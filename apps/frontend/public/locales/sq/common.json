@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 për klip",
       "voiceoverFree": "$0 — audioja dhe videoja juaj",
       "langsSuffix": " · gjuhë: {{count}}",
-      "videoFree": "$0 — video e gatshme, pa HeyGen"
+      "videoFree": "$0 — video e gatshme, pa HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Gati për të krijuar",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen do të animojë foton në një sfond të gjelbër, shërbimi do ta heqë atë — vetëm silueta e personit do të mbetet në ekran, pa drejtkëndëshin.",
       "hgLooksEmpty": "Nuk ka ende avatarë fotografikë në llogarinë tuaj HeyGen: krijoni një pamje në studion HeyGen ose ngarkoni një foto si zakonisht.",
       "hgLookActive": "Është zgjedhur një avatar i gatshëm HeyGen — nuk ka ngarkim fotosh, nuk ka vende të shpenzuara. Zëvendësimi i fotos do ta çaktivizojë atë.",
-      "hgLooksBtn": "Zgjidhni avatar të gatshëm nga HeyGen"
+      "hgLooksBtn": "Zgjidhni avatar të gatshëm nga HeyGen",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "Zëri dhe teksti",
@@ -1363,7 +1376,14 @@
       "catGenerated": "i gjeneruar",
       "catPremade": "i parapërgatitur",
       "yourBadge": "i juaji",
-      "langsAllHint": "Të gjitha gjuhët e mbështetura nga sistemi ynë janë të disponueshme: përkthim (Claude) → ElevenLabs shumëgjuhësh."
+      "langsAllHint": "Të gjitha gjuhët e mbështetura nga sistemi ynë janë të disponueshme: përkthim (Claude) → ElevenLabs shumëgjuhësh.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} rresht · ~{{sec}} sek",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} foto — kalojnë nëpër to",
       "photosVsVideo": "Të dyja video dhe fotot janë zgjedhur — video do të përdoret (fotot injorohen).",
       "photosCount_few": "{{count}} foto — kalojnë nëpër to",
-      "photosCount_many": "{{count}} foto — kalojnë nëpër to"
+      "photosCount_many": "{{count}} foto — kalojnë nëpër to",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "Titrat",
@@ -1475,7 +1500,14 @@
       "hideLines": "Fsheh dialogun ▾",
       "showLines": "Shfaq dialogun ▴",
       "empty": "Dialogu do të shfaqet këtu pas 'Gjenero tekst' ose 'Transkripto fjalën' — një afat kohor me pista zëri, prerje dhe media.",
-      "dragResize": "Zvarrit lart/poshtë për të ndryshuar lartësinë e afatit kohor; dyfish-klikoni për të rivendosur"
+      "dragResize": "Zvarrit lart/poshtë për të ndryshuar lartësinë e afatit kohor; dyfish-klikoni për të rivendosur",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "Grep",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "duke krijuar video…",
-      "note": "Mund ta mbyllni këtë dritare — renderimi do të vazhdojë në server (~2–5 min)."
+      "note": "Mund ta mbyllni këtë dritare — renderimi do të vazhdojë në server (~2–5 min).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "bilanci",
@@ -1564,7 +1601,8 @@
       "hide": "Fsheh",
       "cancel": "Anulo",
       "footage": "Pamje",
-      "avatar": "Avatar"
+      "avatar": "Avatar",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "Intro & outro (opsionale)",
@@ -1573,7 +1611,16 @@
       "hint": "Një video nga galeria do të shtohet siç është, pa modifikime: p.sh., një intro logo (2–10 sek) ose një outro 'abonohu'.",
       "introTitle": "Intro",
       "outroTitle": "Outro",
-      "addSub": "shto bumper"
+      "addSub": "shto bumper",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "Mbivendosje",
@@ -1642,6 +1689,29 @@
       "save": "Ruaj shabllonin",
       "note": "Shabllonet janë të dukshme në Galeri → UGC → 'Auto' me video të gjeneruara automatikisht.",
       "defaultName": "Shablloni im"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "kohështrirja (mbivendosja e zërit)",
       "titlePh": "titull 2–5 fjalë (opsionale)",
       "zoomIn": "zmadho (Ctrl+scroll)",
-      "zoomOut": "zvogëlo (Ctrl+scroll)"
+      "zoomOut": "zvogëlo (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "lidh",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Hap Google Flow",
       "vpTitle": "Video \n→ Google Flow",
       "addTrendTitle": "Hapni 'Tendencat': skanoni sipas fjalës kyçe ose ngjisni një lidhje video — rezultatet do të shfaqen këtu",
-      "tabStoryboard": "Storyboard"
+      "tabStoryboard": "Storyboard",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "Të gjitha",
+      "originFilterTitle": "Shfaq vetëm skedarët nga “{{name}}”"
     },
     "hotebook": {
       "addUrlTitle": "Shto link",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "Njofto abonentët",
       "ytPrivate": "Private",
       "ytTitlePh": "Titulli i videos (i detyrueshëm)",
-      "ytUnlisted": "E palistuar"
+      "ytUnlisted": "E palistuar",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "Dështoi shtimi në galeri",
@@ -3576,7 +3694,11 @@
       "tabSearch": "Kërko",
       "urlPh": "URL video / postimi…",
       "videoDone": "Video u shkarkua ✓",
-      "videoFail": "Dështoi shkarkimi i videos"
+      "videoFail": "Dështoi shkarkimi i videos",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "Llogaria",
@@ -3651,7 +3773,24 @@
       "urlRequired": "Vendosni një lidhje për një video, postim ose llogari.",
       "videoPost": "Video / postim",
       "views": "Shikime",
-      "ytOff": "Analiza e YouTube e padisponueshme — YouTube është vetëm për kërkimin e trendeve."
+      "ytOff": "Analiza e YouTube e padisponueshme — YouTube është vetëm për kërkimin e trendeve.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "Analizo të zgjedhurat",
@@ -4283,6 +4422,42 @@
       "style_terminal": "Terminal",
       "style_bold": "E theksuar",
       "ctaHintV2": "Përdorni të njëjtën fjalë kodi në përshkrimin e postimit tuaj."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "Studio UGC",
+      "storyboard": "Storyboard",
+      "hotebook": "Hotebook",
+      "trends": "Trendet",
+      "analytics": "Analitika",
+      "omni": "Omni Flash",
+      "commentator": "Komentues",
+      "avatar": "Avatarët",
+      "montage": "Montazh",
+      "autopilot": "Autopilot",
+      "text": "Tekst",
+      "upload": "Ngarko"
     }
   }
 }

@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 ib zaj",
       "voiceoverFree": "$0 — koj tus kheej lub suab thiab video",
       "langsSuffix": " · hom lus: {{count}}",
-      "videoFree": "$0 — video npaj txhij, tsis muaj HeyGen"
+      "videoFree": "$0 — video npaj txhij, tsis muaj HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Npaj tsim",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen yuav ua kom daim duab txav ntawm lub keeb kwm ntsuab, qhov kev pabcuam yuav tshem tawm — tsuas yog tus neeg lub duab ntxoov ntxoo yuav nyob ntawm lub vijtsam, tsis muaj lub duab plaub.",
       "hgLooksEmpty": "Tsis muaj duab avatars hauv koj tus HeyGen account tseem: tsim ib qho zoo hauv HeyGen studio lossis upload ib daim duab raws li ib txwm.",
       "hgLookActive": "Ib tus HeyGen avatar npaj txhij raug xaiv — tsis muaj duab upload, tsis muaj qhov chaw siv. Hloov daim duab yuav ua rau nws tsis ua haujlwm.",
-      "hgLooksBtn": "Xaiv tus avatar npaj txhij los ntawm HeyGen"
+      "hgLooksBtn": "Xaiv tus avatar npaj txhij los ntawm HeyGen",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "Lub suab thiab ntawv",
@@ -1363,7 +1376,14 @@
       "catGenerated": "tsim",
       "catPremade": "npaj ua ntej",
       "yourBadge": "koj tus kheej",
-      "langsAllHint": "Peb cov lus txhawb nqa muaj tag nrho: txhais (Claude) → ElevenLabs ntau hom lus."
+      "langsAllHint": "Peb cov lus txhawb nqa muaj tag nrho: txhais (Claude) → ElevenLabs ntau hom lus.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} kab · ~{{sec}} vib nas this",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} daim duab — rov qab",
       "photosVsVideo": "Ob qho video thiab duab raug xaiv — video yuav raug siv (duab raug tsis quav ntsej).",
       "photosCount_few": "{{count}} daim duab — rov qab",
-      "photosCount_many": "{{count}} daim duab — rov qab"
+      "photosCount_many": "{{count}} daim duab — rov qab",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "Cov ntawv sau",
@@ -1475,7 +1500,14 @@
       "hideLines": "Zais dialogue ▾",
       "showLines": "Qhia dialogue ▴",
       "empty": "Dialogue yuav tshwm sim ntawm no tom qab 'Generate text' lossis 'Transcribe speech' — ib lub sij hawm nrog lub suab, txiav, thiab media.",
-      "dragResize": "Luag nce/ntshuav kom hloov timeline qhov siab; ob zaug nias kom rov pib dua"
+      "dragResize": "Luag nce/ntshuav kom hloov timeline qhov siab; ob zaug nias kom rov pib dua",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "Hook",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "tab tom tsim yeeb yaj kiab…",
-      "note": "Koj tuaj yeem kaw lub qhov rais no — kev ua haujlwm yuav txuas ntxiv rau ntawm server (~2–5 feeb)."
+      "note": "Koj tuaj yeem kaw lub qhov rais no — kev ua haujlwm yuav txuas ntxiv rau ntawm server (~2–5 feeb).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "nyiaj tshuav",
@@ -1564,7 +1601,8 @@
       "hide": "Nkaum",
       "cancel": "Tso tseg",
       "footage": "Cov duab",
-      "avatar": "Tus avatar"
+      "avatar": "Tus avatar",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "Intro & outro (yeem)",
@@ -1573,7 +1611,16 @@
       "hint": "Ib daim vis dis aus los ntawm lub gallery yuav raug ntxiv raws li nws yog, tsis muaj kev hloov kho: piv txwv li, ib lub logo intro (2–10 sec) lossis ib qho 'subscribe' outro.",
       "introTitle": "Intro",
       "outroTitle": "Outro",
-      "addSub": "ntxiv bumper"
+      "addSub": "ntxiv bumper",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "Overlay",
@@ -1642,6 +1689,29 @@
       "save": "Txuag tus qauv",
       "note": "Cov qauv pom hauv Gallery → UGC → 'Auto' nrog cov yeeb yaj kiab tsim tawm tsis siv neeg.",
       "defaultName": "Kuv tus qauv"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "timeline (suab overlay)",
       "titlePh": "lub npe 2–5 lo lus (yeem)",
       "zoomIn": "zoom in (Ctrl+scroll)",
-      "zoomOut": "zoom out (Ctrl+scroll)"
+      "zoomOut": "zoom out (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "txuas",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Qhib Google Flow",
       "vpTitle": "Cov yees duab \n→ Google Flow",
       "addTrendTitle": "Qhib 'Trends': tshawb los ntawm keyword lossis muab video link — cov txiaj ntsig yuav tshwm sim ntawm no",
-      "tabStoryboard": "Storyboard"
+      "tabStoryboard": "Storyboard",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "Tag nrho",
+      "originFilterTitle": "Qhia cov ntaub ntawv los ntawm \"{{name}}\" xwb"
     },
     "hotebook": {
       "addUrlTitle": "Ntxiv qhov txuas",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "Ceeb toom cov neeg subscribe",
       "ytPrivate": "Tsis pub leej twg paub",
       "ytTitlePh": "Video lub npe (yuav tsum muaj)",
-      "ytUnlisted": "Tsis tau teev npe"
+      "ytUnlisted": "Tsis tau teev npe",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "Ntxiv rau gallery tsis ua tiav",
@@ -3576,7 +3694,11 @@
       "tabSearch": "Tshawb Nrhiav",
       "urlPh": "Video / post URL…",
       "videoDone": "Video rub tawm lawm ✓",
-      "videoFail": "Rub tawm video tsis tau"
+      "videoFail": "Rub tawm video tsis tau",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "Tus Account",
@@ -3651,7 +3773,24 @@
       "urlRequired": "Sau ib qho txuas mus rau ib qho video, post, lossis account.",
       "videoPost": "Video / post",
       "views": "Saib",
-      "ytOff": "YouTube kev tshuaj xyuas tsis muaj — YouTube tsuas yog rau kev tshawb nrhiav trend."
+      "ytOff": "YouTube kev tshuaj xyuas tsis muaj — YouTube tsuas yog rau kev tshawb nrhiav trend.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "Tshuaj xyuas cov xaiv",
@@ -4283,6 +4422,42 @@
       "style_terminal": "Terminal",
       "style_bold": "Sau ntawv tuab",
       "ctaHintV2": "Siv tib lo lus code hauv koj qhov kev tshaj tawm."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "UGC Studio",
+      "storyboard": "Zaj dab neeg",
+      "hotebook": "Hotebook",
+      "trends": "Cov Qauv",
+      "analytics": "Kev Tshawb Fawb",
+      "omni": "Omni Flash",
+      "commentator": "Tus neeg tawm tswv yim",
+      "avatar": "Cov duab avatar",
+      "montage": "Kev Sib Txuas Lus",
+      "autopilot": "Tsav tsheb tsis siv neeg",
+      "text": "Cov ntawv nyeem",
+      "upload": "Upload"
     }
   }
 }

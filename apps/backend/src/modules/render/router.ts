@@ -844,7 +844,11 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
     // видеоряда, фото слайдшоу, аватар, врезки, заставки, музыка, слои. Так у собранного
     // видео в Галерее остаются иконки и Google Flow, и UGC. Берём ИСХОДНЫЕ url'ы: spec.clip
     // к этому моменту мог стать склейкой-полуфабрикатом, которой в Галерее нет.
-    const ugcOrigins = await chainFromUrls(req.tenantId!, 'ugc', [
+    //
+    // Автопилот трендов гонит сборку через этот же роут (outFolder='auto-ugc'), поэтому
+    // собственную метку берём по папке — иначе метка 'autopilot' мертва: её ставил только
+    // бэкфилл старых файлов, а каждый НОВЫЙ авто-ролик получал бы обычный 'ugc'.
+    const ugcOrigins = await chainFromUrls(req.tenantId!, outFolder === 'auto-ugc' ? 'autopilot' : 'ugc', [
       ...specClips.map((c) => c.url),
       ...clipImages,
       ...insertLines.map((l) => l.url),

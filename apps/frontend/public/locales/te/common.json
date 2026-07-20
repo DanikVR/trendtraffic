@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ క్లిప్‌కు $0.1–0.3",
       "voiceoverFree": "$0 — మీ స్వంత ఆడియో మరియు వీడియో",
       "langsSuffix": " · భాషలు: {{count}}",
-      "videoFree": "$0 — సిద్ధంగా ఉన్న వీడియో, HeyGen లేదు"
+      "videoFree": "$0 — సిద్ధంగా ఉన్న వీడియో, HeyGen లేదు",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "నిర్మించడానికి సిద్ధంగా ఉంది",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen ఫోటోను ఆకుపచ్చ నేపథ్యంలో యానిమేట్ చేస్తుంది, సేవ దానిని తీసివేస్తుంది — దీర్ఘచతురస్రం లేకుండా, వ్యక్తి యొక్క సిల్హౌట్ మాత్రమే స్క్రీన్‌పై మిగిలి ఉంటుంది.",
       "hgLooksEmpty": "మీ HeyGen ఖాతాలో ఇంకా ఫోటో అవతార్‌లు లేవు: HeyGen స్టూడియోలో ఒక రూపాన్ని సృష్టించండి లేదా సాధారణంగా ఫోటోను అప్‌లోడ్ చేయండి.",
       "hgLookActive": "సిద్ధంగా ఉన్న HeyGen అవతార్ ఎంపిక చేయబడింది — ఫోటో అప్‌లోడ్ లేదు, స్లాట్‌లు ఖర్చు చేయబడవు. ఫోటోను మార్చడం వలన అది నిలిపివేయబడుతుంది.",
-      "hgLooksBtn": "HeyGen నుండి సిద్ధంగా ఉన్న అవతార్‌ను ఎంచుకోండి"
+      "hgLooksBtn": "HeyGen నుండి సిద్ధంగా ఉన్న అవతార్‌ను ఎంచుకోండి",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "వాయిస్ మరియు టెక్స్ట్",
@@ -1363,7 +1376,14 @@
       "catGenerated": "ఉత్పత్తి చేయబడింది",
       "catPremade": "ముందుగా తయారు చేయబడింది",
       "yourBadge": "మీ స్వంతం",
-      "langsAllHint": "మా పైప్‌లైన్ ద్వారా మద్దతు ఉన్న అన్ని భాషలు అందుబాటులో ఉన్నాయి: అనువాదం (Claude) → ElevenLabs బహుభాషా."
+      "langsAllHint": "మా పైప్‌లైన్ ద్వారా మద్దతు ఉన్న అన్ని భాషలు అందుబాటులో ఉన్నాయి: అనువాదం (Claude) → ElevenLabs బహుభాషా.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} లైన్ · ~{{sec}} సెకన్లు",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} ఫోటోలు — లూప్ ద్వారా",
       "photosVsVideo": "వీడియో మరియు ఫోటోలు రెండూ ఎంపిక చేయబడ్డాయి — వీడియో ఉపయోగించబడుతుంది (ఫోటోలు విస్మరించబడతాయి).",
       "photosCount_few": "{{count}} ఫోటోలు — లూప్ ద్వారా",
-      "photosCount_many": "{{count}} ఫోటోలు — లూప్ ద్వారా"
+      "photosCount_many": "{{count}} ఫోటోలు — లూప్ ద్వారా",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "ఉపశీర్షికలు",
@@ -1475,7 +1500,14 @@
       "hideLines": "సంభాషణను దాచు ▾",
       "showLines": "సంభాషణను చూపు ▴",
       "empty": "'టెక్స్ట్ జనరేట్ చేయి' లేదా 'స్పీచ్ ట్రాన్స్‌క్రైబ్ చేయి' తర్వాత సంభాషణ ఇక్కడ కనిపిస్తుంది — వాయిస్ ట్రాక్‌లు, కట్‌లు మరియు మీడియా ఉన్న టైమ్‌లైన్.",
-      "dragResize": "టైమ్‌లైన్ ఎత్తును మార్చడానికి పైకి/కిందకు లాగండి; రీసెట్ చేయడానికి డబుల్-క్లిక్ చేయండి"
+      "dragResize": "టైమ్‌లైన్ ఎత్తును మార్చడానికి పైకి/కిందకు లాగండి; రీసెట్ చేయడానికి డబుల్-క్లిక్ చేయండి",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "హుక్",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "వీడియో సృష్టిస్తోంది…",
-      "note": "మీరు ఈ విండోను మూసివేయవచ్చు — రెండరింగ్ సర్వర్‌లో కొనసాగుతుంది (~2–5 నిమిషాలు)."
+      "note": "మీరు ఈ విండోను మూసివేయవచ్చు — రెండరింగ్ సర్వర్‌లో కొనసాగుతుంది (~2–5 నిమిషాలు).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "బ్యాలెన్స్",
@@ -1564,7 +1601,8 @@
       "hide": "దాచండి",
       "cancel": "రద్దు చేయండి",
       "footage": "ఫుటేజ్",
-      "avatar": "అవతార్"
+      "avatar": "అవతార్",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "పరిచయం & ముగింపు (ఐచ్ఛికం)",
@@ -1573,7 +1611,16 @@
       "hint": "గ్యాలరీ నుండి ఒక వీడియో ఎటువంటి మార్పులు లేకుండా జోడించబడుతుంది: ఉదాహరణకు, ఒక లోగో పరిచయం (2–10 సెకన్లు) లేదా 'సబ్‌స్క్రైబ్' ముగింపు.",
       "introTitle": "పరిచయం",
       "outroTitle": "ముగింపు",
-      "addSub": "బంపర్‌ను జోడించండి"
+      "addSub": "బంపర్‌ను జోడించండి",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "ఓవర్‌లే",
@@ -1642,6 +1689,29 @@
       "save": "టెంప్లేట్‌ను సేవ్ చేయండి",
       "note": "టెంప్లేట్‌లు గ్యాలరీ → UGC → 'ఆటో'లో ఆటో-జనరేట్ చేయబడిన వీడియోలతో కనిపిస్తాయి.",
       "defaultName": "నా టెంప్లేట్"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "టైమ్‌లైన్ (వాయిస్ ఓవర్‌లే)",
       "titlePh": "శీర్షిక 2–5 పదాలు (ఐచ్ఛికం)",
       "zoomIn": "జూమ్ ఇన్ చేయండి (Ctrl+స్క్రోల్)",
-      "zoomOut": "జూమ్ అవుట్ చేయండి (Ctrl+స్క్రోల్)"
+      "zoomOut": "జూమ్ అవుట్ చేయండి (Ctrl+స్క్రోల్)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "కనెక్ట్ చేయండి",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Google Flow తెరవండి",
       "vpTitle": "వీడియోలు \n→ Google Flow",
       "addTrendTitle": "'ట్రెండ్‌లు' తెరవండి: కీలకపదం ద్వారా స్కాన్ చేయండి లేదా వీడియో లింక్‌ను అతికించండి — ఫలితాలు ఇక్కడ కనిపిస్తాయి",
-      "tabStoryboard": "స్టోరీబోర్డ్"
+      "tabStoryboard": "స్టోరీబోర్డ్",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "అన్నీ",
+      "originFilterTitle": "“{{name}}” నుండి ఫైల్‌లను మాత్రమే చూపించు"
     },
     "hotebook": {
       "addUrlTitle": "లింక్ జోడించండి",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "సబ్‌స్క్రైబర్‌లకు తెలియజేయండి",
       "ytPrivate": "ప్రైవేట్",
       "ytTitlePh": "వీడియో శీర్షిక (అవసరం)",
-      "ytUnlisted": "జాబితా చేయబడలేదు"
+      "ytUnlisted": "జాబితా చేయబడలేదు",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "గ్యాలరీకి జోడించడంలో విఫలమైంది",
@@ -3576,7 +3694,11 @@
       "tabSearch": "శోధన",
       "urlPh": "వీడియో / పోస్ట్ URL…",
       "videoDone": "వీడియో డౌన్‌లోడ్ చేయబడింది ✓",
-      "videoFail": "వీడియోను డౌన్‌లోడ్ చేయడంలో విఫలమైంది"
+      "videoFail": "వీడియోను డౌన్‌లోడ్ చేయడంలో విఫలమైంది",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "ఖాతా",
@@ -3651,7 +3773,24 @@
       "urlRequired": "వీడియో, పోస్ట్ లేదా ఖాతాకు లింక్‌ను నమోదు చేయండి.",
       "videoPost": "వీడియో / పోస్ట్",
       "views": "వీక్షణలు",
-      "ytOff": "YouTube విశ్లేషణ అందుబాటులో లేదు — YouTube ట్రెండ్ శోధన కోసం మాత్రమే."
+      "ytOff": "YouTube విశ్లేషణ అందుబాటులో లేదు — YouTube ట్రెండ్ శోధన కోసం మాత్రమే.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "ఎంచుకున్న వాటిని విశ్లేషించండి",
@@ -4283,6 +4422,42 @@
       "style_terminal": "టెర్మినల్",
       "style_bold": "బోల్డ్",
       "ctaHintV2": "మీ పోస్ట్ క్యాప్షన్‌లో అదే కోడ్ పదాన్ని ఉపయోగించండి."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "యూజీసీ స్టూడియో",
+      "storyboard": "స్టోరీబోర్డ్",
+      "hotebook": "Hotebook",
+      "trends": "ట్రెండ్స్",
+      "analytics": "విశ్లేషణలు",
+      "omni": "Omni Flash",
+      "commentator": "వ్యాఖ్యాత",
+      "avatar": "అవతార్లు",
+      "montage": "మాంటేజ్",
+      "autopilot": "ఆటోపైలట్",
+      "text": "టెక్స్ట్",
+      "upload": "అప్‌లోడ్ చేయండి"
     }
   }
 }

@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 לקליפ",
       "voiceoverFree": "$0 — אודיו ווידאו משלך",
       "langsSuffix": " · שפות: {{count}}",
-      "videoFree": "$0 — וידאו מוכן, ללא HeyGen"
+      "videoFree": "$0 — וידאו מוכן, ללא HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "מוכן לבנייה",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen ינפיש את התמונה על רקע ירוק, השירות יסיר אותו — רק צללית האדם תישאר על המסך, ללא המלבן.",
       "hgLooksEmpty": "אין עדיין אווטארים של תמונות בחשבון HeyGen שלך: צור מראה בסטודיו HeyGen או העלה תמונה כרגיל.",
       "hgLookActive": "אווטאר HeyGen מוכן נבחר — ללא העלאת תמונה, ללא שימוש בחריצים. החלפת התמונה תבטל אותו.",
-      "hgLooksBtn": "בחר אווטאר מוכן מ-HeyGen"
+      "hgLooksBtn": "בחר אווטאר מוכן מ-HeyGen",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "קול וטקסט",
@@ -1363,7 +1376,14 @@
       "catGenerated": "נוצר",
       "catPremade": "מוכן מראש",
       "yourBadge": "שלך",
-      "langsAllHint": "כל השפות הנתמכות על ידי המערכת שלנו זמינות: תרגום (Claude) ← ElevenLabs רב-לשוני."
+      "langsAllHint": "כל השפות הנתמכות על ידי המערכת שלנו זמינות: תרגום (Claude) ← ElevenLabs רב-לשוני.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} line · ~{{sec}} sec",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} תמונות — עובר בלולאה",
       "photosVsVideo": "גם וידאו וגם תמונות נבחרו — הווידאו ישמש (התמונות יתעלמו).",
       "photosCount_few": "{{count}} תמונות — עובר בלולאה",
-      "photosCount_many": "{{count}} תמונות — עובר בלולאה"
+      "photosCount_many": "{{count}} תמונות — עובר בלולאה",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "כתוביות",
@@ -1475,7 +1500,14 @@
       "hideLines": "הסתר דיאלוג ▾",
       "showLines": "הצג דיאלוג ▴",
       "empty": "דיאלוג יופיע כאן לאחר 'יצירת טקסט' או 'תמלול דיבור' — ציר זמן עם רצועות קול, חיתוכים ומדיה.",
-      "dragResize": "גרור למעלה/למטה כדי לשנות גובה ציר הזמן; לחץ פעמיים לאיפוס"
+      "dragResize": "גרור למעלה/למטה כדי לשנות גובה ציר הזמן; לחץ פעמיים לאיפוס",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "הוק",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "יוצר סרטון…",
-      "note": "ניתן לסגור חלון זה — הרינדור ימשיך בשרת (~2–5 דקות)."
+      "note": "ניתן לסגור חלון זה — הרינדור ימשיך בשרת (~2–5 דקות).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "יתרה",
@@ -1564,7 +1601,8 @@
       "hide": "הסתר",
       "cancel": "ביטול",
       "footage": "צילומים",
-      "avatar": "אווטאר"
+      "avatar": "אווטאר",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "פתיח וסיום (אופציונלי)",
@@ -1573,7 +1611,16 @@
       "hint": "סרטון מהגלריה יתווסף כפי שהוא, ללא שינויים: למשל, פתיח לוגו (2-10 שניות) או סיום 'הירשם'.",
       "introTitle": "פתיח",
       "outroTitle": "סיום",
-      "addSub": "הוסף באמפר"
+      "addSub": "הוסף באמפר",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "שכבת-על",
@@ -1642,6 +1689,29 @@
       "save": "שמור תבנית",
       "note": "תבניות גלויות בגלריה ← UGC ← 'אוטומטי' עם סרטונים שנוצרו אוטומטית.",
       "defaultName": "התבנית שלי"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "ציר זמן (שכבת קול)",
       "titlePh": "כותרת 2–5 מילים (אופציונלי)",
       "zoomIn": "התקרב (Ctrl+גלול)",
-      "zoomOut": "התרחק (Ctrl+גלול)"
+      "zoomOut": "התרחק (Ctrl+גלול)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "התחבר",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "פתח את Google Flow",
       "vpTitle": "סרטונים \n← Google Flow",
       "addTrendTitle": "פתח 'טרנדים': סרוק לפי מילת מפתח או הדבק קישור לסרטון — התוצאות יופיעו כאן",
-      "tabStoryboard": "סטוריבורד"
+      "tabStoryboard": "סטוריבורד",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "כֹּל",
+      "originFilterTitle": "הצג רק קבצים מ-\"{{name}}\""
     },
     "hotebook": {
       "addUrlTitle": "הוסף קישור",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "הודע למנויים",
       "ytPrivate": "פרטי",
       "ytTitlePh": "כותרת סרטון (חובה)",
-      "ytUnlisted": "לא רשום"
+      "ytUnlisted": "לא רשום",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "הוספה לגלריה נכשלה",
@@ -3576,7 +3694,11 @@
       "tabSearch": "חיפוש",
       "urlPh": "כתובת URL של סרטון / פוסט…",
       "videoDone": "הסרטון הורד ✓",
-      "videoFail": "הורדת הסרטון נכשלה"
+      "videoFail": "הורדת הסרטון נכשלה",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "חשבון",
@@ -3651,7 +3773,24 @@
       "urlRequired": "הזן קישור לווידאו, פוסט או חשבון.",
       "videoPost": "וידאו / פוסט",
       "views": "צפיות",
-      "ytOff": "ניתוח YouTube אינו זמין — YouTube מיועד רק לחיפוש טרנדים."
+      "ytOff": "ניתוח YouTube אינו זמין — YouTube מיועד רק לחיפוש טרנדים.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "נתח נבחרים",
@@ -4283,6 +4422,42 @@
       "style_terminal": "טרמינל",
       "style_bold": "מודגש",
       "ctaHintV2": "השתמש באותה מילת קוד בכיתוב הפוסט שלך."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "סטודיו UGC",
+      "storyboard": "לוח תכנון",
+      "hotebook": "Hotebook",
+      "trends": "מגמות",
+      "analytics": "אנליטיקס",
+      "omni": "Omni Flash",
+      "commentator": "פַּרשָׁן",
+      "avatar": "אווטארים",
+      "montage": "מונטאז'",
+      "autopilot": "טייס אוטומטי",
+      "text": "טֶקסט",
+      "upload": "העלאה"
     }
   }
 }

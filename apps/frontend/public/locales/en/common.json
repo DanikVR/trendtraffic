@@ -2789,7 +2789,9 @@
       "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
       "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
       "bulkPub": "To Publisher",
-      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»"
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "All",
+      "originFilterTitle": "Show only files from “{{name}}”"
     },
     "hotebook": {
       "addUrlTitle": "Add link",
@@ -4434,6 +4436,21 @@
       "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
       "errStart": "Could not start processing",
       "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "UGC Studio",
+      "storyboard": "Storyboard",
+      "hotebook": "Hotebook",
+      "trends": "Trends",
+      "analytics": "Analytics",
+      "omni": "Omni Flash",
+      "commentator": "Commentator",
+      "avatar": "Avatars",
+      "montage": "Montage",
+      "autopilot": "Autopilot",
+      "text": "Text",
+      "upload": "Upload"
     }
   }
 }

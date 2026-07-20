@@ -1225,7 +1225,11 @@
       "voiceoverAi": "ကလစ်တစ်ခုလျှင် ≈ $0.1–0.3",
       "voiceoverFree": "$0 — သင့်ကိုယ်ပိုင် အသံနှင့် ဗီဒီယို",
       "langsSuffix": " · ဘာသာစကားများ: {{count}}",
-      "videoFree": "$0 — အသင့်ဗီဒီယို၊ HeyGen မပါဝင်ပါ"
+      "videoFree": "$0 — အသင့်ဗီဒီယို၊ HeyGen မပါဝင်ပါ",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "တည်ဆောက်ရန် အသင့်ဖြစ်ပြီ",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen သည် ဓာတ်ပုံကို အစိမ်းရောင်နောက်ခံတွင် လှုပ်ရှားစေမည်ဖြစ်ပြီး၊ ဝန်ဆောင်မှုက ၎င်းကို ဖယ်ရှားမည် — လူ၏ပုံရိပ်သာ မျက်နှာပြင်ပေါ်တွင် ကျန်ရှိနေမည်ဖြစ်ပြီး ထောင့်မှန်စတုဂံ မပါဝင်ပါ။",
       "hgLooksEmpty": "သင့် HeyGen အကောင့်တွင် ဓာတ်ပုံ avatar များ မရှိသေးပါ- HeyGen စတူဒီယိုတွင် ပုံစံတစ်ခု ဖန်တီးပါ သို့မဟုတ် ပုံမှန်အတိုင်း ဓာတ်ပုံတင်ပါ။",
       "hgLookActive": "အသင့်ရှိ HeyGen avatar ကို ရွေးချယ်ထားသည် — ဓာတ်ပုံတင်ရန်မလို၊ slot များ မကုန်ကျပါ။ ဓာတ်ပုံအစားထိုးခြင်းက ၎င်းကို ပိတ်ပစ်ပါမည်။",
-      "hgLooksBtn": "HeyGen မှ အသင့်ရှိ avatar ကို ရွေးပါ"
+      "hgLooksBtn": "HeyGen မှ အသင့်ရှိ avatar ကို ရွေးပါ",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "အသံနှင့် စာသား",
@@ -1363,7 +1376,14 @@
       "catGenerated": "ထုတ်လုပ်ထားသည်",
       "catPremade": "ကြိုတင်ပြုလုပ်ထားသည်",
       "yourBadge": "သင့်ကိုယ်ပိုင်",
-      "langsAllHint": "ကျွန်ုပ်တို့၏ ပိုက်လိုင်းမှ ပံ့ပိုးထားသော ဘာသာစကားအားလုံး ရရှိနိုင်ပါသည်- ဘာသာပြန်ခြင်း (Claude) → ElevenLabs ဘာသာစကားမျိုးစုံ။"
+      "langsAllHint": "ကျွန်ုပ်တို့၏ ပိုက်လိုင်းမှ ပံ့ပိုးထားသော ဘာသာစကားအားလုံး ရရှိနိုင်ပါသည်- ဘာသာပြန်ခြင်း (Claude) → ElevenLabs ဘာသာစကားမျိုးစုံ။",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} လိုင်း · ~{{sec}} စက္ကန့်",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "ဓာတ်ပုံ {{count}} ပုံ — လှည့်ပတ်ပြသ",
       "photosVsVideo": "ဗီဒီယိုနှင့် ဓာတ်ပုံနှစ်ခုလုံး ရွေးချယ်ထားပါက — ဗီဒီယိုကို အသုံးပြုပါမည် (ဓာတ်ပုံများကို လျစ်လျူရှုပါမည်)။",
       "photosCount_few": "ဓာတ်ပုံ {{count}} ပုံ — လှည့်ပတ်ပြသ",
-      "photosCount_many": "ဓာတ်ပုံ {{count}} ပုံ — လှည့်ပတ်ပြသ"
+      "photosCount_many": "ဓာတ်ပုံ {{count}} ပုံ — လှည့်ပတ်ပြသ",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "စာတန်းထိုးများ",
@@ -1475,7 +1500,14 @@
       "hideLines": "စကားပြောဝှက်ရန် ▾",
       "showLines": "စကားပြောပြရန် ▴",
       "empty": "'စာသားထုတ်လုပ်ရန်' သို့မဟုတ် 'စကားပြောကူးပြောင်းရန်' ပြီးနောက် စကားပြောသည် ဤနေရာတွင် ပေါ်လာပါမည် — အသံလမ်းကြောင်းများ၊ ဖြတ်တောက်မှုများနှင့် မီဒီယာများပါရှိသော ချိန်ဇယားတစ်ခု။",
-      "dragResize": "ချိန်ဇယားအမြင့်ကို ပြောင်းရန် အပေါ်/အောက် ဆွဲပါ; ပြန်လည်သတ်မှတ်ရန် နှစ်ချက်နှိပ်ပါ"
+      "dragResize": "ချိန်ဇယားအမြင့်ကို ပြောင်းရန် အပေါ်/အောက် ဆွဲပါ; ပြန်လည်သတ်မှတ်ရန် နှစ်ချက်နှိပ်ပါ",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "ချိတ်",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "ဗီဒီယို ဖန်တီးနေသည်…",
-      "note": "ဤဝင်းဒိုးကို ပိတ်နိုင်သည် — ရုပ်ထွက်ဖန်တီးမှုသည် ဆာဗာတွင် ဆက်လက်လုပ်ဆောင်မည် (~၂-၅ မိနစ်)။"
+      "note": "ဤဝင်းဒိုးကို ပိတ်နိုင်သည် — ရုပ်ထွက်ဖန်တီးမှုသည် ဆာဗာတွင် ဆက်လက်လုပ်ဆောင်မည် (~၂-၅ မိနစ်)။",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "လက်ကျန်ငွေ",
@@ -1564,7 +1601,8 @@
       "hide": "ဝှက်ရန်",
       "cancel": "ဖျက်သိမ်းရန်",
       "footage": "ရုပ်သံဖိုင်",
-      "avatar": "ကိုယ်ပွား"
+      "avatar": "ကိုယ်ပွား",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "နိဒါန်းနှင့် နိဂုံး (ရွေးချယ်နိုင်သည်)",
@@ -1573,7 +1611,16 @@
       "hint": "ပြခန်းမှ ဗီဒီယိုကို ပြင်ဆင်မှုမရှိဘဲ ထည့်သွင်းပါမည်- ဥပမာ၊ လိုဂိုနိဒါန်း (၂-၁၀ စက္ကန့်) သို့မဟုတ် 'Subscribe' နိဂုံး။",
       "introTitle": "နိဒါန်း",
       "outroTitle": "နိဂုံး",
-      "addSub": "bumper ထည့်ရန်"
+      "addSub": "bumper ထည့်ရန်",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "အပေါ်လွှာ",
@@ -1642,6 +1689,29 @@
       "save": "ပုံစံသိမ်းဆည်းပါ",
       "note": "ပုံစံများကို Gallery → UGC → 'Auto' တွင် အလိုအလျောက်ထုတ်ပေးသော ဗီဒီယိုများနှင့်အတူ မြင်တွေ့နိုင်ပါသည်။",
       "defaultName": "ကျွန်ုပ်၏ပုံစံ"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "အချိန်ဇယား (အသံထပ်ဆင့်)",
       "titlePh": "ခေါင်းစဉ် ၂-၅ စကားလုံး (ရွေးချယ်နိုင်သည်)",
       "zoomIn": "ချဲ့ပါ (Ctrl+scroll)",
-      "zoomOut": "ချုံ့ပါ (Ctrl+scroll)"
+      "zoomOut": "ချုံ့ပါ (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "ချိတ်ဆက်ရန်",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Google Flow ကိုဖွင့်ပါ",
       "vpTitle": "ဗီဒီယိုများ \n→ Google Flow",
       "addTrendTitle": "'Trends' ကိုဖွင့်ပါ- keyword ဖြင့် ရှာဖွေပါ သို့မဟုတ် ဗီဒီယိုလင့်ခ်တစ်ခုကို ကူးထည့်ပါ — ရလဒ်များ ဤနေရာတွင် ပေါ်လာပါမည်။",
-      "tabStoryboard": "ပုံပြင်ဘုတ်"
+      "tabStoryboard": "ပုံပြင်ဘုတ်",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "အားလုံး",
+      "originFilterTitle": "“{{name}}” မှ ဖိုင်များကိုသာ ပြပါ"
     },
     "hotebook": {
       "addUrlTitle": "လင့်ခ်ထည့်ပါ",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "စာရင်းသွင်းသူများကို အသိပေးပါ",
       "ytPrivate": "သီးသန့်",
       "ytTitlePh": "ဗီဒီယိုခေါင်းစဉ် (လိုအပ်သည်)",
-      "ytUnlisted": "စာရင်းမပါဝင်"
+      "ytUnlisted": "စာရင်းမပါဝင်",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "ပြခန်းသို့ ထည့်ရန် မအောင်မြင်ပါ",
@@ -3576,7 +3694,11 @@
       "tabSearch": "ရှာဖွေရန်",
       "urlPh": "ဗီဒီယို / ပို့စ် URL…",
       "videoDone": "ဗီဒီယို ဒေါင်းလုဒ်လုပ်ပြီးပါပြီ ✓",
-      "videoFail": "ဗီဒီယို ဒေါင်းလုဒ်လုပ်၍ မရပါ"
+      "videoFail": "ဗီဒီယို ဒေါင်းလုဒ်လုပ်၍ မရပါ",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "အကောင့်",
@@ -3651,7 +3773,24 @@
       "urlRequired": "ဗီဒီယို၊ ပို့စ် သို့မဟုတ် အကောင့်သို့ လင့်ခ်တစ်ခု ထည့်ပါ။",
       "videoPost": "ဗီဒီယို / ပို့စ်",
       "views": "ကြည့်ရှုမှုများ",
-      "ytOff": "YouTube ခွဲခြမ်းစိတ်ဖြာခြင်း မရရှိနိုင်ပါ — YouTube သည် ခေတ်ရေစီးကြောင်းရှာဖွေမှုအတွက်သာဖြစ်သည်။"
+      "ytOff": "YouTube ခွဲခြမ်းစိတ်ဖြာခြင်း မရရှိနိုင်ပါ — YouTube သည် ခေတ်ရေစီးကြောင်းရှာဖွေမှုအတွက်သာဖြစ်သည်။",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "ရွေးချယ်ထားသည်များကို ခွဲခြမ်းစိတ်ဖြာရန်",
@@ -4283,6 +4422,42 @@
       "style_terminal": "တာမီနယ်",
       "style_bold": "ထူ",
       "ctaHintV2": "သင်၏ post caption တွင် တူညီသော code word ကို အသုံးပြုပါ။"
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "UGC စတူဒီယို",
+      "storyboard": "ဇာတ်လမ်းဘုတ်",
+      "hotebook": "Hotebook",
+      "trends": "ခေတ်ရေစီးကြောင်းများ",
+      "analytics": "ခွဲခြမ်းစိတ်ဖြာမှု",
+      "omni": "Omni Flash",
+      "commentator": "မှတ်ချက်ပေးသူ",
+      "avatar": "ရုပ်ပုံများ",
+      "montage": "မွန်တေ့ဂျ်",
+      "autopilot": "အလိုအလျောက် မောင်းနှင်မှု",
+      "text": "စာသား",
+      "upload": "အပ်လုဒ်လုပ်ပါ"
     }
   }
 }

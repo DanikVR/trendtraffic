@@ -25,25 +25,26 @@ const ROOT = path.resolve(__dirname, '..');
 const LOCALES_DIR = path.join(ROOT, 'public', 'locales');
 const SOURCE_LANG = 'en';
 
-// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: слоты UGC-студии v2.0.7 — title/sub) ──
-// Прошлые батчи (вся ugc.* v2.0.6 — ~290 ключей, chat.*, settings.changePwd.*, auth.reset.*)
-// уже переведены во всех локалях — их повторно гонять не нужно.
+// ── Ключи для перевода (ТЕКУЩИЙ БАТЧ: происхождение файлов Галереи v2.6.34) ──
+// Прошлые батчи (вся ugc.* v2.0.6 — ~290 ключей, ugc.analysis/video/tpl v2.1.0,
+// chat.*, settings.changePwd.*, auth.reset.*) уже переведены во всех локалях —
+// их повторно гонять не нужно.
 // Перед новым прогоном замени список на свежие ключи.
 const KEY_PATHS = [
-  // Батч v2.1.0 — конвейер «тренд → анализ → UGC»: секция «Анализ тренда» (галочки),
-  // фото-слайдшоу в Видеоряде, шаблоны с автопубликацией.
-  'ugc.analysis.title', 'ugc.analysis.sub', 'ugc.analysis.empty', 'ugc.analysis.emptySub',
-  'ugc.analysis.pickTitle', 'ugc.analysis.pickSub', 'ugc.analysis.none', 'ugc.analysis.framesBadge',
-  'ugc.analysis.useScript', 'ugc.analysis.useScriptSub', 'ugc.analysis.useVideo', 'ugc.analysis.useVideoSub',
-  'ugc.analysis.useSubtitles', 'ugc.analysis.useSubtitlesSub', 'ugc.analysis.useRetention', 'ugc.analysis.useRetentionSub',
-  'ugc.video.photosTitle', 'ugc.video.photosSub', 'ugc.video.photosOne',
-  'ugc.video.photosCount_one', 'ugc.video.photosCount_other', 'ugc.video.photosVsVideo',
-  'ugc.picker.clipImagesTitle', 'ugc.picker.clipImagesNote',
-  'ugc.tpl.button', 'ugc.tpl.tooltip', 'ugc.tpl.title', 'ugc.tpl.sub', 'ugc.tpl.empty', 'ugc.tpl.apply',
-  'ugc.tpl.autopubOn', 'ugc.tpl.source', 'ugc.tpl.sourceNone', 'ugc.tpl.sourceTrends', 'ugc.tpl.sourcePaused',
-  'ugc.tpl.lang', 'ugc.tpl.langHint', 'ugc.tpl.autopubHint', 'ugc.tpl.noWatches',
-  'ugc.tpl.saveCurrent', 'ugc.tpl.namePlaceholder', 'ugc.tpl.keywordPlaceholder', 'ugc.tpl.save',
-  'ugc.tpl.note', 'ugc.tpl.defaultName',
+  // Батч v2.6.34 — иконки происхождения в Галерее: подписи блоков-источников
+  // (чипы-фильтры и tooltip цепочки) + управление фильтром.
+  //
+  // ⚠ Брендовые метки СПЕЦИАЛЬНО не переводим — они одинаковы во всех локалях
+  //   и уже разложены пропагацией как есть:
+  //     sec.origins.flow     = «Google Flow»
+  //     sec.origins.hotebook = «Hotebook»
+  //     sec.origins.omni     = «Omni Flash»
+  //   Google Translate их калечит (Flow → «Поток», Hotebook → «Горячая книга»),
+  //   а glossary читает только review-locales-with-gemini.mjs, не этот скрипт.
+  'sec.origins.ugc', 'sec.origins.storyboard', 'sec.origins.trends', 'sec.origins.analytics',
+  'sec.origins.commentator', 'sec.origins.avatar', 'sec.origins.montage', 'sec.origins.autopilot',
+  'sec.origins.text', 'sec.origins.upload',
+  'sec.gallery.originAll', 'sec.gallery.originFilterTitle',
 ];
 
 // Наши коды → коды Google Translate (некоторые отличаются).

@@ -83,15 +83,23 @@ export async function chainFromUrls(
   return dedupeChain([...inherited, own]);
 }
 
-/** Хронологическая цепочка без повторов; собственная метка всегда последняя. */
+/**
+ * Хронологическая цепочка без повторов; собственная метка всегда последняя.
+ *
+ * Повтор УНАСЛЕДОВАННОЙ метки оставляем на ПЕРВОМ месте — иначе склейка двух
+ * исходников ломает хронологию: клипы ['flow','ugc'] + ['flow'] дают на входе
+ * ['flow','ugc','flow','montage'], и перенос повтора в конец показал бы
+ * «UGC → Flow → Монтаж» вместо честного «Flow → UGC → Монтаж».
+ * В конец двигаем только собственную метку (последнюю на входе) — она и есть
+ * текущее состояние файла.
+ */
 export function dedupeChain(keys: (string | null | undefined)[]): OriginKey[] {
+  const clean = keys.filter((k): k is OriginKey => !!k && KEYSET.has(k));
+  if (!clean.length) return [];
+  const own = clean[clean.length - 1];
   const out: OriginKey[] = [];
-  for (const k of keys) {
-    if (!k || !KEYSET.has(k)) continue;
-    const key = k as OriginKey;
-    const at = out.indexOf(key);
-    if (at >= 0) out.splice(at, 1);   // повтор → переносим в конец (это текущее состояние файла)
-    out.push(key);
-  }
+  for (const key of clean) if (!out.includes(key)) out.push(key); // первое вхождение = хронология
+  const at = out.indexOf(own);
+  if (at >= 0 && at !== out.length - 1) { out.splice(at, 1); out.push(own); }
   return out;
 }

@@ -1225,7 +1225,11 @@
       "voiceoverAi": "클립당 ≈ $0.1–0.3",
       "voiceoverFree": "$0 — 직접 녹음한 오디오 및 비디오",
       "langsSuffix": " · 언어: {{count}}",
-      "videoFree": "$0 — 준비된 비디오, HeyGen 없음"
+      "videoFree": "$0 — 준비된 비디오, HeyGen 없음",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "빌드 준비 완료",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen이 녹색 배경에 사진을 애니메이션화하고, 서비스가 배경을 제거하여 직사각형 없이 사람의 실루엣만 화면에 남게 됩니다.",
       "hgLooksEmpty": "아직 HeyGen 계정에 사진 아바타가 없습니다: HeyGen 스튜디오에서 룩을 만들거나 평소처럼 사진을 업로드하세요.",
       "hgLookActive": "준비된 HeyGen 아바타가 선택되었습니다 — 사진 업로드나 슬롯 소모가 없습니다. 사진을 교체하면 비활성화됩니다.",
-      "hgLooksBtn": "HeyGen에서 준비된 아바타 선택"
+      "hgLooksBtn": "HeyGen에서 준비된 아바타 선택",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "음성 및 텍스트",
@@ -1363,7 +1376,14 @@
       "catGenerated": "생성됨",
       "catPremade": "미리 만들어진",
       "yourBadge": "내 음성",
-      "langsAllHint": "저희 파이프라인에서 지원하는 모든 언어를 사용할 수 있습니다: 번역(Claude) → ElevenLabs 다국어."
+      "langsAllHint": "저희 파이프라인에서 지원하는 모든 언어를 사용할 수 있습니다: 번역(Claude) → ElevenLabs 다국어.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}}줄 · ~{{sec}}초",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "사진 {{count}}장 — 반복 재생",
       "photosVsVideo": "비디오와 사진이 모두 선택된 경우 — 비디오가 사용됩니다 (사진은 무시됨).",
       "photosCount_few": "사진 {{count}}장 — 반복 재생",
-      "photosCount_many": "사진 {{count}}장 — 반복 재생"
+      "photosCount_many": "사진 {{count}}장 — 반복 재생",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "자막",
@@ -1475,7 +1500,14 @@
       "hideLines": "대화 숨기기 ▾",
       "showLines": "대화 표시 ▴",
       "empty": "'텍스트 생성' 또는 '음성 전사' 후 여기에 대화가 나타납니다 — 음성 트랙, 컷, 미디어가 포함된 타임라인입니다.",
-      "dragResize": "타임라인 높이 조절하려면 위/아래로 드래그; 초기화하려면 두 번 클릭"
+      "dragResize": "타임라인 높이 조절하려면 위/아래로 드래그; 초기화하려면 두 번 클릭",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "후크",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "동영상 생성 중…",
-      "note": "이 창을 닫아도 됩니다 — 렌더링은 서버에서 계속됩니다 (~2–5분)."
+      "note": "이 창을 닫아도 됩니다 — 렌더링은 서버에서 계속됩니다 (~2–5분).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "잔액",
@@ -1564,7 +1601,8 @@
       "hide": "숨기기",
       "cancel": "취소",
       "footage": "푸티지",
-      "avatar": "아바타"
+      "avatar": "아바타",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "인트로 & 아웃트로 (선택 사항)",
@@ -1573,7 +1611,16 @@
       "hint": "갤러리의 영상은 수정 없이 그대로 추가됩니다. 예: 로고 인트로 (2-10초) 또는 '구독' 아웃트로.",
       "introTitle": "인트로",
       "outroTitle": "아웃트로",
-      "addSub": "범퍼 추가"
+      "addSub": "범퍼 추가",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "오버레이",
@@ -1642,6 +1689,29 @@
       "save": "템플릿 저장",
       "note": "템플릿은 갤러리 → UGC → '자동'에서 자동 생성된 영상과 함께 볼 수 있습니다.",
       "defaultName": "내 템플릿"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "타임라인 (음성 오버레이)",
       "titlePh": "제목 2~5단어 (선택 사항)",
       "zoomIn": "확대 (Ctrl+스크롤)",
-      "zoomOut": "축소 (Ctrl+스크롤)"
+      "zoomOut": "축소 (Ctrl+스크롤)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "연결",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Google Flow 열기",
       "vpTitle": "동영상 \n→ Google Flow",
       "addTrendTitle": "'트렌드' 열기: 키워드로 스캔하거나 비디오 링크를 붙여넣으세요 — 결과가 여기에 표시됩니다",
-      "tabStoryboard": "스토리보드"
+      "tabStoryboard": "스토리보드",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "모두",
+      "originFilterTitle": "\"{{name}}\"에서 생성된 파일만 표시합니다."
     },
     "hotebook": {
       "addUrlTitle": "링크 추가",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "구독자에게 알림",
       "ytPrivate": "비공개",
       "ytTitlePh": "동영상 제목 (필수)",
-      "ytUnlisted": "일부 공개"
+      "ytUnlisted": "일부 공개",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "갤러리에 추가 실패",
@@ -3576,7 +3694,11 @@
       "tabSearch": "검색",
       "urlPh": "동영상 / 게시물 URL…",
       "videoDone": "동영상 다운로드 완료 ✓",
-      "videoFail": "동영상 다운로드 실패"
+      "videoFail": "동영상 다운로드 실패",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "계정",
@@ -3651,7 +3773,24 @@
       "urlRequired": "비디오, 게시물 또는 계정 링크를 입력하세요.",
       "videoPost": "비디오 / 게시물",
       "views": "조회수",
-      "ytOff": "YouTube 분석을 사용할 수 없습니다 — YouTube는 트렌드 검색 전용입니다."
+      "ytOff": "YouTube 분석을 사용할 수 없습니다 — YouTube는 트렌드 검색 전용입니다.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "선택 항목 분석",
@@ -4283,6 +4422,42 @@
       "style_terminal": "터미널",
       "style_bold": "볼드",
       "ctaHintV2": "게시물 캡션에 동일한 코드 단어를 사용하세요."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "UGC 스튜디오",
+      "storyboard": "스토리보드",
+      "hotebook": "Hotebook",
+      "trends": "트렌드",
+      "analytics": "해석학",
+      "omni": "Omni Flash",
+      "commentator": "시사 해설자",
+      "avatar": "아바타",
+      "montage": "몽타주",
+      "autopilot": "자동 조종 장치",
+      "text": "텍스트",
+      "upload": "업로드"
     }
   }
 }

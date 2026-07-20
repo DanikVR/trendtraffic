@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 प्रति क्लिप",
       "voiceoverFree": "$0 — तुमचे स्वतःचे ऑडिओ आणि व्हिडिओ",
       "langsSuffix": " · भाषा: {{count}}",
-      "videoFree": "$0 — तयार व्हिडिओ, HeyGen नाही"
+      "videoFree": "$0 — तयार व्हिडिओ, HeyGen नाही",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "तयार आहे",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen हिरव्या पार्श्वभूमीवर फोटो ॲनिमेट करेल, सेवा ती काढून टाकेल — स्क्रीनवर फक्त व्यक्तीचे सिल्हूट राहील, आयत नाही.",
       "hgLooksEmpty": "तुमच्या HeyGen खात्यात अजून फोटो अवतार नाहीत: HeyGen स्टुडिओमध्ये एक लुक तयार करा किंवा नेहमीप्रमाणे फोटो अपलोड करा.",
       "hgLookActive": "एक तयार HeyGen अवतार निवडला आहे — फोटो अपलोड नाही, स्लॉट खर्च केले नाहीत. फोटो बदलल्यास तो अक्षम होईल.",
-      "hgLooksBtn": "HeyGen मधून तयार अवतार निवडा"
+      "hgLooksBtn": "HeyGen मधून तयार अवतार निवडा",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "आवाज आणि मजकूर",
@@ -1363,7 +1376,14 @@
       "catGenerated": "तयार केलेले",
       "catPremade": "पूर्व-तयार",
       "yourBadge": "तुमचे स्वतःचे",
-      "langsAllHint": "आमच्या पाइपलाइनद्वारे समर्थित सर्व भाषा उपलब्ध आहेत: भाषांतर (Claude) → ElevenLabs बहुभाषिक."
+      "langsAllHint": "आमच्या पाइपलाइनद्वारे समर्थित सर्व भाषा उपलब्ध आहेत: भाषांतर (Claude) → ElevenLabs बहुभाषिक.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} ओळ · ~{{sec}} सेकंद",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} फोटो — लूपद्वारे",
       "photosVsVideo": "व्हिडिओ आणि फोटो दोन्ही निवडले — व्हिडिओ वापरला जाईल (फोटो दुर्लक्षित केले जातील).",
       "photosCount_few": "{{count}} फोटो — लूपद्वारे",
-      "photosCount_many": "{{count}} फोटो — लूपद्वारे"
+      "photosCount_many": "{{count}} फोटो — लूपद्वारे",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "उपशीर्षके",
@@ -1475,7 +1500,14 @@
       "hideLines": "संवाद लपवा ▾",
       "showLines": "संवाद दाखवा ▴",
       "empty": "'मजकूर तयार करा' किंवा 'भाषण लिप्यंतरित करा' नंतर संवाद येथे दिसेल — व्हॉइस ट्रॅक, कट्स आणि मीडियासह एक टाइमलाइन.",
-      "dragResize": "टाइमलाइनची उंची बदलण्यासाठी वर/खाली ड्रॅग करा; रीसेट करण्यासाठी डबल-क्लिक करा"
+      "dragResize": "टाइमलाइनची उंची बदलण्यासाठी वर/खाली ड्रॅग करा; रीसेट करण्यासाठी डबल-क्लिक करा",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "हुक",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "व्हिडिओ तयार करत आहे…",
-      "note": "तुम्ही ही विंडो बंद करू शकता — रेंडरिंग सर्व्हरवर सुरू राहील (~2–5 मिनिटे)."
+      "note": "तुम्ही ही विंडो बंद करू शकता — रेंडरिंग सर्व्हरवर सुरू राहील (~2–5 मिनिटे).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "शिल्लक",
@@ -1564,7 +1601,8 @@
       "hide": "लपवा",
       "cancel": "रद्द करा",
       "footage": "फुटेज",
-      "avatar": "अवतार"
+      "avatar": "अवतार",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "इंट्रो आणि आऊट्रो (ऐच्छिक)",
@@ -1573,7 +1611,16 @@
       "hint": "गॅलरीमधील व्हिडिओ जसा आहे तसा, कोणत्याही बदलांशिवाय जोडला जाईल: उदा. लोगो इंट्रो (२-१० सेकंद) किंवा 'सबस्क्राईब' आऊट्रो.",
       "introTitle": "इंट्रो",
       "outroTitle": "आऊट्रो",
-      "addSub": "बंपर जोडा"
+      "addSub": "बंपर जोडा",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "ओव्हरले",
@@ -1642,6 +1689,29 @@
       "save": "टेम्पलेट जतन करा",
       "note": "टेम्पलेट्स गॅलरी → UGC → 'ऑटो' मध्ये स्वयं-व्युत्पन्न व्हिडिओंसह दिसतात.",
       "defaultName": "माझे टेम्पलेट"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "टाइमलाइन (व्हॉइस आच्छादन)",
       "titlePh": "शीर्षक २-५ शब्द (ऐच्छिक)",
       "zoomIn": "झूम इन (Ctrl+स्क्रोल)",
-      "zoomOut": "झूम आउट (Ctrl+स्क्रोल)"
+      "zoomOut": "झूम आउट (Ctrl+स्क्रोल)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "कनेक्ट करा",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "गुगल फ्लो उघडा",
       "vpTitle": "व्हिडिओ \n→ गुगल फ्लो",
       "addTrendTitle": "'ट्रेंड्स' उघडा: कीवर्डनुसार स्कॅन करा किंवा व्हिडिओ लिंक पेस्ट करा — परिणाम येथे दिसतील",
-      "tabStoryboard": "Storyboard"
+      "tabStoryboard": "Storyboard",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "सर्व",
+      "originFilterTitle": "फक्त “{{name}}” मधील फाईल्स दाखवा"
     },
     "hotebook": {
       "addUrlTitle": "लिंक जोडा",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "सदस्यांना सूचित करा",
       "ytPrivate": "खाजगी",
       "ytTitlePh": "व्हिडिओ शीर्षक (आवश्यक)",
-      "ytUnlisted": "असूचीबद्ध"
+      "ytUnlisted": "असूचीबद्ध",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "गॅलरीमध्ये जोडण्यात अयशस्वी",
@@ -3576,7 +3694,11 @@
       "tabSearch": "शोध",
       "urlPh": "व्हिडिओ / पोस्ट URL…",
       "videoDone": "व्हिडिओ डाउनलोड झाला ✓",
-      "videoFail": "व्हिडिओ डाउनलोड करण्यात अयशस्वी"
+      "videoFail": "व्हिडिओ डाउनलोड करण्यात अयशस्वी",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "खाते",
@@ -3651,7 +3773,24 @@
       "urlRequired": "व्हिडिओ, पोस्ट किंवा खात्याची लिंक प्रविष्ट करा.",
       "videoPost": "व्हिडिओ / पोस्ट",
       "views": "दृश्ये",
-      "ytOff": "YouTube विश्लेषण अनुपलब्ध — YouTube केवळ ट्रेंड शोधासाठी आहे."
+      "ytOff": "YouTube विश्लेषण अनुपलब्ध — YouTube केवळ ट्रेंड शोधासाठी आहे.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "निवडलेले विश्लेषण करा",
@@ -4283,6 +4422,42 @@
       "style_terminal": "टर्मिनल",
       "style_bold": "ठळक",
       "ctaHintV2": "तुमच्या पोस्ट कॅप्शनमध्ये तोच कोड शब्द वापरा."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "यूजीसी स्टुडिओ",
+      "storyboard": "स्टोरीबोर्ड",
+      "hotebook": "Hotebook",
+      "trends": "ट्रेंड्स",
+      "analytics": "विश्लेषण",
+      "omni": "Omni Flash",
+      "commentator": "समालोचक",
+      "avatar": "अवतार",
+      "montage": "मॉन्टेज",
+      "autopilot": "ऑटोपायलट",
+      "text": "मजकूर",
+      "upload": "अपलोड करा"
     }
   }
 }

@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 په هر کلپ",
       "voiceoverFree": "$0 — ستاسو خپل غږ او ویډیو",
       "langsSuffix": " · ژبې: {{count}}",
-      "videoFree": "$0 — چمتو ویډیو، HeyGen نشته"
+      "videoFree": "$0 — چمتو ویډیو، HeyGen نشته",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "د جوړولو لپاره چمتو",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen به عکس په شین شالید متحرک کړي، خدمت به یې لرې کړي — یوازې د شخص سیلوټ به په سکرین پاتې شي، پرته له مستطیل.",
       "hgLooksEmpty": "ستاسو په HeyGen حساب کې لا تر اوسه د عکس اوتارونه نشته: په HeyGen سټوډیو کې یو لید جوړ کړئ یا یو عکس د معمول په څیر پورته کړئ.",
       "hgLookActive": "یو چمتو HeyGen اوتار انتخاب شوی — د عکس پورته کول نشته، هیڅ سلاټ نه دي مصرف شوي. د عکس بدلول به یې غیر فعال کړي.",
-      "hgLooksBtn": "له HeyGen څخه چمتو اوتار انتخاب کړئ"
+      "hgLooksBtn": "له HeyGen څخه چمتو اوتار انتخاب کړئ",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "غږ او متن",
@@ -1363,7 +1376,14 @@
       "catGenerated": "تولید شوی",
       "catPremade": "مخکې جوړ شوی",
       "yourBadge": "ستاسو خپل",
-      "langsAllHint": "زموږ د پایپ لاین لخوا ملاتړ شوي ټولې ژبې شتون لري: ژباړه (Claude) → ElevenLabs څو ژبني."
+      "langsAllHint": "زموږ د پایپ لاین لخوا ملاتړ شوي ټولې ژبې شتون لري: ژباړه (Claude) → ElevenLabs څو ژبني.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} کرښه · ~{{sec}} ثانیه",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} عکسونه — لوپ له لارې",
       "photosVsVideo": "د ویډیو او عکسونو دواړه انتخاب شوي — ویډیو به وکارول شي (عکسونه به له پامه وغورځول شي).",
       "photosCount_few": "{{count}} عکسونه — لوپ له لارې",
-      "photosCount_many": "{{count}} عکسونه — لوپ له لارې"
+      "photosCount_many": "{{count}} عکسونه — لوپ له لارې",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "فرعي سرلیکونه",
@@ -1475,7 +1500,14 @@
       "hideLines": "خبرې اترې پټ کړئ ▾",
       "showLines": "خبرې اترې ښکاره کړئ ▴",
       "empty": "خبرې اترې به دلته د 'متن تولید' یا 'وینا لیږد' وروسته څرګند شي — د غږ ټریکونو، کټونو، او میډیا سره یو مهال ویش.",
-      "dragResize": "د مهال ویش لوړوالی بدلولو لپاره پورته/لاندې کش کړئ؛ د بیا تنظیمولو لپاره دوه ځله کلیک وکړئ"
+      "dragResize": "د مهال ویش لوړوالی بدلولو لپاره پورته/لاندې کش کړئ؛ د بیا تنظیمولو لپاره دوه ځله کلیک وکړئ",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "هوک",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "ویډیو جوړول…",
-      "note": "تاسو کولی شئ دا کړکۍ وتړئ — رینډرینګ به په سرور کې دوام وکړي (~2-5 دقیقې)."
+      "note": "تاسو کولی شئ دا کړکۍ وتړئ — رینډرینګ به په سرور کې دوام وکړي (~2-5 دقیقې).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "بیلانس",
@@ -1564,7 +1601,8 @@
       "hide": "پټول",
       "cancel": "لغوه کول",
       "footage": "فوټیج",
-      "avatar": "اوتار"
+      "avatar": "اوتار",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "پېژندنه او پای (اختیاري)",
@@ -1573,7 +1611,16 @@
       "hint": "د ګالري څخه یوه ویډیو به پرته له تعدیلاتو اضافه شي: د مثال په توګه، د لوګو پېژندنه (2-10 ثانیې) یا د 'سبسکرایب' پای.",
       "introTitle": "پېژندنه",
       "outroTitle": "پای",
-      "addSub": "بمپر اضافه کړئ"
+      "addSub": "بمپر اضافه کړئ",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "اوورلې",
@@ -1642,6 +1689,29 @@
       "save": "ټیمپلیټ خوندي کړئ",
       "note": "ټیمپلیټونه په ګالري → UGC → 'اتومات' کې د اتوماتیک تولید شوي ویډیوګانو سره لیدل کیږي.",
       "defaultName": "زما ټیمپلیټ"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "ټایم لاین (غږ اوورلی)",
       "titlePh": "سرلیک ۲-۵ کلمې (اختیاري)",
       "zoomIn": "زوم دننه (Ctrl+scroll)",
-      "zoomOut": "زوم بهر (Ctrl+scroll)"
+      "zoomOut": "زوم بهر (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "وصل کړئ",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "د ګوګل فلو خلاص کړئ",
       "vpTitle": "ویډیوګانې \n← د ګوګل فلو",
       "addTrendTitle": "'رجحانات' خلاص کړئ: د کلیدي کلمې له مخې سکین کړئ یا د ویډیو لینک پیسټ کړئ — پایلې به دلته څرګندې شي",
-      "tabStoryboard": "کیسه"
+      "tabStoryboard": "کیسه",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "ټول",
+      "originFilterTitle": "یوازې د “{{name}}” څخه فایلونه وښایاست"
     },
     "hotebook": {
       "addUrlTitle": "لینک اضافه کړئ",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "سبسکرایبرانو ته خبر ورکړئ",
       "ytPrivate": "شخصي",
       "ytTitlePh": "د ویډیو سرلیک (اړین)",
-      "ytUnlisted": "غیر لیست شوی"
+      "ytUnlisted": "غیر لیست شوی",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "ګالري ته اضافه کول ناکام شول",
@@ -3576,7 +3694,11 @@
       "tabSearch": "لټون",
       "urlPh": "ویډیو / پوسټ URL…",
       "videoDone": "ویډیو ډاونلوډ شوه ✓",
-      "videoFail": "د ویډیو ډاونلوډ کول پاتې راغلل"
+      "videoFail": "د ویډیو ډاونلوډ کول پاتې راغلل",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "حساب",
@@ -3651,7 +3773,24 @@
       "urlRequired": "د ویډیو، پوسټ یا حساب لینک دننه کړئ.",
       "videoPost": "ویډیو / پوسټ",
       "views": "لیدونه",
-      "ytOff": "د یوټیوب تحلیل شتون نلري — یوټیوب یوازې د رجحان لټون لپاره دی."
+      "ytOff": "د یوټیوب تحلیل شتون نلري — یوټیوب یوازې د رجحان لټون لپاره دی.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "انتخاب شوي تحلیل کړئ",
@@ -4283,6 +4422,42 @@
       "style_terminal": "ټرمینل",
       "style_bold": "زړور",
       "ctaHintV2": "په خپل پوسټ کیپشن کې ورته کوډ کلمه وکاروئ."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "د UGC سټوډیو",
+      "storyboard": "د کیسې بورډ",
+      "hotebook": "Hotebook",
+      "trends": "رجحانات",
+      "analytics": "تحلیلونه",
+      "omni": "Omni Flash",
+      "commentator": "تبصره کوونکی",
+      "avatar": "اوتارونه",
+      "montage": "مونټاژ",
+      "autopilot": "اتوماتیک",
+      "text": "متن",
+      "upload": "پورته کول"
     }
   }
 }

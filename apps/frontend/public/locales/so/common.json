@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 clip kasta",
       "voiceoverFree": "$0 — codkaaga iyo fiidiyowgaaga",
       "langsSuffix": " · luqadaha: {{count}}",
-      "videoFree": "$0 — fiidiyow diyaar ah, ma jiro HeyGen"
+      "videoFree": "$0 — fiidiyow diyaar ah, ma jiro HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Diyaar u ah dhisidda",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen wuxuu dhaqaajin doonaa sawirka asalka cagaaran, adeegga wuu ka saari doonaa — kaliya silhouette-ka qofka ayaa ku sii jiri doona shaashadda, iyada oo aan lahayn leydi.",
       "hgLooksEmpty": "Weli ma jiraan avatar-ro sawir ah akoonkaaga HeyGen: ku samee muuqaal istuudiyaha HeyGen ama soo geli sawir sidii caadiga ahayd.",
       "hgLookActive": "Avatar HeyGen oo diyaar ah ayaa la doortay — ma jiro sawir la soo gelinayo, ma jiro boosas la isticmaalay. Beddelidda sawirka ayaa joojin doonta.",
-      "hgLooksBtn": "Dooro avatar diyaar ah oo ka yimid HeyGen"
+      "hgLooksBtn": "Dooro avatar diyaar ah oo ka yimid HeyGen",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "Cod iyo qoraal",
@@ -1363,7 +1376,14 @@
       "catGenerated": "la soo saaray",
       "catPremade": "horay loo sameeyay",
       "yourBadge": "kaaga",
-      "langsAllHint": "Dhammaan luqadaha ay taageerto nidaamkayagu waa diyaar: tarjumaad (Claude) → ElevenLabs luqado badan."
+      "langsAllHint": "Dhammaan luqadaha ay taageerto nidaamkayagu waa diyaar: tarjumaad (Claude) → ElevenLabs luqado badan.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} xariiq · ~{{sec}} ilbidhiqsi",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} sawirro — wareeg",
       "photosVsVideo": "Labada fiidyow iyo sawirro waa la doortay — fiidyowga ayaa la isticmaali doonaa (sawirrada waa la iska indhatiray).",
       "photosCount_few": "{{count}} sawirro — wareeg",
-      "photosCount_many": "{{count}} sawirro — wareeg"
+      "photosCount_many": "{{count}} sawirro — wareeg",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "Qoraal-hoosaadyo",
@@ -1475,7 +1500,14 @@
       "hideLines": "Qari wadahadalka ▾",
       "showLines": "Muuji wadahadalka ▴",
       "empty": "Wadahadalku wuxuu halkan ka soo muuqan doonaa ka dib 'Abuur qoraal' ama 'Qor hadalka' — jadwal leh raadadka codka, goynta, iyo warbaahinta.",
-      "dragResize": "Jiid kor/hoos si aad u beddesho dhererka jadwalka; laba jeer guji si aad dib ugu dejiso"
+      "dragResize": "Jiid kor/hoos si aad u beddesho dhererka jadwalka; laba jeer guji si aad dib ugu dejiso",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "Jillaab",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "abuurista muuqaalka…",
-      "note": "Waad xidhi kartaa daaqaddan — soo-saarista waxay ku sii socon doontaa server-ka (~2–5 daqiiqo)."
+      "note": "Waad xidhi kartaa daaqaddan — soo-saarista waxay ku sii socon doontaa server-ka (~2–5 daqiiqo).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "hadhaaga",
@@ -1564,7 +1601,8 @@
       "hide": "Qari",
       "cancel": "Jooji",
       "footage": "Muuqaal",
-      "avatar": "Avatar"
+      "avatar": "Avatar",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "Hordhac & gabagabo (ikhtiyaari)",
@@ -1573,7 +1611,16 @@
       "hint": "Muuqaal laga soo qaaday gallery-ga waxa lagu dari doonaa sidii uu yahay, iyada oo aan wax isbeddel ah lagu samayn: tusaale, hordhac logo ah (2–10 ilbidhiqsi) ama 'subscribe' gabagabo ah.",
       "introTitle": "Hordhac",
       "outroTitle": "Gabagabo",
-      "addSub": "ku dar bumper"
+      "addSub": "ku dar bumper",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "Dulsaar",
@@ -1642,6 +1689,29 @@
       "save": "Kaydi qaabka",
       "note": "Qaababka waxaa laga arki karaa Gallery → UGC → 'Auto' oo leh fiidiyowyo si otomaatig ah loo soo saaray.",
       "defaultName": "Qaabkayga"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "timeline (cod dulsaar)",
       "titlePh": "cinwaan 2–5 eray (ikhtiyaari)",
       "zoomIn": "soo dhowee (Ctrl+scroll)",
-      "zoomOut": "fogee (Ctrl+scroll)"
+      "zoomOut": "fogee (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "ku xidh",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Fur Google Flow",
       "vpTitle": "Fiidiyowyada \n→ Google Flow",
       "addTrendTitle": "Fur 'Trends': ku baadh ereyga muhiimka ah ama dheji xiriirka fiidiyowga — natiijooyinka halkan ayay ka soo muuqan doonaan",
-      "tabStoryboard": "Storyboard"
+      "tabStoryboard": "Storyboard",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "Dhammaan",
+      "originFilterTitle": "Muuji oo keliya faylasha ka imanaya \"{{name}}\""
     },
     "hotebook": {
       "addUrlTitle": "Ku dar xiriiriye",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "Ogeysii macaamiisha",
       "ytPrivate": "Gaar ah",
       "ytTitlePh": "Cinwaanka muuqaalka (waa qasab)",
-      "ytUnlisted": "Aan liis garaysnayn"
+      "ytUnlisted": "Aan liis garaysnayn",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "Ku darista gallery-ga way fashilantay",
@@ -3576,7 +3694,11 @@
       "tabSearch": "Raadi",
       "urlPh": "URL-ka fiidyowga / qoraalka…",
       "videoDone": "Fiidyowga waa la soo dejiyay ✓",
-      "videoFail": "Wuu fashilmay soo dejinta fiidyowga"
+      "videoFail": "Wuu fashilmay soo dejinta fiidyowga",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "Koonto",
@@ -3651,7 +3773,24 @@
       "urlRequired": "Geli xiriir muuqaal, qoraal, ama akoon.",
       "videoPost": "Muuqaal / qoraal",
       "views": "Aragtiyo",
-      "ytOff": "Falanqaynta YouTube ma shaqeynayso — YouTube kaliya waa raadinta isbeddelka."
+      "ytOff": "Falanqaynta YouTube ma shaqeynayso — YouTube kaliya waa raadinta isbeddelka.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "Falanqee kuwa la doortay",
@@ -4283,6 +4422,42 @@
       "style_terminal": "Terminal",
       "style_bold": "Geesinimo",
       "ctaHintV2": "Isticmaal ereyga sirta ah ee la midka ah qoraalkaaga."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "Istuudiyaha UGC",
+      "storyboard": "Looxa Sheeko-xariireed",
+      "hotebook": "Hotebook",
+      "trends": "Isbeddellada",
+      "analytics": "Falanqaynta",
+      "omni": "Omni Flash",
+      "commentator": "Faallo-qaade",
+      "avatar": "Avatars",
+      "montage": "Montage",
+      "autopilot": "Duuliye otomaatig ah",
+      "text": "Qoraal",
+      "upload": "Soo geli"
     }
   }
 }

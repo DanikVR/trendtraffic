@@ -1225,7 +1225,11 @@
       "voiceoverAi": "每剪辑约 $0.1–0.3",
       "voiceoverFree": "$0 — 您自己的音频和视频",
       "langsSuffix": " · 语言：{{count}}",
-      "videoFree": "$0 — 现成视频，无HeyGen"
+      "videoFree": "$0 — 现成视频，无HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "准备就绪",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen 将在绿色背景上动画化照片，服务将移除背景 — 屏幕上只保留人物轮廓，没有矩形。",
       "hgLooksEmpty": "您的 HeyGen 账户中还没有照片头像：在 HeyGen 工作室中创建形象或像往常一样上传照片。",
       "hgLookActive": "已选择现成的 HeyGen 头像 — 无需上传照片，不占用槽位。替换照片将禁用它。",
-      "hgLooksBtn": "从 HeyGen 选择现成头像"
+      "hgLooksBtn": "从 HeyGen 选择现成头像",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "语音和文本",
@@ -1363,7 +1376,14 @@
       "catGenerated": "生成",
       "catPremade": "预制",
       "yourBadge": "您自己的",
-      "langsAllHint": "我们的管道支持所有语言：翻译 (Claude) → ElevenLabs 多语言。"
+      "langsAllHint": "我们的管道支持所有语言：翻译 (Claude) → ElevenLabs 多语言。",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} 行 · 约 {{sec}} 秒",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} 张照片 — 循环播放",
       "photosVsVideo": "同时选择了视频和照片 — 将使用视频（照片将被忽略）。",
       "photosCount_few": "{{count}} 张照片 — 循环播放",
-      "photosCount_many": "{{count}} 张照片 — 循环播放"
+      "photosCount_many": "{{count}} 张照片 — 循环播放",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "字幕",
@@ -1475,7 +1500,14 @@
       "hideLines": "隐藏对话 ▾",
       "showLines": "显示对话 ▴",
       "empty": "对话将在“生成文本”或“转录语音”后显示在此处 — 包含音轨、剪辑和媒体的时间轴。",
-      "dragResize": "上下拖动调整时间轴高度；双击重置"
+      "dragResize": "上下拖动调整时间轴高度；双击重置",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "开头",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "正在创建视频…",
-      "note": "您可以关闭此窗口 — 渲染将在服务器上继续（约 2-5 分钟）。"
+      "note": "您可以关闭此窗口 — 渲染将在服务器上继续（约 2-5 分钟）。",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "余额",
@@ -1564,7 +1601,8 @@
       "hide": "隐藏",
       "cancel": "取消",
       "footage": "素材",
-      "avatar": "虚拟形象"
+      "avatar": "虚拟形象",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "片头与片尾（可选）",
@@ -1573,7 +1611,16 @@
       "hint": "图库中的视频将原样添加，不作修改：例如，片头标志（2-10秒）或“订阅”片尾。",
       "introTitle": "片头",
       "outroTitle": "片尾",
-      "addSub": "添加片头/片尾"
+      "addSub": "添加片头/片尾",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "叠加层",
@@ -1642,6 +1689,29 @@
       "save": "保存模板",
       "note": "模板在图库 → UGC → “自动”中可见，其中包含自动生成的视频。",
       "defaultName": "我的模板"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "时间轴（声音叠加）",
       "titlePh": "标题 2-5 个词（可选）",
       "zoomIn": "放大 (Ctrl+滚动)",
-      "zoomOut": "缩小 (Ctrl+滚动)"
+      "zoomOut": "缩小 (Ctrl+滚动)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "连接",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "打开 Google Flow",
       "vpTitle": "视频 \n→ Google Flow",
       "addTrendTitle": "打开“趋势”：按关键词扫描或粘贴视频链接 — 结果将显示在此处",
-      "tabStoryboard": "故事板"
+      "tabStoryboard": "故事板",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "全部",
+      "originFilterTitle": "仅显示“{{name}}”中的文件"
     },
     "hotebook": {
       "addUrlTitle": "添加链接",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "通知订阅者",
       "ytPrivate": "私享",
       "ytTitlePh": "视频标题 (必填)",
-      "ytUnlisted": "不公开"
+      "ytUnlisted": "不公开",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "添加到图库失败",
@@ -3576,7 +3694,11 @@
       "tabSearch": "搜索",
       "urlPh": "视频/帖子URL…",
       "videoDone": "视频下载成功 ✓",
-      "videoFail": "视频下载失败"
+      "videoFail": "视频下载失败",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "账号",
@@ -3651,7 +3773,24 @@
       "urlRequired": "请输入视频、帖子或账号的链接。",
       "videoPost": "视频/帖子",
       "views": "观看次数",
-      "ytOff": "YouTube分析不可用 — YouTube仅用于趋势搜索。"
+      "ytOff": "YouTube分析不可用 — YouTube仅用于趋势搜索。",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "分析所选",
@@ -4283,6 +4422,42 @@
       "style_terminal": "终端",
       "style_bold": "粗体",
       "ctaHintV2": "在您的帖子标题中使用相同的代码词。"
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "UGC工作室",
+      "storyboard": "故事板",
+      "hotebook": "Hotebook",
+      "trends": "趋势",
+      "analytics": "分析",
+      "omni": "Omni Flash",
+      "commentator": "评论员",
+      "avatar": "化身",
+      "montage": "剪辑",
+      "autopilot": "自动驾驶仪",
+      "text": "文本",
+      "upload": "上传"
     }
   }
 }

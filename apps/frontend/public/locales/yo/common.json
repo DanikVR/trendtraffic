@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 fun agekuru",
       "voiceoverFree": "$0 — ohun ati fidio tirẹ",
       "langsSuffix": " · awọn ede: {{count}}",
-      "videoFree": "$0 — fidio ti o ṣetan, ko si HeyGen"
+      "videoFree": "$0 — fidio ti o ṣetan, ko si HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Ṣetan lati kọ",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen yoo ṣe iwara fọto lori ipilẹ alawọ ewe, iṣẹ naa yoo yọ ọ kuro — aworan eniyan nikan yoo wa loju iboju, laisi onigun mẹrin.",
       "hgLooksEmpty": "Ko si awọn avatar fọto ninu akọọlẹ HeyGen rẹ sibẹ: ṣẹda irisi kan ninu ile-iṣere HeyGen tabi gbe fọto kan soke bi igbagbogbo.",
       "hgLookActive": "Avatar HeyGen ti o ti ṣetan ni a ti yan — ko si igbasilẹ fọto, ko si awọn iho ti a lo. Rirọpo fọto yoo mu u kuro.",
-      "hgLooksBtn": "Yan avatar ti o ti ṣetan lati HeyGen"
+      "hgLooksBtn": "Yan avatar ti o ti ṣetan lati HeyGen",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "Ohùn ati ọrọ",
@@ -1363,7 +1376,14 @@
       "catGenerated": "ti a ṣe ipilẹ",
       "catPremade": "ti a ti ṣe tẹlẹ",
       "yourBadge": "tirẹ",
-      "langsAllHint": "Gbogbo awọn ede ti o wa ni atilẹyin nipasẹ eto wa wa: itumọ (Claude) → ElevenLabs multilingual."
+      "langsAllHint": "Gbogbo awọn ede ti o wa ni atilẹyin nipasẹ eto wa wa: itumọ (Claude) → ElevenLabs multilingual.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "ìlà {{count}} · ~{{sec}} iṣẹju-aaya",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "awọn fọto {{count}} — yipo nipasẹ",
       "photosVsVideo": "Mejeeji fidio ati awọn fọto ti yan — fidio yoo ṣee lo (awọn fọto ti a ko fiyesi).",
       "photosCount_few": "awọn fọto {{count}} — yipo nipasẹ",
-      "photosCount_many": "awọn fọto {{count}} — yipo nipasẹ"
+      "photosCount_many": "awọn fọto {{count}} — yipo nipasẹ",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "Awọn atunkọ",
@@ -1475,7 +1500,14 @@
       "hideLines": "Fi ijiroro pamọ ▾",
       "showLines": "Fi ijiroro han ▴",
       "empty": "Ijiroro yoo han nibi lẹhin 'Ṣẹda ọrọ' tabi 'Ṣe atunkọ ọrọ' — aago pẹlu awọn orin ohùn, awọn gige, ati media.",
-      "dragResize": "Fa soke/isalẹ lati tun iwọn giga aago; tẹ lẹẹmeji lati tun si ipilẹṣẹ"
+      "dragResize": "Fa soke/isalẹ lati tun iwọn giga aago; tẹ lẹẹmeji lati tun si ipilẹṣẹ",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "Ìkọ́",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "ṣíṣe fídíò…",
-      "note": "O le pa ferese yii — ṣiṣe yoo tẹsiwaju lori olupin (~2–5 min)."
+      "note": "O le pa ferese yii — ṣiṣe yoo tẹsiwaju lori olupin (~2–5 min).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "iwọntunwọnsi",
@@ -1564,7 +1601,8 @@
       "hide": "Fi pamọ́",
       "cancel": "Fagilee",
       "footage": "Fídíò",
-      "avatar": "Àwòrán"
+      "avatar": "Àwòrán",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "Ìbẹ̀rẹ̀ àti Ìparí (yan láàyò)",
@@ -1573,7 +1611,16 @@
       "hint": "Fídíò kan láti ibi ìkópa yóò jẹ́ kíkún sí i láìsí àtúnṣe: fún àpẹẹrẹ, ìbẹ̀rẹ̀ àmì-ìdámọ̀ (2–10 sec) tàbí ìparí 'fọwọ́sí'.",
       "introTitle": "Ìbẹ̀rẹ̀",
       "outroTitle": "Ìparí",
-      "addSub": "fi bumper kún"
+      "addSub": "fi bumper kún",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "Ìbòrí",
@@ -1642,6 +1689,29 @@
       "save": "Fi awoṣe pamọ",
       "note": "Awọn awoṣe han ni Gallery → UGC → 'Aifọwọyi' pẹlu awọn fidio ti a ṣe agbejade laifọwọyi.",
       "defaultName": "Awoṣe mi"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "akoko (ohun overlay)",
       "titlePh": "akọle ọrọ 2–5 (iyan)",
       "zoomIn": "sun-un si (Ctrl+scroll)",
-      "zoomOut": "sun-un jade (Ctrl+scroll)"
+      "zoomOut": "sun-un jade (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "sopọ",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Ṣí Google Flow",
       "vpTitle": "Àwọn fídíò \n→ Google Flow",
       "addTrendTitle": "Ṣii 'Awọn aṣa': ṣayẹwo nipasẹ ọrọ-ọrọ tabi lẹẹmọ ọna asopọ fidio — awọn abajade yoo han nibi",
-      "tabStoryboard": "Ìtàn Fídíò"
+      "tabStoryboard": "Ìtàn Fídíò",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "Gbogbo",
+      "originFilterTitle": "Fi àwọn fáìlì láti “{{name}}” nìkan hàn"
     },
     "hotebook": {
       "addUrlTitle": "Fi ọ̀na asopọ̀ kún",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "Fi ìsọfúnni ránṣẹ́ sí àwọn ajẹ́mọ́gbà",
       "ytPrivate": "Ìkọ̀kọ̀",
       "ytTitlePh": "Àkọlé fídíò (nílò)",
-      "ytUnlisted": "Kò sí lórí àtòjọ"
+      "ytUnlisted": "Kò sí lórí àtòjọ",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "Kò lè fi kún gallery",
@@ -3576,7 +3694,11 @@
       "tabSearch": "Wá",
       "urlPh": "URL fídíò / ìfìwéránṣẹ́…",
       "videoDone": "Fídíò ti gbàsílẹ̀ ✓",
-      "videoFail": "Kò lè gbàsílẹ̀ fídíò"
+      "videoFail": "Kò lè gbàsílẹ̀ fídíò",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "Àkọọ́lẹ̀",
@@ -3651,7 +3773,24 @@
       "urlRequired": "Fi ọna asopọ si fidio, ifiweranṣẹ, tabi akọọlẹ kan.",
       "videoPost": "Fidio / ifiweranṣẹ",
       "views": "Awọn wiwo",
-      "ytOff": "Itupalẹ YouTube ko si — YouTube jẹ fun wiwa aṣa nikan."
+      "ytOff": "Itupalẹ YouTube ko si — YouTube jẹ fun wiwa aṣa nikan.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "Ṣe itupalẹ awọn ti a yan",
@@ -4283,6 +4422,42 @@
       "style_terminal": "Ebute",
       "style_bold": "Lile",
       "ctaHintV2": "Lo ọrọ koodu kanna ninu akọle ifiweranṣẹ rẹ."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "Ilé iṣẹ́ UGC",
+      "storyboard": "Àkójọ ìtàn",
+      "hotebook": "Hotebook",
+      "trends": "Àwọn àṣà ìṣẹ̀dálẹ̀",
+      "analytics": "Àwọn Ìṣàyẹ̀wò",
+      "omni": "Omni Flash",
+      "commentator": "Olùṣàlàyé",
+      "avatar": "Àwọn Àfàtà",
+      "montage": "Àtòjọ",
+      "autopilot": "Awakọ awakọ ọkọ ayọkẹlẹ",
+      "text": "Ọ̀rọ̀",
+      "upload": "Gbe sori ẹrọ"
     }
   }
 }

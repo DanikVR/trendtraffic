@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 kwa clip",
       "voiceoverFree": "$0 — ọdịyo na vidiyo nke gị",
       "langsSuffix": " · asụsụ: {{count}}",
-      "videoFree": "$0 — vidiyo dị njikere, enweghị HeyGen"
+      "videoFree": "$0 — vidiyo dị njikere, enweghị HeyGen",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "Njikere maka iwulite",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen ga-eme ka foto dị ndụ na ndabere akwụkwọ ndụ akwụkwọ ndụ, ọrụ ahụ ga-ewepụ ya — naanị silhouette onye ahụ ga-anọgide na ihuenyo, na-enweghị akụkụ anọ.",
       "hgLooksEmpty": "Enweghị avatar foto na akaụntụ HeyGen gị etinyebeghị: mepụta ọdịdị na studio HeyGen ma ọ bụ bulite foto dị ka ọ dị na mbụ.",
       "hgLookActive": "Ahọrọla avatar HeyGen dị njikere — enweghị nbudata foto, enweghị oghere ejiri. Dochie foto ga-eme ka ọ ghara ịrụ ọrụ.",
-      "hgLooksBtn": "Họrọ avatar dị njikere na HeyGen"
+      "hgLooksBtn": "Họrọ avatar dị njikere na HeyGen",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "Olu na ederede",
@@ -1363,7 +1376,14 @@
       "catGenerated": "emepụtara",
       "catPremade": "emeburu",
       "yourBadge": "nke gị",
-      "langsAllHint": "Asụsụ niile pipeline anyị na-akwado dị: ntụgharị asụsụ (Claude) → ElevenLabs multilingual."
+      "langsAllHint": "Asụsụ niile pipeline anyị na-akwado dị: ntụgharị asụsụ (Claude) → ElevenLabs multilingual.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "Ahịrị {{count}} · ~{{sec}} sekọnd",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "Foto {{count}} — na-agagharị",
       "photosVsVideo": "Ahọpụtara vidiyo na foto abụọ — a ga-eji vidiyo (foto eleghara anya).",
       "photosCount_few": "Foto {{count}} — na-agagharị",
-      "photosCount_many": "Foto {{count}} — na-agagharị"
+      "photosCount_many": "Foto {{count}} — na-agagharị",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "Ndepụta okwu",
@@ -1475,7 +1500,14 @@
       "hideLines": "Zoo mkparịta ụka ▾",
       "showLines": "Gosi mkparịta ụka ▴",
       "empty": "Mkparịta ụka ga-apụta ebe a mgbe 'Mepụta ederede' ma ọ bụ 'Dee okwu' — usoro ihe omume nwere egwu olu, nkwụsị, na mgbasa ozi.",
-      "dragResize": "Dọrọ elu/ala ka ịgbanwee ịdị elu usoro ihe omume; pịa ugboro abụọ ka ịtọgharịa"
+      "dragResize": "Dọrọ elu/ala ka ịgbanwee ịdị elu usoro ihe omume; pịa ugboro abụọ ka ịtọgharịa",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "Nko",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "na-emepụta vidiyo…",
-      "note": "Ị nwere ike imechi windo a — nhazi ga-aga n'ihu na ihe nkesa (~2–5 min)."
+      "note": "Ị nwere ike imechi windo a — nhazi ga-aga n'ihu na ihe nkesa (~2–5 min).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "nguzozi",
@@ -1564,7 +1601,8 @@
       "hide": "Zobe",
       "cancel": "Kagbuo",
       "footage": "Ihe nkiri",
-      "avatar": "Avatar"
+      "avatar": "Avatar",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "Mmalite & ngwụcha (nhọrọ)",
@@ -1573,7 +1611,16 @@
       "hint": "A ga-agbakwunye vidiyo sitere na gallery dị ka ọ dị, na-enweghị mgbanwe: dịka ọmụmaatụ, mmalite logo (2–10 sekọnd) ma ọ bụ 'denye aha' ngwụcha.",
       "introTitle": "Mmalite",
       "outroTitle": "Ngwụcha",
-      "addSub": "tinye bumper"
+      "addSub": "tinye bumper",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "Mkpuchi",
@@ -1642,6 +1689,29 @@
       "save": "Chekwaa ndebiri",
       "note": "A na-ahụ ndebiri na Gallery → UGC → 'Auto' na vidiyo emepụtara na-akpaghị aka.",
       "defaultName": "Ndebiri m"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "usoro iheomume (olu n'elu)",
       "titlePh": "aha okwu 2–5 (nhọrọ)",
       "zoomIn": "buo ibu (Ctrl+scroll)",
-      "zoomOut": "ebelata (Ctrl+scroll)"
+      "zoomOut": "ebelata (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "jikọọ",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Mepee Google Flow",
       "vpTitle": "Vidiyo n→ Google Flow",
       "addTrendTitle": "Mepee 'Usoro': nyochaa site na isiokwu ma ọ bụ mado njikọ vidiyo — nsonaazụ ga-apụta ebe a",
-      "tabStoryboard": "Storyboard"
+      "tabStoryboard": "Storyboard",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "Ihe niile",
+      "originFilterTitle": "Gosi naanị faịlụ sitere na \"{{name}}\""
     },
     "hotebook": {
       "addUrlTitle": "Tinye njikọ",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "Gwa ndị debanyere aha",
       "ytPrivate": "Nkeonwe",
       "ytTitlePh": "Aha vidiyo (achọrọ)",
-      "ytUnlisted": "Edepụtaghị ya"
+      "ytUnlisted": "Edepụtaghị ya",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "Enweghị ike itinye na gallery",
@@ -3576,7 +3694,11 @@
       "tabSearch": "Chọọ",
       "urlPh": "URL vidiyo / post…",
       "videoDone": "Ebudatara vidiyo ✓",
-      "videoFail": "Ebudataghị vidiyo"
+      "videoFail": "Ebudataghị vidiyo",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "Akaụntụ",
@@ -3651,7 +3773,24 @@
       "urlRequired": "Tinye njikọ na vidiyo, post, ma ọ bụ akaụntụ.",
       "videoPost": "Vidiyo / post",
       "views": "Nlele",
-      "ytOff": "Nyocha YouTube adịghị — YouTube bụ naanị maka ịchọ usoro."
+      "ytOff": "Nyocha YouTube adịghị — YouTube bụ naanị maka ịchọ usoro.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "Nyochaa ahọpụtara",
@@ -4283,6 +4422,42 @@
       "style_terminal": "Ọdụ ụgbọ mmiri",
       "style_bold": "Ike",
       "ctaHintV2": "Jiri otu okwu koodu ahụ na nkọwa post gị."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "Ụlọ Ọrụ UGC",
+      "storyboard": "Akụkọ Akụkọ",
+      "hotebook": "Hotebook",
+      "trends": "Usoro",
+      "analytics": "Nchịkọta",
+      "omni": "Omni Flash",
+      "commentator": "Onye na-ekwu okwu",
+      "avatar": "Avatars",
+      "montage": "Nhazi",
+      "autopilot": "Ọkpọ ụgbọelu akpaaka",
+      "text": "Ederede",
+      "upload": "Bulite"
     }
   }
 }

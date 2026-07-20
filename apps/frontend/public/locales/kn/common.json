@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ ಪ್ರತಿ ಕ್ಲಿಪ್‌ಗೆ $0.1–0.3",
       "voiceoverFree": "$0 — ನಿಮ್ಮ ಸ್ವಂತ ಆಡಿಯೋ ಮತ್ತು ವೀಡಿಯೊ",
       "langsSuffix": " · ಭಾಷೆಗಳು: {{count}}",
-      "videoFree": "$0 — ಸಿದ್ಧ ವೀಡಿಯೊ, HeyGen ಇಲ್ಲ"
+      "videoFree": "$0 — ಸಿದ್ಧ ವೀಡಿಯೊ, HeyGen ಇಲ್ಲ",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "ನಿರ್ಮಿಸಲು ಸಿದ್ಧವಾಗಿದೆ",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen ಹಸಿರು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಫೋಟೋವನ್ನು ಅನಿಮೇಟ್ ಮಾಡುತ್ತದೆ, ಸೇವೆಯು ಅದನ್ನು ತೆಗೆದುಹಾಕುತ್ತದೆ — ಪರದೆಯ ಮೇಲೆ ವ್ಯಕ್ತಿಯ ಸಿಲೂಯೆಟ್ ಮಾತ್ರ ಉಳಿಯುತ್ತದೆ, ಆಯತಾಕಾರವಿಲ್ಲದೆ.",
       "hgLooksEmpty": "ನಿಮ್ಮ HeyGen ಖಾತೆಯಲ್ಲಿ ಇನ್ನೂ ಯಾವುದೇ ಫೋಟೋ ಅವತಾರ್‌ಗಳಿಲ್ಲ: HeyGen ಸ್ಟುಡಿಯೋದಲ್ಲಿ ನೋಟವನ್ನು ರಚಿಸಿ ಅಥವಾ ಎಂದಿನಂತೆ ಫೋಟೋವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.",
       "hgLookActive": "ಸಿದ್ಧ HeyGen ಅವತಾರ್ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ — ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಇಲ್ಲ, ಸ್ಲಾಟ್‌ಗಳು ಖರ್ಚಾಗಿಲ್ಲ. ಫೋಟೋವನ್ನು ಬದಲಾಯಿಸುವುದರಿಂದ ಅದು ನಿಷ್ಕ್ರಿಯಗೊಳ್ಳುತ್ತದೆ.",
-      "hgLooksBtn": "HeyGen ನಿಂದ ಸಿದ್ಧ ಅವತಾರ್ ಆಯ್ಕೆಮಾಡಿ"
+      "hgLooksBtn": "HeyGen ನಿಂದ ಸಿದ್ಧ ಅವತಾರ್ ಆಯ್ಕೆಮಾಡಿ",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "ಧ್ವನಿ ಮತ್ತು ಪಠ್ಯ",
@@ -1363,7 +1376,14 @@
       "catGenerated": "ರಚಿಸಲಾಗಿದೆ",
       "catPremade": "ಮೊದಲೇ ತಯಾರಿಸಿದ",
       "yourBadge": "ನಿಮ್ಮದೇ ಆದ",
-      "langsAllHint": "ನಮ್ಮ ಪೈಪ್‌ಲೈನ್ ಬೆಂಬಲಿಸುವ ಎಲ್ಲಾ ಭಾಷೆಗಳು ಲಭ್ಯವಿದೆ: ಅನುವಾದ (Claude) → ElevenLabs ಬಹುಭಾಷಾ."
+      "langsAllHint": "ನಮ್ಮ ಪೈಪ್‌ಲೈನ್ ಬೆಂಬಲಿಸುವ ಎಲ್ಲಾ ಭಾಷೆಗಳು ಲಭ್ಯವಿದೆ: ಅನುವಾದ (Claude) → ElevenLabs ಬಹುಭಾಷಾ.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} ಸಾಲು · ~{{sec}} ಸೆಕೆಂಡು",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} ಫೋಟೋಗಳು — ಲೂಪ್ ಮೂಲಕ",
       "photosVsVideo": "ವೀಡಿಯೊ ಮತ್ತು ಫೋಟೋಗಳು ಎರಡನ್ನೂ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ — ವೀಡಿಯೊವನ್ನು ಬಳಸಲಾಗುತ್ತದೆ (ಫೋಟೋಗಳನ್ನು ನಿರ್ಲಕ್ಷಿಸಲಾಗುತ್ತದೆ).",
       "photosCount_few": "{{count}} ಫೋಟೋಗಳು — ಲೂಪ್ ಮೂಲಕ",
-      "photosCount_many": "{{count}} ಫೋಟೋಗಳು — ಲೂಪ್ ಮೂಲಕ"
+      "photosCount_many": "{{count}} ಫೋಟೋಗಳು — ಲೂಪ್ ಮೂಲಕ",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "ಉಪಶೀರ್ಷಿಕೆಗಳು",
@@ -1475,7 +1500,14 @@
       "hideLines": "ಸಂಭಾಷಣೆಯನ್ನು ಮರೆಮಾಡಿ ▾",
       "showLines": "ಸಂಭಾಷಣೆಯನ್ನು ತೋರಿಸಿ ▴",
       "empty": "'ಪಠ್ಯವನ್ನು ರಚಿಸಿ' ಅಥವಾ 'ಭಾಷಣವನ್ನು ಲಿಪ್ಯಂತರ ಮಾಡಿ' ನಂತರ ಸಂಭಾಷಣೆ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ — ಧ್ವನಿ ಟ್ರ್ಯಾಕ್‌ಗಳು, ಕಟ್‌ಗಳು ಮತ್ತು ಮಾಧ್ಯಮದೊಂದಿಗೆ ಟೈಮ್‌ಲೈನ್.",
-      "dragResize": "ಟೈಮ್‌ಲೈನ್ ಎತ್ತರವನ್ನು ಮರುಗಾತ್ರಗೊಳಿಸಲು ಮೇಲೆ/ಕೆಳಗೆ ಎಳೆಯಿರಿ; ಮರುಹೊಂದಿಸಲು ಡಬಲ್-ಕ್ಲಿಕ್ ಮಾಡಿ"
+      "dragResize": "ಟೈಮ್‌ಲೈನ್ ಎತ್ತರವನ್ನು ಮರುಗಾತ್ರಗೊಳಿಸಲು ಮೇಲೆ/ಕೆಳಗೆ ಎಳೆಯಿರಿ; ಮರುಹೊಂದಿಸಲು ಡಬಲ್-ಕ್ಲಿಕ್ ಮಾಡಿ",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "ಹುಕ್",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "ವೀಡಿಯೊ ರಚಿಸಲಾಗುತ್ತಿದೆ…",
-      "note": "ನೀವು ಈ ವಿಂಡೋವನ್ನು ಮುಚ್ಚಬಹುದು — ರೆಂಡರಿಂಗ್ ಸರ್ವರ್‌ನಲ್ಲಿ ಮುಂದುವರಿಯುತ್ತದೆ (~2–5 ನಿಮಿಷಗಳು)."
+      "note": "ನೀವು ಈ ವಿಂಡೋವನ್ನು ಮುಚ್ಚಬಹುದು — ರೆಂಡರಿಂಗ್ ಸರ್ವರ್‌ನಲ್ಲಿ ಮುಂದುವರಿಯುತ್ತದೆ (~2–5 ನಿಮಿಷಗಳು).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "ಬ್ಯಾಲೆನ್ಸ್",
@@ -1564,7 +1601,8 @@
       "hide": "ಮರೆಮಾಡಿ",
       "cancel": "ರದ್ದುಮಾಡಿ",
       "footage": "ಫೂಟೇಜ್",
-      "avatar": "ಅವತಾರ್"
+      "avatar": "ಅವತಾರ್",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "ಪರಿಚಯ ಮತ್ತು ಮುಕ್ತಾಯ (ಐಚ್ಛಿಕ)",
@@ -1573,7 +1611,16 @@
       "hint": "ಗ್ಯಾಲರಿಯಿಂದ ವೀಡಿಯೊವನ್ನು ಯಾವುದೇ ಮಾರ್ಪಾಡುಗಳಿಲ್ಲದೆ ಸೇರಿಸಲಾಗುತ್ತದೆ: ಉದಾಹರಣೆಗೆ, ಲೋಗೋ ಪರಿಚಯ (2–10 ಸೆಕೆಂಡುಗಳು) ಅಥವಾ 'ಚಂದಾದಾರರಾಗಿ' ಮುಕ್ತಾಯ.",
       "introTitle": "ಪರಿಚಯ",
       "outroTitle": "ಮುಕ್ತಾಯ",
-      "addSub": "ಬಂಪರ್ ಸೇರಿಸಿ"
+      "addSub": "ಬಂಪರ್ ಸೇರಿಸಿ",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "ಓವರ್‌ಲೇ",
@@ -1642,6 +1689,29 @@
       "save": "ಟೆಂಪ್ಲೇಟ್ ಉಳಿಸಿ",
       "note": "ಟೆಂಪ್ಲೇಟ್‌ಗಳು ಗ್ಯಾಲರಿ → UGC → 'ಸ್ವಯಂ' ನಲ್ಲಿ ಸ್ವಯಂ-ರಚಿಸಿದ ವೀಡಿಯೊಗಳೊಂದಿಗೆ ಗೋಚರಿಸುತ್ತವೆ.",
       "defaultName": "ನನ್ನ ಟೆಂಪ್ಲೇಟ್"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "ಟೈಮ್‌ಲೈನ್ (ಧ್ವನಿ ಓವರ್‌ಲೇ)",
       "titlePh": "ಶೀರ್ಷಿಕೆ 2–5 ಪದಗಳು (ಐಚ್ಛಿಕ)",
       "zoomIn": "ಜೂಮ್ ಇನ್ (Ctrl+scroll)",
-      "zoomOut": "ಜೂಮ್ ಔಟ್ (Ctrl+scroll)"
+      "zoomOut": "ಜೂಮ್ ಔಟ್ (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "ಸಂಪರ್ಕಿಸಿ",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Google Flow ತೆರೆಯಿರಿ",
       "vpTitle": "ವೀಡಿಯೊಗಳು \n→ Google Flow",
       "addTrendTitle": "'ಟ್ರೆಂಡ್‌ಗಳು' ತೆರೆಯಿರಿ: ಕೀವರ್ಡ್ ಮೂಲಕ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಅಥವಾ ವೀಡಿಯೊ ಲಿಂಕ್ ಅನ್ನು ಅಂಟಿಸಿ — ಫಲಿತಾಂಶಗಳು ಇಲ್ಲಿ ಕಾಣಿಸಿಕೊಳ್ಳುತ್ತವೆ",
-      "tabStoryboard": "ಸ್ಟೋರಿಬೋರ್ಡ್"
+      "tabStoryboard": "ಸ್ಟೋರಿಬೋರ್ಡ್",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "ಎಲ್ಲವೂ",
+      "originFilterTitle": "“{{name}}” ನಿಂದ ಮಾತ್ರ ಫೈಲ್‌ಗಳನ್ನು ತೋರಿಸಿ"
     },
     "hotebook": {
       "addUrlTitle": "ಲಿಂಕ್ ಸೇರಿಸಿ",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "ಚಂದಾದಾರರಿಗೆ ತಿಳಿಸಿ",
       "ytPrivate": "ಖಾಸಗಿ",
       "ytTitlePh": "ವೀಡಿಯೊ ಶೀರ್ಷಿಕೆ (ಕಡ್ಡಾಯ)",
-      "ytUnlisted": "ಪಟ್ಟಿಮಾಡದ"
+      "ytUnlisted": "ಪಟ್ಟಿಮಾಡದ",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "ಗ್ಯಾಲರಿಗೆ ಸೇರಿಸಲು ವಿಫಲವಾಗಿದೆ",
@@ -3576,7 +3694,11 @@
       "tabSearch": "ಹುಡುಕಾಟ",
       "urlPh": "ವೀಡಿಯೊ / ಪೋಸ್ಟ್ URL…",
       "videoDone": "ವೀಡಿಯೊ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗಿದೆ ✓",
-      "videoFail": "ವೀಡಿಯೊ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ"
+      "videoFail": "ವೀಡಿಯೊ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "ಖಾತೆ",
@@ -3651,7 +3773,24 @@
       "urlRequired": "ವೀಡಿಯೊ, ಪೋಸ್ಟ್ ಅಥವಾ ಖಾತೆಗೆ ಲಿಂಕ್ ನಮೂದಿಸಿ.",
       "videoPost": "ವೀಡಿಯೊ / ಪೋಸ್ಟ್",
       "views": "ವೀಕ್ಷಣೆಗಳು",
-      "ytOff": "YouTube ವಿಶ್ಲೇಷಣೆ ಲಭ್ಯವಿಲ್ಲ — YouTube ಕೇವಲ ಟ್ರೆಂಡ್ ಹುಡುಕಾಟಕ್ಕಾಗಿ ಮಾತ್ರ."
+      "ytOff": "YouTube ವಿಶ್ಲೇಷಣೆ ಲಭ್ಯವಿಲ್ಲ — YouTube ಕೇವಲ ಟ್ರೆಂಡ್ ಹುಡುಕಾಟಕ್ಕಾಗಿ ಮಾತ್ರ.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "ಆಯ್ಕೆಮಾಡಿದವನ್ನು ವಿಶ್ಲೇಷಿಸಿ",
@@ -4283,6 +4422,42 @@
       "style_terminal": "ಟರ್ಮಿನಲ್",
       "style_bold": "ಬೋಲ್ಡ್",
       "ctaHintV2": "ನಿಮ್ಮ ಪೋಸ್ಟ್ ಶೀರ್ಷಿಕೆಯಲ್ಲಿ ಅದೇ ಕೋಡ್ ಪದವನ್ನು ಬಳಸಿ."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "ಯುಜಿಸಿ ಸ್ಟುಡಿಯೋ",
+      "storyboard": "ಸ್ಟೋರಿಬೋರ್ಡ್",
+      "hotebook": "Hotebook",
+      "trends": "ಪ್ರವೃತ್ತಿಗಳು",
+      "analytics": "ವಿಶ್ಲೇಷಣೆ",
+      "omni": "Omni Flash",
+      "commentator": "ವ್ಯಾಖ್ಯಾನಕಾರ",
+      "avatar": "ಅವತಾರಗಳು",
+      "montage": "ಮಾಂಟೇಜ್",
+      "autopilot": "ಆಟೋಪೈಲಟ್",
+      "text": "ಪಠ್ಯ",
+      "upload": "ಅಪ್‌ಲೋಡ್ ಮಾಡಿ"
     }
   }
 }

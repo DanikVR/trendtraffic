@@ -63,10 +63,17 @@
     "OpenAI",
     "TrendDNA",
     "Telegram Mini App",
-    "Stripe Checkout"
+    "Stripe Checkout",
+    "Hotebook",
+    "Omni Flash"
   ],
   "_tierComment": "Tier names. By default Plus/Standard/Yearly stay as English/Latin (brand-feel). Enterprise + Trial we DO translate where it makes sense (the user clicks the badge to see local-language tier name). Override per locale here if needed.",
-  "preserveTiers": ["Premium", "Plus", "Standard", "Yearly"],
+  "preserveTiers": [
+    "Premium",
+    "Plus",
+    "Standard",
+    "Yearly"
+  ],
   "_specialCases": {
     "comment": "Special hints for known Google Translate failure modes",
     "trial_meaning": "The word 'Trial' in subscription context means 'free trial period' / 'trial subscription', NOT 'court trial' / 'lawsuit'. Common bad Google translations to fix: tr=Duruşma, de=Versuch, es=Ensayo, ko=재판, ar=محاكمة, he=משפט — should become subscription/试用/probación equivalents.",

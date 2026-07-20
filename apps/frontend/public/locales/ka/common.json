@@ -1225,7 +1225,11 @@
       "voiceoverAi": "≈ $0.1–0.3 თითო კლიპზე",
       "voiceoverFree": "$0 — თქვენი საკუთარი აუდიო და ვიდეო",
       "langsSuffix": " · ენები: {{count}}",
-      "videoFree": "$0 — მზა ვიდეო, HeyGen-ის გარეშე"
+      "videoFree": "$0 — მზა ვიდეო, HeyGen-ის გარეშე",
+      "calcHeygen": "≈{{sum}} — Avatar IV {{sec}}s{{langs}}{{tts}}",
+      "calcTts": "≈{{sum}} — ElevenLabs, {{chars}} chars{{langs}}",
+      "calcLangsPart": " × {{n}} langs",
+      "calcTtsPart": " + TTS {{sum}}"
     },
     "checklist": {
       "title": "მზადაა შესაქმნელად",
@@ -1323,7 +1327,16 @@
       "aiCutoutHint": "HeyGen გააცოცხლებს ფოტოს მწვანე ფონზე, სერვისი ამოიღებს მას — ეკრანზე დარჩება მხოლოდ ადამიანის სილუეტი, მართკუთხედის გარეშე.",
       "hgLooksEmpty": "თქვენს HeyGen ანგარიშში ჯერ არ არის ფოტო ავატარები: შექმენით სახე HeyGen სტუდიაში ან ატვირთეთ ფოტო ჩვეულებრივად.",
       "hgLookActive": "არჩეულია მზა HeyGen ავატარი — ფოტოს ატვირთვა არ ხდება, სლოტები არ იხარჯება. ფოტოს შეცვლა გამორთავს მას.",
-      "hgLooksBtn": "აირჩიეთ მზა ავატარი HeyGen-დან"
+      "hgLooksBtn": "აირჩიეთ მზა ავატარი HeyGen-დან",
+      "videoTimelineHint": "The footage sets the video length. Drag the orange \"Avatar\" segment on the timeline below to choose when the avatar appears and speaks; click it to trim in the editor.",
+      "bgHeading": "Video background",
+      "bgKeep": "Keep background as is",
+      "bgKeepHint": "The video goes into the frame as is, with its own background.",
+      "bgAi": "AI cutout of any background",
+      "bgAiHint": "A neural network removes any background — a room, a street, anything — leaving only the person. Runs via the Replicate service using your API key (cents per video); the build takes a couple of minutes longer.",
+      "bgAiNoKey": "Replicate is not connected — AI cutout won't work without it. Connect an API key and come back here.",
+      "bgAiConnect": "Connect Replicate API",
+      "bgAiRecheck": "Check again"
     },
     "voice": {
       "title": "ხმა და ტექსტი",
@@ -1363,7 +1376,14 @@
       "catGenerated": "გენერირებული",
       "catPremade": "წინასწარ შექმნილი",
       "yourBadge": "თქვენი საკუთარი",
-      "langsAllHint": "ჩვენი სისტემის მიერ მხარდაჭერილი ყველა ენა ხელმისაწვდომია: თარგმანი (Claude) → ElevenLabs მულტილინგვური."
+      "langsAllHint": "ჩვენი სისტემის მიერ მხარდაჭერილი ყველა ენა ხელმისაწვდომია: თარგმანი (Claude) → ElevenLabs მულტილინგვური.",
+      "fromGallery": "Take text from Gallery",
+      "pickTextTitle": "Text from Gallery",
+      "noTexts": "No saved texts yet. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\".",
+      "textFallback": "text",
+      "textTaken": "Text \"{{n}}\" inserted — press \"Use as is\" or \"Generate script\".",
+      "textFailed": "Could not take the text.",
+      "textEmpty": "The text is empty."
     },
     "lines": {
       "count_one": "{{count}} ხაზი · ~{{sec}} წმ",
@@ -1411,7 +1431,12 @@
       "photosCount_other": "{{count}} ფოტო — ციკლურად",
       "photosVsVideo": "როგორც ვიდეო, ასევე ფოტოები არჩეულია — გამოყენებული იქნება ვიდეო (ფოტოები იგნორირებული იქნება).",
       "photosCount_few": "{{count}} ფოტო — ციკლურად",
-      "photosCount_many": "{{count}} ფოტო — ციკლურად"
+      "photosCount_many": "{{count}} ფოტო — ციკლურად",
+      "addMore": "Add video",
+      "multiHint": "Multiple videos play one after another · total {{dur}}. Trim them on the \"Footage\" track of the timeline below.",
+      "durTrimmed": "{{from}}–{{to}} of {{full}}",
+      "editClip": "Open in editor — trim/cut",
+      "editedSuffix": "trimmed"
     },
     "subtitles": {
       "title": "სუბტიტრები",
@@ -1475,7 +1500,14 @@
       "hideLines": "დიალოგის დამალვა ▾",
       "showLines": "დიალოგის ჩვენება ▴",
       "empty": "დიალოგი გამოჩნდება აქ 'ტექსტის გენერირების' ან 'მეტყველების ტრანსკრიფციის' შემდეგ — ქრონოლოგია ხმოვანი ჩანაწერებით, ჭრებითა და მედიით.",
-      "dragResize": "გადაათრიეთ ზემოთ/ქვემოთ ქრონოლოგიის სიმაღლის შესაცვლელად; ორჯერ დაწკაპუნებით გადაყენება"
+      "dragResize": "გადაათრიეთ ზემოთ/ქვემოთ ქრონოლოგიის სიმაღლის შესაცვლელად; ორჯერ დაწკაპუნებით გადაყენება",
+      "clipSound": "Footage audio volume",
+      "clipSoundOff": "Footage audio is off — the \"keep video sound\" checkbox in the Video step",
+      "mutedShort": "off",
+      "clipSpeed": "Footage playback speed (×0.5–×2): video speeds up/slows down, the track rescales",
+      "voiceVol": "Voiceover volume (avatar voice / TTS / recording)",
+      "voiceLabel": "Voiceover",
+      "avatarLabel": "Avatar"
     },
     "plan": {
       "hook": "ჰუკი",
@@ -1554,7 +1586,12 @@
     },
     "progress": {
       "title": "ვიდეოს შექმნა…",
-      "note": "შეგიძლიათ დახუროთ ეს ფანჯარა — რენდერინგი გაგრძელდება სერვერზე (~2–5 წთ)."
+      "note": "შეგიძლიათ დახუროთ ეს ფანჯარა — რენდერინგი გაგრძელდება სერვერზე (~2–5 წთ).",
+      "stQueue": "Queue",
+      "stPrep": "Preparing",
+      "stCutout": "Background cutout",
+      "stCompose": "Composing",
+      "stBumpers": "Bumpers"
     },
     "common": {
       "balance": "ბალანსი",
@@ -1564,7 +1601,8 @@
       "hide": "დამალვა",
       "cancel": "გაუქმება",
       "footage": "კადრები",
-      "avatar": "ავატარი"
+      "avatar": "ავატარი",
+      "loading": "Loading…"
     },
     "bumpers": {
       "heading": "შესავალი და დასკვნა (სურვილისამებრ)",
@@ -1573,7 +1611,16 @@
       "hint": "გალერეიდან ვიდეო დაემატება უცვლელად: მაგ., ლოგოს შესავალი (2–10 წმ) ან „გამოიწერეთ“ დასკვნა.",
       "introTitle": "შესავალი",
       "outroTitle": "დასკვნა",
-      "addSub": "ბამპერის დამატება"
+      "addSub": "ბამპერის დამატება",
+      "transitionLabel": "Transition:",
+      "trNone": "None",
+      "trFade": "Fade",
+      "trZoom": "Zoom",
+      "trSlide": "Swipe",
+      "trCircle": "Circle",
+      "trBlur": "Blur",
+      "trAvatarZoom": "Avatar zoom",
+      "avatarZoomHint": "At the end the frame zooms into the avatar and dissolves into the outro; at the start it zooms back out of it. No avatar in frame — a regular zoom."
     },
     "layer": {
       "title": "გადაფარვა",
@@ -1642,6 +1689,29 @@
       "save": "შაბლონის შენახვა",
       "note": "შაბლონები ჩანს გალერეაში → UGC → 'ავტო' ავტომატურად გენერირებულ ვიდეოებთან ერთად.",
       "defaultName": "ჩემი შაბლონი"
+    },
+    "batch": {
+      "btn": "Batch: one clip per video",
+      "btnHint": "Pick several videos — each one becomes its own clip using this same scenario.",
+      "running": "Batch is building…",
+      "pickTitle": "Batch: pick videos",
+      "pickNote": "Each video becomes its own clip using the current scenario. Up to {{n}}.",
+      "confirmTitle": "Batch: {{n}} clips",
+      "confirmSub": "Every clip is built from THIS scenario — only the footage changes. Builds run one after another.",
+      "atEnd": "Avatar at the end of every clip",
+      "atEndHint": "The segment start is computed from each video's length. Uncheck to keep the avatar at the same second as in the scenario.",
+      "paidWarn": "In this mode every clip is a separate speech/avatar generation (paid ×{{n}}).",
+      "addMore": "More videos",
+      "run": "Build {{n}} clips",
+      "progressTitle": "Batch: {{done}} of {{total}}",
+      "pill": "Batch {{done}}/{{total}}",
+      "minimize": "Collapse",
+      "stQueued": "queued",
+      "stDone": "done",
+      "avAt": "avatar from {{t}}",
+      "open": "open",
+      "runningHint": "Building — you can collapse this panel and keep working. Finished clips show up in the Gallery.",
+      "doneHint": "Done: {{done}} · failed: {{failed}}. All clips are in the Gallery, UGC tab."
     }
   },
   "sec": {
@@ -2436,7 +2506,21 @@
       "timelineTitle": "ქრონოლოგია (ხმოვანი გადაფარვა)",
       "titlePh": "სათაური 2–5 სიტყვა (არასავალდებულო)",
       "zoomIn": "მასშტაბის გაზრდა (Ctrl+scroll)",
-      "zoomOut": "მასშტაბის შემცირება (Ctrl+scroll)"
+      "zoomOut": "მასშტაბის შემცირება (Ctrl+scroll)",
+      "bumperAfter": "Bumper: glued AFTER the video",
+      "bumperAfterShort": "After",
+      "bumperBefore": "Bumper: glued BEFORE the video",
+      "bumperBeforeShort": "Before",
+      "bumpersRow": "Bumpers",
+      "cutAtCursor2": "Cut at cursor: a line or a footage clip (✂)",
+      "delSeg": "Remove duplicate",
+      "dupClip": "Duplicate clip (copy follows)",
+      "dupLine": "Duplicate line (copy follows on the timeline)",
+      "dupSeg": "Duplicate segment (copy follows)",
+      "clipSegTip": "click — open in editor; drag the edges to trim the clip",
+      "clipTrimL": "Trim clip start",
+      "clipTrimR": "Trim clip end",
+      "avatarSegTip": "drag along the timeline — when the avatar appears and starts speaking; click to open in the editor"
     },
     "flowext": {
       "btnConnect": "დაკავშირება",
@@ -2706,7 +2790,15 @@
       "vpOpenFlow": "Google Flow-ის გახსნა",
       "vpTitle": "ვიდეოები \n→ Google Flow",
       "addTrendTitle": "გახსენით 'ტრენდები': მოძებნეთ საკვანძო სიტყვით ან ჩასვით ვიდეოს ბმული — შედეგები აქ გამოჩნდება",
-      "tabStoryboard": "სთორიბორდი"
+      "tabStoryboard": "სთორიბორდი",
+      "ugcBuilding": "creating video…",
+      "kindText": "Text",
+      "emptyText": "Empty for now. \"Trends → Analytics\" → \"Transcribe speech\" → \"To Gallery\": transcriptions and translations land here. They can be dropped into the UGC studio voiceover.",
+      "addHintText": "Open \"Trends → Analytics\": \"Transcribe speech\" → \"To Gallery\" puts the text here",
+      "bulkPub": "To Publisher",
+      "bulkPubTitle": "To Publisher: AI writes captions and hashtags per network, posts land in «Drafts»",
+      "originAll": "ყველა",
+      "originFilterTitle": "მხოლოდ ფაილების ჩვენება „{{name}}“-დან"
     },
     "hotebook": {
       "addUrlTitle": "ბმულის დამატება",
@@ -3522,7 +3614,33 @@
       "ytNotifySubs": "გამოწერილების შეტყობინება",
       "ytPrivate": "პირადი",
       "ytTitlePh": "ვიდეოს სათაური (აუცილებელია)",
-      "ytUnlisted": "დაუმალავი"
+      "ytUnlisted": "დაუმალავი",
+      "stDraft": "draft",
+      "folderDrafts": "Drafts",
+      "folderQueue": "To publish",
+      "folderPublished": "Published",
+      "folderFailed": "Errors",
+      "selectAll": "Select all",
+      "unselectAll": "Clear selection",
+      "draftsSelected": "Selected: {{n}}",
+      "delete": "Delete",
+      "publishNow": "Publish now",
+      "scheduleBySlots": "Schedule into slots",
+      "noSlotsHint": "No slots in «My schedule» — nowhere to schedule. Add times or publish now.",
+      "draftsEmptyTitle": "No drafts yet",
+      "draftsEmptySub": "Select clips in the Gallery and hit «To Publisher» — AI writes captions and hashtags, and the posts land here.",
+      "pickGroup": "Select the whole clip",
+      "pickOne": "Select this network",
+      "editText": "Edit text",
+      "save": "Save",
+      "cancel": "Cancel",
+      "ytNoTitle": "no title",
+      "errSaveDraft": "Could not save the draft",
+      "errPublishDrafts": "Could not send the drafts",
+      "draftsScheduled": "Scheduled: {{ok}} · failed: {{failed}}. See the «To publish» folder and the Calendar.",
+      "draftsSentNow": "Sent now: {{ok}} · failed: {{failed}}.",
+      "delSelTitle": "Delete selected?",
+      "delSelMsg": "Records to delete: {{n}}. The videos themselves stay in the Gallery."
     },
     "socialext": {
       "addFail": "გალერეაში დამატება ვერ მოხერხდა",
@@ -3576,7 +3694,11 @@
       "tabSearch": "ძებნა",
       "urlPh": "ვიდეოს / პოსტის URL…",
       "videoDone": "ვიდეო გადმოწერილია ✓",
-      "videoFail": "ვიდეოს გადმოწერა ვერ მოხერხდა"
+      "videoFail": "ვიდეოს გადმოწერა ვერ მოხერხდა",
+      "igAudioSaved": "Audio downloaded and saved to the Gallery as \"{{n}}\" ✓",
+      "igAudioLink": "Open: Gallery → Media → Audio",
+      "igAudioNoGallery": "Audio downloaded ✓ Saving to the Gallery failed: {{e}}",
+      "igAudioLink2": "Open: Gallery → Media → Analytics"
     },
     "tanalytics": {
       "account": "ანგარიში",
@@ -3651,7 +3773,24 @@
       "urlRequired": "შეიყვანეთ ბმული ვიდეოზე, პოსტზე ან ანგარიშზე.",
       "videoPost": "ვიდეო / პოსტი",
       "views": "ნახვები",
-      "ytOff": "YouTube ანალიზი მიუწვდომელია — YouTube მხოლოდ ტრენდების ძიებისთვისაა."
+      "ytOff": "YouTube ანალიზი მიუწვდომელია — YouTube მხოლოდ ტრენდების ძიებისთვისაა.",
+      "trTitle": "Speech transcription",
+      "trLang": "language: {{l}}",
+      "trRun": "Transcribe speech",
+      "trRunning": "Listening to the clip…",
+      "trRedo": "Again",
+      "trHint": "I will transcribe the speech, optionally translate it, and save it to the Gallery (\"Text\") — from there the text can be dropped into the UGC studio voiceover.",
+      "trOrig": "Original",
+      "trTrans": "Translation",
+      "trTranslateBtn": "Translate",
+      "trSave": "To Gallery (\"Text\")",
+      "trSaving": "Saving…",
+      "trSaved": "In Gallery",
+      "trSavedHint": "\"{{n}}\" is in the Gallery, \"Media\" → \"Text\". From there the text can be dropped into the UGC studio voiceover.",
+      "trFileName": "Transcription",
+      "trFailed": "Could not transcribe the speech",
+      "trTranslateFailed": "Could not translate",
+      "trSaveFailed": "Could not save the text"
     },
     "trends": {
       "analyzeSelBtn": "არჩეულის ანალიზი",
@@ -4283,6 +4422,42 @@
       "style_terminal": "ტერმინალი",
       "style_bold": "მკვეთრი",
       "ctaHintV2": "გამოიყენეთ იგივე კოდური სიტყვა თქვენი პოსტის აღწერაში."
+    },
+    "pubBulk": {
+      "title": "To Publisher: {{n}} clips",
+      "sub": "AI writes a caption and hashtags SEPARATELY for each network (plus a title for YouTube). Posts land in the «Drafts» folder — nothing goes out until you schedule it yourself.",
+      "where": "Where to post",
+      "loadingAcc": "Loading accounts…",
+      "noAcc": "No social networks connected yet.",
+      "connect": "Connect in Blotato →",
+      "aiOn": "Let AI write captions and hashtags",
+      "aiHint": "Context is this clip's trend analysis (hook, audience, keywords). Unchecked, the caption is just the clip name.",
+      "tone": "Tone",
+      "toneEngaging": "engaging",
+      "toneExpert": "expert",
+      "toneSelling": "selling",
+      "progress": "Processed {{done}} of {{total}}",
+      "close": "Close",
+      "run": "Process {{n}} clips",
+      "running": "Processing…",
+      "note": "One clip = one post per checked network. Texts can be edited later in «Drafts».",
+      "errStart": "Could not start processing",
+      "errRun": "Processing failed"
+    },
+    "origins": {
+      "flow": "Google Flow",
+      "ugc": "მომხმარებლისთვის განკუთვნილი სტუდია",
+      "storyboard": "სცენარის დაფა",
+      "hotebook": "Hotebook",
+      "trends": "ტენდენციები",
+      "analytics": "ანალიტიკა",
+      "omni": "Omni Flash",
+      "commentator": "კომენტატორი",
+      "avatar": "ავატარები",
+      "montage": "მონტაჟი",
+      "autopilot": "ავტოპილოტი",
+      "text": "ტექსტი",
+      "upload": "ატვირთვა"
     }
   }
 }
