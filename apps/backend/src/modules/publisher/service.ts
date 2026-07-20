@@ -245,7 +245,8 @@ export async function submitPost(args: SubmitArgs): Promise<SubmitResult> {
     const platform = String(t.platform || '').toLowerCase() as BlotatoPlatform;
     const rowId = randomUUID();
     const opts = t.options || {};
-    const rowText = (t.textOverride ?? args.text) || '';
+    // Лимит сети — последний рубеж: счётчик в Студии не блокирует, а цепочки идут мимо UI.
+    const rowText = fitText((t.textOverride ?? args.text) || '', TEXT_LIMITS[platform]);
     let submissionId: string | null = null;
     let status = scheduledTime ? 'scheduled' : 'submitted';
     let error: string | null = null;
@@ -430,6 +431,8 @@ export async function generateCaptions(args: {
   }
   const platforms = (args.platforms || []).map((p) => String(p).toLowerCase())
     .filter((p) => (BLOTATO_PLATFORMS as readonly string[]).includes(p));
+  // Пустой/неизвестный список площадок не должен рождать промпт с «заполни: » без сетей.
+  const askFor = platforms.length ? platforms : ['tiktok', 'instagram'];
   const lang = args.language || 'ru';
   const tone = TONES[args.tone || 'engaging'] || TONES.engaging;
   const count = Math.max(1, Math.min(Number(args.count) || 2, 3));
@@ -447,11 +450,12 @@ export async function generateCaptions(args: {
     'Ты — SMM-редактор коротких видео. Пишешь подписи, которые дочитывают и по которым кликают. ' +
     'Отвечай СТРОГО одним JSON-объектом без пояснений и markdown.';
   const user =
-    `Напиши ${count} варианта подписи к посту с видео. Язык: ${lang}. Тон: ${tone}.\n` +
-    `Платформы: ${platforms.join(', ') || 'tiktok, instagram'}.\n` +
+    `Напиши ${count} ${count === 1 ? 'вариант' : 'варианта'} подписи к посту с видео. Язык: ${lang}. Тон: ${tone}.\n` +
+    `Платформы: ${askFor.join(', ')}.\n` +
     (ctx.length ? `Контекст:\n${ctx.join('\n')}\n` : '') +
     'Правила: первая строка — хук; без кавычек-ёлочек вокруг всего текста; эмодзи умеренно; ' +
-    'хэштеги НЕ вставляй в base — отдай отдельным массивом (5–8: смесь широких и нишевых, с #).\n' +
+    'хэштеги НЕ вставляй ни в base, ни в тексты сетей — отдай отдельным массивом ' +
+    '(5–8: смесь широких и нишевых, с #).\n' +
     'ПОД КАЖДУЮ СЕТЬ — СВОЙ текст (не копия base), с её манерой:\n' +
     '· tiktok — разговорно и коротко (1–3 строки), хук в первых 3 словах, вопрос или спор в конце;\n' +
     '· instagram — чуть длиннее и эмоциональнее (2–4 строки), призыв сохранить/переслать;\n' +
@@ -459,17 +463,22 @@ export async function generateCaptions(args: {
     'ОБЯЗАТЕЛЬНО поле youtubeTitle — цепкий заголовок до 90 символов без кликбейта-обмана;\n' +
     '· twitter/threads/bluesky — уложись в лимит (280/500/300); linkedin — деловой тон, БЕЗ хэштегов.\n' +
     'Формат ответа: {"variants":[{"base":"…","hashtags":["#…"],"platforms":{"tiktok":"…","instagram":"…","youtube":"…"},"youtubeTitle":"…"}]} ' +
-    `— в platforms заполни ВСЕ запрошенные площадки: ${platforms.join(', ')}.`;
+    `— в platforms заполни ВСЕ запрошенные площадки: ${askFor.join(', ')}.`;
 
   const mod: any = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default || mod.Anthropic || mod;
   const client = new Anthropic({ apiKey });
-  const res = await client.messages.create({
-    model: DEFAULT_DIRECTOR_MODEL, max_tokens: 2000,
-    system, messages: [{ role: 'user', content: user }],
-  });
-  const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
-  const j = parseJsonLoose(txt);
+  // Префилл '{' не даёт модели начать с преамбулы; вторая попытка — на случай обрыва JSON.
+  let j: any = null;
+  for (let attempt = 0; attempt < 2 && !j; attempt++) {
+    const res = await client.messages.create({
+      model: DEFAULT_DIRECTOR_MODEL, max_tokens: 2000,
+      system,
+      messages: [{ role: 'user', content: user }, { role: 'assistant', content: '{' }],
+    });
+    const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
+    j = parseJsonLoose('{' + txt);
+  }
   const rawVars = Array.isArray(j?.variants) ? j.variants : [];
   const variants: CaptionVariant[] = rawVars.slice(0, 3).map((v: any): CaptionVariant => ({
     base: String(v?.base || '').trim(),
@@ -493,15 +502,65 @@ export async function generateCaptions(args: {
 // scheduled/submitted), статус-синк и авторетраи их не видят. Публикация — отдельным
 // шагом (publishDrafts): один ролик = одна группа = один слот на все свои платформы.
 
+/**
+ * Практические лимиты подписи по сетям — те же, что показывает счётчик в Студии
+ * (apps/frontend/src/pages/publisher/PublisherStudio.tsx). Держим копию здесь: массовые
+ * черновики и цепочки идут мимо UI, и текст сверх лимита сеть отвергает уже на сабмите.
+ */
+const TEXT_LIMITS: Record<string, number> = {
+  twitter: 280, threads: 500, bluesky: 300, instagram: 2200, tiktok: 2200,
+  linkedin: 3000, facebook: 5000, youtube: 5000, pinterest: 500,
+};
+
+/** Обрезка по границе слова (без лимита — текст как есть). */
+function fitText(s: string, limit?: number): string {
+  if (!limit || s.length <= limit) return s;
+  const cut = s.slice(0, limit);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > limit * 0.6 ? cut.slice(0, sp) : cut).trimEnd();
+}
+
+/** Текст + блок хэштегов так, чтобы вместе уложиться в лимит сети. */
+function joinWithinLimit(body: string, tags: string, limit?: number): string {
+  if (!tags) return fitText(body, limit);
+  if (!limit) return `${body}\n\n${tags}`;
+  const room = limit - tags.length - 2; // 2 = '\n\n'
+  // Если под текст осталась пара слов — теги дороже не стоят, публикуем сам текст.
+  if (room < 40) return fitText(body, limit);
+  return `${fitText(body, room)}\n\n${tags}`;
+}
+
 /** Текст подписи под КОНКРЕТНУЮ платформу из варианта Пост-движка. */
-function captionForPlatform(v: CaptionVariant, platform: string): string {
+export function captionForPlatform(v: CaptionVariant, platform: string): string {
   const own = v.platforms?.[platform];
   const body = (own && own.trim()) ? own.trim() : v.base;
+  const chars = TEXT_LIMITS[platform];
   // LinkedIn — деловой тон без хэштегов (так же просим и у Claude в промпте).
-  if (platform === 'linkedin' || !v.hashtags.length) return body;
+  if (platform === 'linkedin' || !v.hashtags.length) return fitText(body, chars);
   // YouTube: теги живут в описании, 3–5 достаточно; короткие сети — тоже не мусорим.
   const limit = platform === 'youtube' ? 5 : (platform === 'twitter' || platform === 'bluesky') ? 3 : 8;
-  return [body, v.hashtags.slice(0, limit).join(' ')].filter(Boolean).join('\n\n');
+  // Модель иногда всё же ставит теги прямо в текст сети — не клеим их вторым блоком.
+  const inBody = new Set((body.match(/#[^\s#]+/g) || []).map((h) => h.toLowerCase()));
+  const tags = v.hashtags.filter((h) => !inBody.has(h.toLowerCase())).slice(0, limit);
+  return joinWithinLimit(body, tags.join(' '), chars);
+}
+
+/**
+ * Раскладка варианта по таргетам: каждая сеть получает СВОЙ текст через textOverride,
+ * YouTube — ещё и заголовок. Общая точка для цепочек (ручных и авто) — раньше они
+ * слали один base во все сети и персонализация Пост-движка пропадала.
+ */
+export function targetsWithCaptions(targets: TargetInput[], v: CaptionVariant, fallbackTitle: string): TargetInput[] {
+  return targets.map((t) => {
+    const platform = String(t.platform).toLowerCase();
+    const out: TargetInput = { ...t, textOverride: captionForPlatform(v, platform) };
+    if (platform === 'youtube') {
+      const opts = { ...(t.options || {}) };
+      if (!opts.title) opts.title = (v.youtubeTitle || fallbackTitle).slice(0, 100);
+      out.options = opts;
+    }
+    return out;
+  });
 }
 
 export interface BulkDraftItem { assetId?: string; mediaUrl?: string; title?: string }
@@ -709,7 +768,11 @@ export async function listChains(tenantId: string): Promise<any[]> {
   return chains.map((c: any) => ({ ...c, stats: byChain.get(c.id) || {} }));
 }
 
-async function captionForItem(tenantId: string, chainCaption: ChainRow['caption'], item: { assetId?: string; title?: string }, platforms: string[]): Promise<{ text: string; ytTitle?: string }> {
+/**
+ * Подпись для ролика цепочки. Возвращает ВЕСЬ вариант (с текстами по сетям), а не одну
+ * склеенную строку: раскладку по таргетам делает targetsWithCaptions.
+ */
+async function captionForItem(tenantId: string, chainCaption: ChainRow['caption'], item: { assetId?: string; title?: string }, platforms: string[]): Promise<CaptionVariant> {
   const title = item.title || 'Новое видео';
   if (chainCaption?.mode === 'ai') {
     try {
@@ -717,14 +780,14 @@ async function captionForItem(tenantId: string, chainCaption: ChainRow['caption'
         tenantId, title, assetId: item.assetId, platforms,
         tone: chainCaption.tone, language: chainCaption.language, count: 1,
       });
-      const v = g.variants[0];
-      return { text: [v.base, v.hashtags.join(' ')].filter(Boolean).join('\n\n'), ytTitle: v.youtubeTitle };
+      if (g.variants[0]) return g.variants[0];
     } catch { /* падаем в фолбэк — цепочка не должна стоять */ }
   }
-  if (chainCaption?.text) return { text: chainCaption.text };
+  // Фиксированный текст цепочки — один на все сети осознанно (так задал автор).
+  if (chainCaption?.text) return { base: chainCaption.text, hashtags: [], platforms: {} };
   let dna: any = null;
   if (item.assetId) { try { const s: any = await getTrendDNAByAsset(tenantId, item.assetId); dna = s?.dna || s; } catch { /* без ДНК */ } }
-  return { text: fallbackCaption(title, dna) };
+  return { base: fallbackCaption(title, dna), hashtags: [], platforms: {} };
 }
 
 /** Ручная цепочка: серия готовых роликов раскладывается по свободным слотам СРАЗУ. */
@@ -749,15 +812,13 @@ export async function createManualChain(args: {
   const platforms = Array.from(new Set(args.targets.map((t) => String(t.platform).toLowerCase())));
   let scheduled = 0, failed = 0;
   for (let i = 0; i < items.length; i++) {
-    const cap = await captionForItem(args.tenantId, args.caption || {}, items[i], platforms);
-    const targets = cap.ytTitle
-      ? args.targets.map((t) => t.platform === 'youtube' ? { ...t, options: { title: cap.ytTitle, ...(t.options || {}) } } : t)
-      : args.targets;
+    const v = await captionForItem(args.tenantId, args.caption || {}, items[i], platforms);
+    const targets = targetsWithCaptions(args.targets, v, items[i].title || 'Новое видео');
     try {
       const out = await submitPost({
         tenantId: args.tenantId, baseUrl: args.baseUrl, chainId,
         assetId: items[i].assetId, mediaUrl: items[i].mediaUrl, title: items[i].title,
-        text: cap.text, mode: 'time', scheduledAt: slots[i].toISOString(), targets,
+        text: v.base, mode: 'time', scheduledAt: slots[i].toISOString(), targets,
       });
       scheduled += out.results.filter((x) => x.ok).length;
       failed += out.results.filter((x) => !x.ok).length;
@@ -790,13 +851,11 @@ async function tickAutoChain(chain: any): Promise<'posted' | 'skip'> {
   const targets: TargetInput[] = Array.isArray(chain.targets) ? chain.targets : [];
   if (!targets.length) throw new Error('У цепочки не выбраны аккаунты');
   const platforms = Array.from(new Set(targets.map((t) => String(t.platform).toLowerCase())));
-  const cap = await captionForItem(tenantId, chain.caption || {}, { assetId: a.id, title: a.original_name || 'Новое видео' }, platforms);
-  const finalTargets = cap.ytTitle
-    ? targets.map((t) => t.platform === 'youtube' ? { ...t, options: { title: cap.ytTitle, ...(t.options || {}) } } : t)
-    : targets;
+  const title = a.original_name || 'Новое видео';
+  const v = await captionForItem(tenantId, chain.caption || {}, { assetId: a.id, title }, platforms);
   const out = await submitPost({
     tenantId, chainId: chain.id, assetId: a.id, title: a.original_name || undefined,
-    text: cap.text, mode: 'slot', targets: finalTargets,
+    text: v.base, mode: 'slot', targets: targetsWithCaptions(targets, v, title),
   });
   const ok = out.results.filter((x) => x.ok).length;
   if (!ok) throw new Error(out.results[0]?.error || 'Все таргеты упали');
