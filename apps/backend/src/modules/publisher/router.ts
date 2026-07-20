@@ -30,7 +30,7 @@ import {
   listSlots, addSlots, removeSlot, nextFreeSlotTimes,
   listChains, createManualChain, cancelChain,
   generateCaptions, createDrafts, publishDrafts, updateDraft, deleteRows,
-  createManualPosts, updateManualPost, getSignature, setSignature,
+  createManualPosts, updateManualPost, duplicateManualPost, getSignature, setSignature,
   type TargetInput, type BulkDraftItem,
 } from './service.js';
 
@@ -351,6 +351,20 @@ router.post('/manual', async (req: AuthedRequest, res: Response) => {
       }
     })();
   } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось создать посты' }); }
+});
+
+/** POST /manual/duplicate — { groupId, platforms:[…], scheduledAt? } копия поста в архив. */
+router.post('/manual/duplicate', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    if (!b.groupId) return res.status(400).json({ error: 'Не указан пост для копирования' });
+    const out = await duplicateManualPost({
+      tenantId: req.tenantId!, groupId: String(b.groupId),
+      platforms: Array.isArray(b.platforms) ? b.platforms : [],
+      scheduledAt: b.scheduledAt ?? null,
+    });
+    res.status(201).json({ ok: true, ...out });
+  } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось скопировать пост' }); }
 });
 
 /** PATCH /manual/:id — { text?, title?, scheduledAt?: string|null, wholeGroup? } */

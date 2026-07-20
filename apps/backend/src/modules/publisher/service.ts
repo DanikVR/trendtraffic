@@ -870,6 +870,57 @@ export async function createManualPosts(args: ManualPostArgs): Promise<{ groups:
 }
 
 /**
+ * Копия поста в ручной архив — «тот же ролик, но в другие сети и/или на другую дату».
+ * Копируем ЛЮБОЙ пост (в т.ч. уже опубликованный через Blotato), а копия всегда ложится
+ * в ручной архив: она никуда не отправляется, пока человек сам этого не сделает.
+ * Текст берём от сети-донора; если такой сети в оригинале не было — от первой строки,
+ * чтобы новая площадка не осталась с пустым описанием.
+ */
+export async function duplicateManualPost(args: {
+  tenantId: string; groupId: string; platforms: string[]; scheduledAt?: string | null;
+}): Promise<{ groupId: string; rows: number }> {
+  const platforms = [...new Set((args.platforms || []).map((p) => String(p).toLowerCase()))]
+    .filter((p) => (BLOTATO_PLATFORMS as readonly string[]).includes(p));
+  if (!platforms.length) throw new Error('Не выбраны соцсети');
+
+  const src = await pool.query(
+    `SELECT * FROM publisher_posts WHERE tenant_id=$1 AND group_id=$2 ORDER BY created_at ASC`,
+    [args.tenantId, args.groupId]);
+  const rows = src.rows as any[];
+  if (!rows.length) throw new Error('Исходный пост не найден');
+
+  let when: string | null = null;
+  if (args.scheduledAt) {
+    if (Number.isNaN(Date.parse(args.scheduledAt))) throw new Error('Некорректная дата');
+    when = new Date(args.scheduledAt).toISOString();
+  }
+
+  const byPlatform = new Map<string, any>(rows.map((r) => [String(r.platform), r]));
+  const base = rows[0];
+  const newGroup = randomUUID();
+  let made = 0;
+  for (const platform of platforms) {
+    const donor = byPlatform.get(platform) || base;
+    const opts: Record<string, any> = (typeof donor.target === 'object' && donor.target) ? { ...donor.target } : {};
+    // Чужие идентификаторы аккаунта в копию не тащим — она живёт в ручном архиве.
+    delete opts.accountName; delete opts.pageId; delete opts.boardId;
+    if (platform === 'youtube' && !opts.title) {
+      opts.title = String((base.target as any)?.title || (donor.text || '').split('\n')[0] || 'Видео').slice(0, 100);
+    }
+    await pool.query(
+      `INSERT INTO publisher_posts
+         (id, tenant_id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
+          target, mode, scheduled_at, submission_id, status, error, retries, next_retry_at)
+       VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,$8,NULL,$9,'time',$10,NULL,$11,NULL,0,NULL)`,
+      [randomUUID(), args.tenantId, newGroup, base.asset_id || null, base.media_url || null,
+       donor.text || base.text || '', platform, `${MANUAL_ACCOUNT_PREFIX}${platform}`,
+       JSON.stringify(opts), when, MANUAL_STATUS]);
+    made++;
+  }
+  return { groupId: newGroup, rows: made };
+}
+
+/**
  * Правка поста ручного архива: текст, заголовок и дата в календаре. Дату можно менять
  * и группой (весь ролик переезжает целиком) — так работает перетаскивание в календаре.
  */

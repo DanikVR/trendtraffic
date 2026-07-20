@@ -10,11 +10,11 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
-  X, Download, Copy, Check, FileEdit, Calendar as CalendarIcon, ExternalLink, Trash2,
+  X, Download, Copy, CopyPlus, Check, FileEdit, Calendar as CalendarIcon, ExternalLink, Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { downloadMedia } from '../../components/chat/MediaLightbox';
-import { PLATFORM_META, PlatformMark, type PubPostRow } from './PublisherTab';
+import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, type PubPostRow } from './PublisherTab';
 
 /** Имя файла без запрещённых символов — иначе браузер молча срежет расширение. */
 const safeName = (s: string) => (s || 'post').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -59,6 +59,11 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
   const [when, setWhen] = useState(toLocalInput(rows[0]?.scheduled_at));
   /** Поле даты раскрыто: у поста без даты его прячем за кнопкой «Добавить в календарь». */
   const [dateOpen, setDateOpen] = useState(false);
+  /** Панель копии: тот же ролик в другие сети и/или на другую дату. */
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copyPlatforms, setCopyPlatforms] = useState<Set<string>>(new Set(rows.map((r) => r.platform)));
+  const [copyWhen, setCopyWhen] = useState('');
+  const [copyNote, setCopyNote] = useState<string | null>(null);
 
   const row = useMemo(() => rows.find((r) => r.platform === active) || rows[0], [rows, active]);
   const isManual = row?.status === 'manual';
@@ -140,6 +145,28 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
       onChanged();
       onClose();
     } catch (e: any) { setErr(e?.message || String(e)); setBusy(false); }
+  };
+
+  /** Копия ложится в ручной архив: она никуда не отправляется, пока человек не решит сам. */
+  const duplicate = async () => {
+    setBusy(true); setErr(null); setCopyNote(null);
+    try {
+      const res = await fetch('/api/publisher/manual/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          groupId: row.group_id,
+          platforms: [...copyPlatforms],
+          scheduledAt: copyWhen ? new Date(copyWhen).toISOString() : null,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j?.error || t('sec.publisher.copyPostFailed', 'Не удалось скопировать'));
+      setCopyNote(t('sec.publisher.copyPostOk', 'Копия создана в папке «Вручную» ({{n}} сет.)', { n: j?.rows ?? copyPlatforms.size }));
+      setCopyOpen(false);
+      onChanged();
+    } catch (e: any) { setErr(e?.message || String(e)); }
+    finally { setBusy(false); }
   };
 
   const copy = async () => {
@@ -295,6 +322,9 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
                       <ExternalLink size={14} /> {t('sec.publisher.openPost', 'Открыть публикацию')}
                     </a>
                   )}
+                  <button type="button" onClick={() => { setCopyOpen((v) => !v); setCopyNote(null); }} style={btn('var(--bg-tertiary)', 'var(--text-secondary)')}>
+                    <CopyPlus size={14} /> {t('sec.publisher.duplicate', 'Копировать пост')}
+                  </button>
                   {isManual && (
                     <button type="button" onClick={removePost} disabled={busy}
                       style={{ ...btn('transparent', '#ef4444'), marginLeft: 'auto' }}>
@@ -306,6 +336,47 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
             </div>
 
             {err && <p className="text-[12px]" style={{ color: '#ef4444' }}>{err}</p>}
+            {copyNote && <p className="text-[12px]" style={{ color: '#16a34a' }}>{copyNote}</p>}
+
+            {/* Копия: тот же ролик и текст, но сети и дату выбираем заново */}
+            {copyOpen && (
+              <div className="rounded-xl p-2.5 space-y-2" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--brand)' }}>
+                <span className="text-[11px] font-700 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <CopyPlus size={12} /> {t('sec.publisher.copyTo', 'Копия поста — в какие сети')}
+                </span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {PLATFORM_ORDER.map((pk) => {
+                    const on = copyPlatforms.has(pk);
+                    return (
+                      <button
+                        key={pk} type="button"
+                        onClick={() => setCopyPlatforms((s) => { const n = new Set(s); if (n.has(pk)) n.delete(pk); else n.add(pk); return n; })}
+                        className="rounded-lg px-2 py-1.5 flex items-center gap-1.5"
+                        style={{
+                          background: on ? 'rgba(99,102,241,0.12)' : 'var(--bg-secondary)',
+                          border: `1px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer',
+                        }}>
+                        <PlatformMark platform={pk} size={16} />
+                        <span className="text-[10.5px] font-600 truncate" style={{ color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                          {PLATFORM_META[pk]?.label || pk}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input type="datetime-local" value={copyWhen} onChange={(e) => setCopyWhen(e.target.value)}
+                    className="rounded-lg px-2 py-[6px] text-[12.5px] flex-1"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minWidth: 190 }} />
+                  <button type="button" onClick={duplicate} disabled={busy || !copyPlatforms.size} style={btn('#6366f1')}>
+                    <CopyPlus size={14} /> {t('sec.publisher.createCopy', 'Создать копию')}
+                  </button>
+                </div>
+                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                  {t('sec.publisher.copyHint', 'Копия ложится в папку «Вручную» с тем же видео и текстом. Дату можно не указывать — поставите потом в календаре.')}
+                </p>
+              </div>
+            )}
 
             {/* Календарь: дата ставится на ВЕСЬ пост (все его сети живут одной датой) */}
             {isManual && (

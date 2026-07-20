@@ -177,7 +177,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   }>(null);
 
   // Ф2: календарь
-  const [weekOff, setWeekOff] = useState(0);
+  /** Смещение показываемого месяца от текущего (0 = этот месяц). */
+  const [monthOff, setMonthOff] = useState(0);
   /** group_id раскрытого поста (окно с видео и описаниями по сетям); null = закрыто. */
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [moveId, setMoveId] = useState<string | null>(null);
@@ -528,91 +529,127 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   }
 
   // ── Календарь недели ────────────────────────────────────────────────────────
+  /** Календарь на МЕСЯЦ: 6 недель сеткой, сверху перелистывание месяцев. */
   const renderCalendar = () => {
     const now = new Date();
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) + weekOff * 7);
-    const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i));
+    const view = new Date(now.getFullYear(), now.getMonth() + monthOff, 1);
+    // Сетка всегда начинается с понедельника и держит 6 строк: месяц не «прыгает»
+    // по высоте при переключении, а хвосты соседних месяцев видно приглушёнными.
+    const firstCell = new Date(view.getFullYear(), view.getMonth(), 1 - ((view.getDay() + 6) % 7));
+    const days = Array.from({ length: 42 }, (_, i) =>
+      new Date(firstCell.getFullYear(), firstCell.getMonth(), firstCell.getDate() + i));
+
     // В календаре живут и очередь Blotato ('scheduled'), и ручной архив ('manual'):
-    // для человека это одна доска дат, различает их значок «Вручную» на карточке.
+    // для человека это одна доска дат, различает их значок «M» на карточке.
     const sched = posts.filter((p) => (p.status === 'scheduled' || p.status === 'manual') && p.scheduled_at);
+    const sameDay = (t: Date, d: Date) =>
+      t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth() && t.getDate() === d.getDate();
     const byDay = (d: Date) => sched
-      .filter((p) => { const t = new Date(p.scheduled_at!); return t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth() && t.getDate() === d.getDate(); })
+      .filter((p) => sameDay(new Date(p.scheduled_at!), d))
       .sort((a, b) => new Date(a.scheduled_at!).getTime() - new Date(b.scheduled_at!).getTime());
+    const inMonth = days.filter((d) => d.getMonth() === view.getMonth());
+    const monthCount = inMonth.reduce((n, d) => n + byDay(d).length, 0);
+
+    const navBtn: React.CSSProperties = {
+      background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)',
+      color: 'var(--text-secondary)', cursor: 'pointer',
+    };
+
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <button type="button" onClick={() => setWeekOff(weekOff - 1)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}><ChevronLeft size={15} /></button>
-          <span className="text-[13px] font-700" style={{ color: 'var(--text-primary)' }}>
-            {days[0].toLocaleDateString([], { day: '2-digit', month: '2-digit' })} — {days[6].toLocaleDateString([], { day: '2-digit', month: '2-digit' })}
+          <button type="button" onClick={() => setMonthOff(monthOff - 1)} title={t('sec.publisher.prevMonth', 'Предыдущий месяц')}
+            className="w-8 h-8 rounded-lg flex items-center justify-center" style={navBtn}><ChevronLeft size={15} /></button>
+          <span className="text-[13.5px] font-700 capitalize" style={{ color: 'var(--text-primary)', minWidth: 150, textAlign: 'center' }}>
+            {view.toLocaleDateString([], { month: 'long', year: 'numeric' })}
           </span>
-          <button type="button" onClick={() => setWeekOff(weekOff + 1)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', cursor: 'pointer' }}><ChevronRight size={15} /></button>
-          {weekOff !== 0 && <button type="button" onClick={() => setWeekOff(0)} className="text-[12px] font-600 px-2.5 py-1.5 rounded-lg" style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('sec.publisher.today', 'Сегодня')}</button>}
-          <span className="text-[11.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.weekPlanned', 'Запланировано на неделю: {{n}}', { n: days.reduce((n, d) => n + byDay(d).length, 0) })}</span>
+          <button type="button" onClick={() => setMonthOff(monthOff + 1)} title={t('sec.publisher.nextMonth', 'Следующий месяц')}
+            className="w-8 h-8 rounded-lg flex items-center justify-center" style={navBtn}><ChevronRight size={15} /></button>
+          {monthOff !== 0 && (
+            <button type="button" onClick={() => setMonthOff(0)} className="text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
+              style={{ background: 'transparent', border: '1px solid var(--border-medium)', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              {t('sec.publisher.today', 'Сегодня')}
+            </button>
+          )}
+          <span className="text-[11.5px] ml-auto" style={{ color: 'var(--text-muted)' }}>
+            {t('sec.publisher.monthPlanned', 'Запланировано в этом месяце: {{n}}', { n: monthCount })}
+          </span>
         </div>
+
         <div className="overflow-x-auto">
-          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(7, minmax(150px, 1fr))', minWidth: 1080 }}>
-            {days.map((d, i) => {
-              const items = byDay(d);
-              const isToday = weekOff === 0 && d.getDate() === now.getDate() && d.getMonth() === now.getMonth();
-              return (
-                <div key={i} className="rounded-xl p-2 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: `1px solid ${isToday ? 'var(--brand)' : 'var(--border-medium)'}`, minHeight: 140 }}>
-                  <div className="text-[11px] font-700 flex items-center justify-between" style={{ color: isToday ? 'var(--brand)' : 'var(--text-muted)' }}>
-                    <span>{dowLabel[d.getDay()]}</span><span>{pad2(d.getDate())}.{pad2(d.getMonth() + 1)}</span>
-                  </div>
-                  {items.map((p) => (
-                    <div key={p.id} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
-                      {/* Клик по дате в календаре раскрывает пост: видео + описания по сетям. */}
-                      <button
-                        type="button" onClick={() => setOpenGroup(p.group_id)}
-                        className="w-full text-left"
-                        style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-                        title={t('sec.publisher.openPostTitle', 'Открыть пост')}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <PlatformMark platform={p.platform} size={16} />
-                          <span className="text-[11px] font-700 tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                            {pad2(new Date(p.scheduled_at!).getHours())}:{pad2(new Date(p.scheduled_at!).getMinutes())}
-                          </span>
-                          {p.status === 'manual' && (
-                            <span className="text-[9px] px-1 rounded font-700" style={{ background: 'rgba(129,140,248,0.18)', color: '#818cf8' }}
-                              title={t('sec.publisher.manualBadge', 'Вручную')}>M</span>
-                          )}
-                          {p.chain_id && <span title={t('sec.publisher.chainPostTitle', 'Пост цепочки')}><Link2 size={10} style={{ color: 'var(--brand)' }} /></span>}
-                        </div>
-                        <div className="text-[10.5px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }} title={p.text || ''}>{(p.text || '').split('\n')[0] || '—'}</div>
-                      </button>
-                      {moveId === p.id ? (
-                        <div className="mt-1 space-y-1">
-                          <input type="datetime-local" value={moveVal} onChange={(e) => setMoveVal(e.target.value)}
-                            className="w-full rounded-md px-1.5 py-1 text-[10.5px]"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
-                          <div className="flex gap-1">
-                            <button type="button" onClick={() => void movePost(p)} disabled={rowBusy === p.id || !moveVal}
-                              className="flex-1 text-[10.5px] font-700 py-1 rounded-md" style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>OK</button>
-                            <button type="button" onClick={() => { setMoveId(null); setMoveVal(''); }}
-                              className="flex-1 text-[10.5px] font-600 py-1 rounded-md" style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>×</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex gap-1 mt-1">
-                          <button type="button" onClick={() => { setMoveId(p.id); setMoveVal(''); }} title={t('sec.publisher.moveTitle', 'Перенести')}
-                            className="flex-1 text-[10px] font-600 py-0.5 rounded-md inline-flex items-center justify-center gap-1"
-                            style={{ background: 'rgba(99,102,241,0.10)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}>
-                            <Timer size={10} /> {t('sec.publisher.moveBtn', 'перенести')}
-                          </button>
-                          <button type="button" onClick={() => removeRow(p)} title={t('sec.publisher.cancelPub', 'Отменить публикацию')}
-                            className="w-6 text-[10px] py-0.5 rounded-md" style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>×</button>
-                        </div>
+          <div style={{ minWidth: 760 }}>
+            {/* Шапка дней недели */}
+            <div className="grid gap-1.5 mb-1.5" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+              {[1, 2, 3, 4, 5, 6, 0].map((dw) => (
+                <div key={dw} className="text-[11px] font-700 text-center" style={{ color: 'var(--text-muted)' }}>{dowLabel[dw]}</div>
+              ))}
+            </div>
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+              {days.map((d, i) => {
+                const items = byDay(d);
+                const isToday = sameDay(now, d);
+                const otherMonth = d.getMonth() !== view.getMonth();
+                return (
+                  <div key={i} className="rounded-lg p-1.5 flex flex-col gap-1"
+                    style={{
+                      background: otherMonth ? 'var(--bg-primary)' : 'var(--bg-secondary)',
+                      border: `1px solid ${isToday ? 'var(--brand)' : 'var(--border-medium)'}`,
+                      minHeight: 96, opacity: otherMonth ? 0.55 : 1,
+                    }}>
+                    <div className="text-[11px] font-700 flex items-center justify-between" style={{ color: isToday ? 'var(--brand)' : 'var(--text-muted)' }}>
+                      <span>{d.getDate()}</span>
+                      {items.length > 0 && (
+                        <span className="text-[9.5px] px-1 rounded" style={{ background: 'rgba(99,102,241,0.14)', color: 'var(--brand)' }}>{items.length}</span>
                       )}
                     </div>
-                  ))}
-                  {!items.length && <div className="text-[10.5px] text-center pt-6" style={{ color: 'var(--text-disabled)' }}>—</div>}
-                </div>
-              );
-            })}
+                    {items.map((p) => (
+                      <div key={p.id}>
+                        {moveId === p.id ? (
+                          <div className="space-y-1">
+                            <input type="datetime-local" value={moveVal} onChange={(e) => setMoveVal(e.target.value)}
+                              className="w-full rounded-md px-1 py-0.5 text-[10px]"
+                              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }} />
+                            <div className="flex gap-1">
+                              <button type="button" onClick={() => void movePost(p)} disabled={rowBusy === p.id || !moveVal}
+                                className="flex-1 text-[10px] font-700 py-0.5 rounded-md"
+                                style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>OK</button>
+                              <button type="button" onClick={() => { setMoveId(null); setMoveVal(''); }}
+                                className="flex-1 text-[10px] font-600 py-0.5 rounded-md"
+                                style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>×</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-md px-1 py-0.5 flex items-center gap-1"
+                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
+                            {/* Клик раскрывает пост: видео, тексты по сетям, скачивание, дата */}
+                            <button type="button" onClick={() => setOpenGroup(p.group_id)}
+                              title={p.text || t('sec.publisher.openPostTitle', 'Открыть пост')}
+                              className="flex items-center gap-1 min-w-0 flex-1"
+                              style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}>
+                              <PlatformMark platform={p.platform} size={13} />
+                              <span className="text-[10px] font-700 tabular-nums flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
+                                {pad2(new Date(p.scheduled_at!).getHours())}:{pad2(new Date(p.scheduled_at!).getMinutes())}
+                              </span>
+                              {p.status === 'manual' && (
+                                <span className="text-[8.5px] px-0.5 rounded font-700 flex-shrink-0" style={{ background: 'rgba(129,140,248,0.18)', color: '#818cf8' }}>M</span>
+                              )}
+                              {p.chain_id && <Link2 size={9} className="flex-shrink-0" style={{ color: 'var(--brand)' }} />}
+                            </button>
+                            <button type="button" onClick={() => { setMoveId(p.id); setMoveVal(''); }} title={t('sec.publisher.moveTitle', 'Перенести')}
+                              className="flex-shrink-0" style={{ background: 'transparent', border: 'none', color: 'var(--brand)', cursor: 'pointer', lineHeight: 0 }}>
+                              <Timer size={11} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.calHint', 'Время местное. Перенос обновляет время публикации в очереди Blotato; отмена снимает пост из очереди.')}</p>
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{t('sec.publisher.calHintMonth', 'Время местное. Значок «M» — пост ручного архива: он никуда не отправляется, дата нужна только вам. Перенос обычного поста обновляет время в очереди Blotato.')}</p>
       </div>
     );
   };
