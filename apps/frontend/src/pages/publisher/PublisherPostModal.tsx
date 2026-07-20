@@ -57,6 +57,8 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [when, setWhen] = useState(toLocalInput(rows[0]?.scheduled_at));
+  /** Поле даты раскрыто: у поста без даты его прячем за кнопкой «Добавить в календарь». */
+  const [dateOpen, setDateOpen] = useState(false);
 
   const row = useMemo(() => rows.find((r) => r.platform === active) || rows[0], [rows, active]);
   const isManual = row?.status === 'manual';
@@ -209,17 +211,6 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
                 <Download size={14} /> {t('sec.publisher.dlVideo', 'Скачать видео')}
               </button>
             )}
-            {isManual && (
-              <label className="block text-[11px] space-y-1" style={{ color: 'var(--text-muted)' }}>
-                <span className="flex items-center gap-1"><CalendarIcon size={12} /> {t('sec.publisher.whenPublish', 'Дата публикации')}</span>
-                <input
-                  type="datetime-local" value={when} disabled={busy}
-                  onChange={(e) => saveDate(e.target.value)}
-                  className="w-full rounded-lg px-2 py-[6px] text-[12px]"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)' }}
-                />
-              </label>
-            )}
           </div>
 
           {/* Тексты по сетям */}
@@ -315,6 +306,41 @@ export function PublisherPostModal({ rows, token, onClose, onChanged }: {
             </div>
 
             {err && <p className="text-[12px]" style={{ color: '#ef4444' }}>{err}</p>}
+
+            {/* Календарь: дата ставится на ВЕСЬ пост (все его сети живут одной датой) */}
+            {isManual && (
+              <div className="rounded-xl p-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                {!dateOpen && !when ? (
+                  <button type="button" onClick={() => setDateOpen(true)} style={{ ...btn('#6366f1'), width: '100%', justifyContent: 'center' }}>
+                    <CalendarIcon size={14} /> {t('sec.publisher.addToCalendar', 'Добавить в календарь')}
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-700 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                      <CalendarIcon size={12} /> {t('sec.publisher.whenPublish', 'Дата публикации')}
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="datetime-local" value={when} disabled={busy} autoFocus={dateOpen && !when}
+                        onChange={(e) => void saveDate(e.target.value)}
+                        className="rounded-lg px-2 py-[6px] text-[12.5px] flex-1"
+                        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', minWidth: 190 }}
+                      />
+                      {when && (
+                        <button type="button" onClick={() => { setDateOpen(false); void saveDate(''); }} disabled={busy}
+                          style={btn('transparent', 'var(--text-muted)')}>
+                          {t('sec.publisher.clearDate', 'Убрать дату')}
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      {t('sec.publisher.dateWholePost', 'Дата ставится на весь пост — все его сети встают в календарь одним днём.')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {isManual && (
               <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 {t('sec.publisher.manualHint', 'Пост никуда не отправляется: скачайте видео и описание нужной сети и опубликуйте вручную.')}

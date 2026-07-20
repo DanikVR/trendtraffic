@@ -95,6 +95,13 @@ const FOLDER_OF: Record<string, PubFolder> = {
   published: 'published', failed: 'failed', canceled: 'failed',
 };
 
+// Единый вид карточек — тот же, что в «Трендах» и во всей Галерее (GalleryPage.tsx):
+// карточка = само видео (портрет 9/16), текст и ВСЕ кнопки накладываются поверх.
+const CARD_GRID = 'grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2';
+const cardCls = (sel = false) =>
+  `group relative rounded-xl overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg${sel ? ' ring-2 ring-[var(--brand)] ring-inset' : ''}`;
+const CARD_STYLE: React.CSSProperties = { aspectRatio: '9 / 16', background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' };
+
 const CHAIN_FMT_LABEL: Record<string, string> = { '9x16': '9:16', '16x9': '16:9', '1x1': '1:1', '4x5': '4:5' };
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Пн..Вс (JS getDay)
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -152,7 +159,6 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   const [folder, setFolder] = useState<PubFolder>('queue');
   const [draftSel, setDraftSel] = useState<Set<string>>(new Set());
   const [draftBusy, setDraftBusy] = useState(false);
-  const [draftEdit, setDraftEdit] = useState<{ id: string; text: string } | null>(null);
   const [draftNote, setDraftNote] = useState<string | null>(null);
 
   // Ф2: слоты + цепочки
@@ -301,9 +307,6 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
 
   // ── Черновики: выбор, правка текста, публикация пачкой ──────────────────────
   const draftIdsVisible = useMemo(() => groups.flatMap((rows) => rows.map((r) => r.id)), [groups]);
-  const toggleDraft = (id: string) => setDraftSel((s) => {
-    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
-  });
   const toggleDraftGroup = (rows: PubPostRow[]) => setDraftSel((s) => {
     const n = new Set(s);
     const all = rows.every((r) => n.has(r.id));
@@ -311,13 +314,6 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     return n;
   });
   const allDraftsSelected = draftIdsVisible.length > 0 && draftIdsVisible.every((id) => draftSel.has(id));
-  const saveDraftText = async (id: string, text: string) => {
-    try {
-      const r = await fetch(`/api/publisher/drafts/${id}`, { method: 'PATCH', headers: jsonHeaders(), body: JSON.stringify({ text }) });
-      if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errSaveDraft', 'Не удалось сохранить черновик'));
-      else await loadPosts(true);
-    } catch { setErr(t('sec.publisher.errSaveDraft', 'Не удалось сохранить черновик')); }
-  };
   const publishDraftSel = async (mode: 'slot' | 'now') => {
     if (draftBusy || !draftSel.size) return;
     setDraftBusy(true); setDraftNote(null); setErr(null);
@@ -471,32 +467,6 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     finally { setAnaLoading(false); }
   };
   useEffect(() => { if (sub === 'analytics' && ana === null && keyState === 'ok') void loadAnalytics(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [sub, keyState]);
-
-  const statusChip = (row: PubPostRow) => {
-    const base = 'inline-flex items-center gap-1 text-[10.5px] font-700 px-2 py-0.5 rounded-full';
-    if (row.status === 'published') {
-      return row.post_url
-        ? <a href={row.post_url} target="_blank" rel="noreferrer" className={base} title={t('sec.publisher.openPost', 'Открыть пост')}
-            style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', textDecoration: 'none' }}>
-            <Check size={11} /> {t('sec.publisher.stPublished', 'опубликован')} <ExternalLink size={10} />
-          </a>
-        : <span className={base} style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}><Check size={11} /> {t('sec.publisher.stPublished', 'опубликован')}</span>;
-    }
-    if (row.status === 'failed') {
-      const willRetry = row.next_retry_at && new Date(row.next_retry_at).getTime() > Date.now();
-      return <span className={base} title={row.error || undefined} style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
-        <AlertTriangle size={11} /> {t('sec.publisher.stFailed', 'ошибка')}{willRetry ? ' · ' + t('sec.publisher.stRetryAt', 'повтор {{when}}', { when: fmtDT(row.next_retry_at!) }) : ''}
-      </span>;
-    }
-    if (row.status === 'canceled') {
-      return <span className={base} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}><Ban size={11} /> {t('sec.publisher.stCanceled', 'отменён')}</span>;
-    }
-    if (row.status === 'draft') {
-      return <span className={base} style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)' }}><FileEdit size={11} /> {t('sec.publisher.stDraft', 'черновик')}</span>;
-    }
-    const when = row.scheduled_at ? fmtDT(row.scheduled_at) : t('sec.publisher.stPublishing', 'публикуется…');
-    return <span className={base} style={{ background: 'rgba(245,158,11,0.13)', color: '#f59e0b' }}><Clock size={11} /> {when}</span>;
-  };
 
   // ── Онбординг: ключа нет / ключ отклонён ──────────────────────────────────
   if (keyState === 'none' || keyState === 'bad') {
@@ -965,124 +935,97 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
         </p>
       </div>
     ) : (
-      <div className="flex flex-col gap-2">
+      <div className={CARD_GRID}>
+        {/* Плитка «+» — как в Трендах: первым делом добавить новый пост */}
+        <button type="button" onClick={onNewPost} title={t('sec.publisher.newPostHint', 'Собрать пост: медиа из Галереи, текст под каждую сеть, дата')}
+          className="rounded-xl flex flex-col items-center justify-center gap-2 p-2 text-center transition-colors hover:border-[var(--border-stronger)]"
+          style={{ aspectRatio: '9 / 16', background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+          <span className="relative w-11 h-11 rounded-full flex items-center justify-center animate-attract" style={{ boxShadow: '0 0 18px rgba(99,102,241,0.45)' }}>
+            <span aria-hidden className="absolute inset-0 rounded-full animate-iridescent"
+              style={{ background: 'conic-gradient(from 0deg, #6366f1, #22d3ee, #a855f7, #ec4899, #f59e0b, #6366f1)' }} />
+            <Plus size={22} className="relative z-[1]" style={{ color: '#fff' }} />
+          </span>
+          <span className="text-[12px] font-600 leading-tight">{t('sec.publisher.newPost', 'Новый пост')}</span>
+        </button>
+
         {groups.map((rows) => {
           const first = rows[0];
           const groupChecked = isDrafts && rows.every((r) => draftSel.has(r.id));
+          // Дата поста = дата любой его сети: они всегда живут одним днём.
+          const when = rows.find((r) => r.scheduled_at)?.scheduled_at || null;
+          const failed = rows.filter((r) => r.status === 'failed');
+          const title = (first.text || '').split('\n')[0] || t('sec.publisher.noText', 'Без текста');
+          const isImg = !!first.media_url && /\.(png|jpe?g|webp|gif)(\?|$)/i.test(first.media_url);
           return (
-            <div key={first.group_id} className="rounded-xl p-3 flex gap-3" style={{ background: 'var(--bg-secondary)', border: `1px solid ${groupChecked ? 'var(--brand)' : 'var(--border-medium)'}` }}>
+            <div key={first.group_id} className={cardCls(groupChecked)} style={CARD_STYLE}>
+              {/* Вся карточка — кнопка: раскрывает пост (видео, тексты по сетям, скачивание) */}
+              <button type="button" onClick={() => setOpenGroup(first.group_id)}
+                title={t('sec.publisher.openPostTitle', 'Открыть пост')}
+                className="absolute inset-0 w-full h-full"
+                style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}>
+                {first.media_url ? (isImg
+                  ? <img src={first.media_url} alt="" loading="lazy" className="w-full h-full object-cover pointer-events-none" />
+                  : <video src={`${first.media_url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover pointer-events-none" />)
+                  : <span className="w-full h-full flex items-center justify-center"><Send size={20} style={{ color: 'var(--text-muted)' }} /></span>}
+              </button>
+
+              {/* Статус — верх слева */}
+              <span className="absolute top-1.5 left-1.5 z-10 text-[10px] font-700 px-2 py-0.5 rounded-md"
+                style={{ background: 'rgba(0,0,0,.55)', color: '#fff' }}>
+                {first.status === 'manual' ? t('sec.publisher.manualBadge', 'Вручную')
+                  : first.status === 'draft' ? t('sec.publisher.stDraft', 'черновик')
+                  : first.status === 'published' ? t('sec.publisher.stPublished', 'опубликован')
+                  : failed.length ? t('sec.publisher.stFailed', 'ошибка')
+                  : t('sec.publisher.stQueued', 'в очереди')}
+                {first.chain_id ? ' · ⛓' : ''}
+              </span>
+
+              {/* Выбор черновика пачкой — верх справа */}
               {isDrafts && (
                 <button type="button" onClick={() => toggleDraftGroup(rows)} title={t('sec.publisher.pickGroup', 'Выбрать ролик целиком')}
-                  className="flex-shrink-0 self-start mt-0.5" style={{ background: 'transparent', border: 'none', color: groupChecked ? 'var(--brand)' : 'var(--text-muted)', cursor: 'pointer' }}>
-                  {groupChecked ? <CheckSquare size={16} /> : <Square size={16} />}
+                  className="absolute top-1.5 right-1.5 z-20 w-[25px] h-[25px] rounded-md flex items-center justify-center"
+                  style={{ background: groupChecked ? 'var(--brand)' : 'rgba(0,0,0,.55)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.7)', cursor: 'pointer' }}>
+                  {groupChecked ? <CheckSquare size={13} /> : <Square size={13} />}
                 </button>
               )}
-              {/* Обложка и заголовок раскрывают пост: видео + описания по сетям + скачивание. */}
-              <button
-                type="button" onClick={() => setOpenGroup(first.group_id)}
-                title={t('sec.publisher.openPostTitle', 'Открыть пост')}
-                className="w-[44px] h-[72px] rounded-lg overflow-hidden flex-shrink-0"
-                style={{ background: 'var(--bg-tertiary)', border: 'none', padding: 0, cursor: 'pointer' }}
-              >
-                {first.media_url && (/\.(png|jpe?g|webp|gif)(\?|$)/i.test(first.media_url)
-                  ? <img src={first.media_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                  : <video src={`${first.media_url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)}
-              </button>
-              <div className="min-w-0 flex-1">
-                <button
-                  type="button" onClick={() => setOpenGroup(first.group_id)}
-                  title={t('sec.publisher.openPostTitle', 'Открыть пост')}
-                  className="text-[13px] font-600 truncate block w-full text-left"
-                  style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-                >
-                  {first.chain_id && <Link2 size={11} className="inline mr-1" style={{ color: 'var(--brand)' }} />}
-                  {(first.text || '').split('\n')[0] || t('sec.publisher.noText', 'Без текста')}
-                </button>
-                <div className="text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>{fmtDT(first.created_at)}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {rows.map((row) => (
-                    <span key={row.id} className="inline-flex items-center gap-1.5 rounded-lg pl-1 pr-1 py-1" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
-                      <PlatformMark platform={row.platform} size={20} />
-                      {statusChip(row)}
-                      {row.status === 'failed' && (
-                        <button type="button" onClick={() => void retry(row)} disabled={rowBusy === row.id} title={row.error ? t('sec.publisher.retryTitleErr', 'Повторить · {{error}}', { error: row.error }) : t('sec.publisher.retryTitle', 'Повторить')}
-                          className="w-6 h-6 rounded-md flex items-center justify-center"
-                          style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--brand)', border: 'none', cursor: 'pointer' }}>
-                          {rowBusy === row.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-                        </button>
-                      )}
-                      {(row.status === 'scheduled' || row.status === 'failed' || row.status === 'published' || row.status === 'canceled') && (
-                        <button type="button" onClick={() => removeRow(row)} disabled={rowBusy === row.id}
-                          title={row.status === 'scheduled' ? t('sec.publisher.cancelPub', 'Отменить публикацию') : t('sec.publisher.removeRec', 'Убрать запись')}
-                          className="w-6 h-6 rounded-md flex items-center justify-center"
-                          style={{ background: 'rgba(239,68,68,0.10)', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
-                          <Trash2 size={12} />
-                        </button>
-                      )}
-                    </span>
+
+              {/* Подвал: текст, КУДА публикуется и КОГДА, действия — всё видно без ховера */}
+              <div className="absolute inset-x-0 bottom-0 p-1.5 pt-6" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,0,0,.80))' }}>
+                <div className="text-[11px] font-600 leading-tight mb-1"
+                  style={{ color: '#fff', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                  title={first.text || ''}>{title}</div>
+
+                <div className="flex items-center gap-1 mb-1 flex-wrap">
+                  {rows.map((r) => (
+                    <span key={`pm-${r.id}`} title={PLATFORM_META[r.platform]?.label || r.platform}><PlatformMark platform={r.platform} size={16} /></span>
                   ))}
+                  <span className="text-[10px] font-700 tabular-nums ml-auto px-1.5 py-0.5 rounded-md"
+                    style={{ background: when ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.45)', color: when ? '#111' : '#fff' }}>
+                    {when ? fmtDT(when) : t('sec.publisher.stNoDate', 'без даты')}
+                  </span>
                 </div>
-                {rows.some((r) => r.status === 'failed' && r.error) && (
-                  <div className="text-[11px] mt-1.5 space-y-0.5" style={{ color: '#ef4444' }}>
-                    {rows.filter((r) => r.status === 'failed' && r.error).map((r) => (
-                      <div key={r.id} className="truncate" title={r.error || undefined}>
-                        {PLATFORM_META[r.platform]?.label || r.platform}: {r.error}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {/* Черновик: свой текст под каждую сеть — видно и правится прямо здесь */}
-                {isDrafts && (
-                  <div className="mt-2 space-y-1.5">
-                    {rows.map((row) => {
-                      const editing = draftEdit?.id === row.id;
-                      const ytTitle = row.platform === 'youtube' ? String((row as any).target?.title || '') : '';
-                      return (
-                        <div key={`tx-${row.id}`} className="rounded-lg p-2" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <button type="button" onClick={() => toggleDraft(row.id)} title={t('sec.publisher.pickOne', 'Выбрать эту сеть')}
-                              style={{ background: 'transparent', border: 'none', color: draftSel.has(row.id) ? 'var(--brand)' : 'var(--text-muted)', cursor: 'pointer', lineHeight: 0 }}>
-                              {draftSel.has(row.id) ? <CheckSquare size={13} /> : <Square size={13} />}
-                            </button>
-                            <span className="text-[11px] font-700" style={{ color: 'var(--text-secondary)' }}>
-                              {PLATFORM_META[row.platform]?.label || row.platform}
-                            </span>
-                            {ytTitle && <span className="text-[10.5px] truncate" style={{ color: 'var(--text-muted)' }} title={ytTitle}>· {ytTitle}</span>}
-                            {row.platform === 'youtube' && !ytTitle && <span className="text-[10.5px]" style={{ color: '#f59e0b' }}>· {t('sec.publisher.ytNoTitle', 'нет заголовка')}</span>}
-                            <button type="button" onClick={() => setDraftEdit(editing ? null : { id: row.id, text: row.text || '' })}
-                              title={t('sec.publisher.editText', 'Править текст')}
-                              className="ml-auto w-6 h-6 rounded-md flex items-center justify-center"
-                              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
-                              <FileEdit size={12} />
-                            </button>
-                          </div>
-                          {editing ? (
-                            <div className="space-y-1.5">
-                              <textarea value={draftEdit!.text} onChange={(e) => setDraftEdit({ id: row.id, text: e.target.value })}
-                                rows={5} className="w-full text-[12px] rounded-lg p-2"
-                                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-medium)', resize: 'vertical' }} />
-                              <div className="flex items-center gap-2">
-                                <button type="button" onClick={async () => { const d = draftEdit!; setDraftEdit(null); await saveDraftText(d.id, d.text); }}
-                                  className="text-[12px] font-700 px-3 py-1.5 rounded-lg"
-                                  style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
-                                  {t('sec.publisher.save', 'Сохранить')}
-                                </button>
-                                <button type="button" onClick={() => setDraftEdit(null)} className="text-[12px] px-2 py-1.5 rounded-lg"
-                                  style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
-                                  {t('sec.publisher.cancel', 'Отмена')}
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-[11.5px] whitespace-pre-wrap" style={{ color: 'var(--text-secondary)', maxHeight: 96, overflow: 'hidden' }}>
-                              {row.text || t('sec.publisher.noText', 'Без текста')}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+
+                <div className="flex items-center gap-1">
+                  {failed.length > 0 && (
+                    <button type="button" onClick={() => void retry(failed[0])} disabled={rowBusy === failed[0].id}
+                      title={failed[0].error || t('sec.publisher.retryTitle', 'Повторить')}
+                      className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
+                      style={{ background: 'rgba(255,255,255,.92)', color: '#111', border: 'none', cursor: 'pointer' }}>
+                      {rowBusy === failed[0].id ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setOpenGroup(first.group_id)} title={t('sec.publisher.openPostTitle', 'Открыть пост')}
+                    className="w-[25px] h-[25px] rounded-md flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,.92)', color: '#111', border: 'none', cursor: 'pointer' }}>
+                    <FileEdit size={13} />
+                  </button>
+                  <button type="button" onClick={() => removeRow(first)} disabled={rowBusy === first.id}
+                    title={first.status === 'scheduled' ? t('sec.publisher.cancelPub', 'Отменить публикацию') : t('sec.publisher.removeRec', 'Убрать запись')}
+                    className="w-[25px] h-[25px] rounded-md flex items-center justify-center ml-auto"
+                    style={{ background: 'rgba(239,68,68,.9)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             </div>
           );
