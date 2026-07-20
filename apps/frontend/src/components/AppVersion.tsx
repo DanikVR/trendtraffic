@@ -3411,6 +3411,28 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.34 — ГАЛЕРЕЯ: иконки ПРОИСХОЖДЕНИЯ файла + фильтр по источникам.
+ *          Юзер: «на обложках обозначения, откуда файл: UGC / Сториборд / Google Flow /
+ *          аналитика. Сразу сортировка по иконкам. Если сняли в Google Flow, потом
+ *          преобразовали через UGC — у видео остаются ОБА».
+ *          1) media_assets.origins TEXT[] — ЦЕПОЧКА блоков хронологически: ['flow','ugc'].
+ *             Ключи (13 шт.) — backend media/origins.ts, зеркало на фронте lib/mediaOrigins.tsx.
+ *          2) Связей «B сделан из A» в базе не было (UGC-сборка знала входы только как
+ *             URL в памяти) → chainFromUrls() резолвит исходники по file_url и наследует
+ *             их метки. Наследуют: UGC (5 веток), монтаж, сториборд, Omni, кадр из видео,
+ *             «аватар из Галереи». Остальные места-производители ставят свою метку.
+ *          3) UI: ряд иконок на обложке (слева — откуда пришло, справа — чем стало, «+N»
+ *             при длинной цепочке), над сеткой — чипы-фильтры со счётчиками. Файл с
+ *             цепочкой Flow→UGC виден в ОБОИХ чипах. Бейджи и в GalleryPicker.
+ *          4) Backfill старых файлов: точные связки из job-таблиц → папка → имя/путь →
+ *             «Загрузка». ГРАБЛИ: asset_id в flow_ext_tasks/notebooklm_jobs = TEXT, а
+ *             media_assets.id = UUID → без ::text шаг падает «text = uuid» и молча
+ *             пропускается. Два шага Flow разнесены: нет одной таблицы — второй отработает.
+ *          Файлы: media/{origins,assets}.ts, db/migrations.ts, render/router.ts,
+ *          video_edit/router.ts, storyboard/service.ts, trends/*, flow-ext, notebooklm*,
+ *          social-ext, lib/mediaOrigins.tsx, GalleryPage.tsx, GalleryPicker.tsx.
+ *          tsc 0×2, vite 0; миграции прогнаны на живом Postgres. */
+
 /* 2.6.33 — ПУБЛИКАТОР: прошедшие даты закрыты, «Соцсети» стали заметной кнопкой.
  *          Юзер: «дни и время в прошлом опубликовать нельзя — сделай их недоступными;
  *          соцсети сделай кнопкой, а то не заметил сразу».
@@ -3865,7 +3887,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.33';
+export const APP_VERSION = '2.6.34';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
