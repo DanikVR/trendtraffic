@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Send, RefreshCw, Loader2, ExternalLink, Plus, Check, Clock, RotateCcw, Trash2,
   Ban, KeyRound, AlertTriangle, Link2, CalendarDays, ListChecks, BarChart3, Timer,
-  ChevronLeft, ChevronRight, Zap, X, Sparkles, FileEdit, CheckSquare, Square,
+  ChevronLeft, ChevronRight, ChevronDown, Zap, X, Sparkles, FileEdit, CheckSquare, Square,
 } from 'lucide-react';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { PublisherPostModal } from './PublisherPostModal';
@@ -147,7 +147,10 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     ['9x16', t('sec.publisher.fmt9x16', '9:16 вертикальный')], ['16x9', t('sec.publisher.fmt16x9', '16:9 горизонтальный')],
     ['1x1', t('sec.publisher.fmt1x1', '1:1 квадрат')], ['4x5', t('sec.publisher.fmt4x5', '4:5 портрет')],
   ];
-  const [sub, setSub] = useState<SubTab>('feed');
+  // Календарь — главный экран Публикатора: план на месяц важнее списка постов.
+  const [sub, setSub] = useState<SubTab>('calendar');
+  /** Плитки соцсетей свёрнуты: они нужны раз в жизни — подключить сеть. */
+  const [netsOpen, setNetsOpen] = useState(false);
   const [keyState, setKeyState] = useState<KeyState>('loading');
   const [accounts, setAccounts] = useState<PubAccount[]>([]);
   const [accLoading, setAccLoading] = useState(false);
@@ -355,6 +358,9 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     for (const a of accounts) { const arr = m.get(a.platform) || []; arr.push(a); m.set(a.platform, arr); }
     return m;
   }, [accounts]);
+  /** Сколько площадок реально подключено — видно в свёрнутом заголовке «Соцсети». */
+  const connectedCount = useMemo(
+    () => PLATFORM_ORDER.filter((p) => (byPlatform.get(p) || []).length > 0).length, [byPlatform]);
 
   const retry = async (row: PubPostRow) => {
     setRowBusy(row.id);
@@ -1099,7 +1105,18 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       {/* Плитки сетей */}
       <div>
         <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-          <span className="text-sm font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.socialNets', 'Соцсети')}</span>
+          {/* Заголовок = кнопка: плитки сетей свёрнуты и не занимают полэкрана над
+              календарём. Разворачиваются, когда сеть действительно надо подключить. */}
+          <button type="button" onClick={() => setNetsOpen((v) => !v)}
+            title={netsOpen ? t('sec.publisher.hideNets', 'Свернуть соцсети') : t('sec.publisher.showNets', 'Показать соцсети — подключить или проверить')}
+            className="inline-flex items-center gap-1.5 text-sm font-700"
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}>
+            {netsOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            {t('sec.publisher.socialNets', 'Соцсети')}
+            <span className="text-[11.5px] font-600" style={{ color: connectedCount ? '#10b981' : 'var(--text-muted)' }}>
+              {t('sec.publisher.netsCount', '{{n}} из {{total}}', { n: connectedCount, total: PLATFORM_ORDER.length })}
+            </span>
+          </button>
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => void loadAccounts(true)} disabled={accLoading}
               className="inline-flex items-center gap-1.5 text-[12px] font-600 px-2.5 py-1.5 rounded-lg"
@@ -1113,6 +1130,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             </button>
           </div>
         </div>
+        {netsOpen && (
+        <>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {PLATFORM_ORDER.map((pk) => {
             const meta = PLATFORM_META[pk];
@@ -1143,6 +1162,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
             {t('sec.publisher.keyActiveNoNets', 'Ключ активен, но соцсети ещё не подключены — нажмите любую плитку: откроется кабинет Blotato, после подключения вернитесь и нажмите «Обновить».')}
           </p>
         )}
+        </>
+        )}
       </div>
 
       {/* Папки ленты (они же счётчики — клик переключает) + саб-вкладки */}
@@ -1165,7 +1186,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
           );
         })}
         <div className="inline-flex gap-1 p-1 rounded-xl ml-auto" style={{ background: 'var(--bg-tertiary)' }}>
-          {([['feed', t('sec.publisher.tabFeed', 'Лента'), <ListChecks key="f" size={13} />], ['calendar', t('sec.publisher.tabCalendar', 'Календарь'), <CalendarDays key="c" size={13} />], ['schedule', t('sec.publisher.tabSchedule', 'Моё расписание'), <Clock key="s" size={13} />], ['analytics', t('sec.publisher.tabAnalytics', 'Аналитика'), <BarChart3 key="a" size={13} />]] as [SubTab, string, React.ReactNode][]).map(([k, l, ic]) => (
+          {/* Календарь первым — это главный экран; следом Галерея постов. */}
+          {([['calendar', t('sec.publisher.tabCalendar', 'Календарь'), <CalendarDays key="c" size={13} />], ['feed', t('sec.publisher.tabGallery', 'Галерея'), <ListChecks key="f" size={13} />], ['schedule', t('sec.publisher.tabSchedule', 'Моё расписание'), <Clock key="s" size={13} />], ['analytics', t('sec.publisher.tabAnalytics', 'Аналитика'), <BarChart3 key="a" size={13} />]] as [SubTab, string, React.ReactNode][]).map(([k, l, ic]) => (
             <button key={k} type="button" onClick={() => setSub(k)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-600 whitespace-nowrap"
               style={{ background: sub === k ? 'var(--brand)' : 'transparent', color: sub === k ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
