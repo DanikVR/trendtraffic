@@ -3411,6 +3411,30 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.35 — ГАЛЕРЕЯ: подписи происхождения на 108 языков + честная хронология цепочки.
+ *          Доводка 2.6.34: фича была собрана, но подписи блоков жили только русскими
+ *          дефолтами в коде, а порядок иконок врал на склейках.
+ *          1) i18n: sec.origins.* (13 меток) + sec.gallery.originAll/originFilterTitle
+ *             в ru+en → пропагация по 108 локалям → перевод 12 родовых слов на 106
+ *             языков (fallback'ов 0). ГРАБЛИ: подписи рендерятся ШАБЛОННЫМ ключом
+ *             t(`sec.origins.${key}`), которого НЕ видят ни check-i18n-coverage.mjs,
+ *             ни harvest-sec-keys.mjs (обе регулярки требуют строковый литерал) —
+ *             ключ теряется молча. Guard'ом стал тест сверки ORIGIN_KEYS ↔ фронт ↔ ru.
+ *          2) ГРАБЛИ: брендовые метки НЕ отдавать переводчику — Flow → «Поток»,
+ *             Hotebook → «Горячая книга». _glossary.json читает ТОЛЬКО Gemini-ревью,
+ *             а не translate-new-keys.mjs. Google Flow / Hotebook / Omni Flash
+ *             исключены из батча; Hotebook и Omni Flash добавлены в глоссарий.
+ *          3) dedupeChain гнал повтор в конец → склейка клипов ['flow','ugc'] и
+ *             ['flow'] давала «UGC → Flow → Монтаж» вместо «Flow → UGC → Монтаж».
+ *             Унаследованная метка держится за ПЕРВОЕ вхождение, в конец едет только
+ *             собственная (она и есть текущее состояние файла).
+ *          4) Метка «Автопилот» была МЁРТВОЙ: авто-ролики идут через тот же /ugc/build
+ *             и каждый новый получал 'ugc', иконку ставил только бэкфилл старых строк.
+ *             Собственная метка теперь берётся по outFolder ('auto-ugc' → 'autopilot').
+ *          Файлы: media/origins.ts, render/router.ts, tests/origins.test.ts,
+ *          scripts/translate-new-keys.mjs, locales/* (108), _glossary.json.
+ *          tsc 0×2, тесты 4/4, {{name}} цел во всех локалях. */
+
 /* 2.6.34 — ГАЛЕРЕЯ: иконки ПРОИСХОЖДЕНИЯ файла + фильтр по источникам.
  *          Юзер: «на обложках обозначения, откуда файл: UGC / Сториборд / Google Flow /
  *          аналитика. Сразу сортировка по иконкам. Если сняли в Google Flow, потом
@@ -3887,7 +3911,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.34';
+export const APP_VERSION = '2.6.35';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
