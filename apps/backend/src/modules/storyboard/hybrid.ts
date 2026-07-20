@@ -102,7 +102,12 @@ async function drawPanelImage(
   const dest = path.join(dir, `ai-${chunk.idx}-${pi}-${randomUUID().slice(0, 8)}${ext}`);
   fs.copyFileSync(gen.filePath, dest);
   try { fs.unlinkSync(gen.filePath); } catch { /* best-effort */ }
-  return toUploadsUrl(dest);
+
+  // Каталог вне uploads → fromUploadsUrl вернёт null, и монтаж МОЛЧА скатится
+  // в программные фолбэки при уже потраченных деньгах. Лучше честно упасть.
+  const url = toUploadsUrl(dest);
+  if (fromUploadsUrl(url) !== dest) throw new Error(`картинка сохранена вне uploads (${dest}) — врезка не подхватится`);
+  return url;
 }
 
 /**
