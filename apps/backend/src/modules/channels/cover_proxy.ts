@@ -11,7 +11,7 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
@@ -30,12 +30,17 @@ function refererFor(host: string): string {
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
 // Обложек на канал — до сотен; грузятся пачкой. Лимит высокий, но рубит абуз.
+// ⚠️ Ключ по IP гнать ТОЛЬКО через ipKeyGenerator: голый req.ip для IPv6 даёт полный адрес,
+// а клиенту выдают целую подсеть — сменил адрес внутри неё и лимит обнулился. Хелпер
+// сворачивает IPv6 к префиксу (деф. /56: 2001:db8:abcd:1234::1 → 2001:db8:abcd:1200::/56),
+// IPv4 отдаёт как есть. Голый req.ip заодно заставлял express-rate-limit писать
+// ValidationError ERR_ERL_KEY_GEN_IPV6 в лог при каждом старте.
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 1200,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip || 'cover',
+  keyGenerator: (req) => (req.ip ? ipKeyGenerator(req.ip) : 'cover'),
 });
 router.use(limiter);
 

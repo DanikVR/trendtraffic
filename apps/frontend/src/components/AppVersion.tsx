@@ -3411,6 +3411,21 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.26 — Безопасность: закрыт обход rate-limit по IPv6 (ERR_ERL_KEY_GEN_IPV6).
+ *          В логе прода 639 записей ValidationError с самой первой строки — express-rate-limit
+ *          ругался на кастомный keyGenerator прокси обложек каналов: `req.ip || 'cover'`.
+ *          Суть дыры: для IPv6 req.ip — ПОЛНЫЙ адрес, а клиенту провайдер выдаёт целую
+ *          подсеть. Сменил адрес внутри своей подсети — получил новый ключ и чистый счётчик,
+ *          то есть лимит 1200/мин обходился бесплатно и бесконечно. Для IPv4 проблемы нет.
+ *          Починка: keyGenerator завёрнут в штатный хелпер ipKeyGenerator (экспорт
+ *          express-rate-limit 8.5.2) — он сворачивает IPv6 к префиксу /56, IPv4 отдаёт как
+ *          есть. Проверено на проде живым вызовом: 2001:db8:abcd:1234::1 и ::beef → один
+ *          ключ 2001:db8:abcd:1200::/56, соседняя подсеть ::9999 → другой (чужих не режем),
+ *          203.0.113.7 → без изменений.
+ *          Остальные лимитеры чисты: auth (login/register/reset) идут на дефолтном
+ *          keyGenerator v8 — он уже IPv6-safe; лимитеры расширений и /channels ключуются по
+ *          tenantId и IP не трогают вовсе. Файлы: channels/cover_proxy.ts. */
+
 /* 2.6.25 — UGC-студия: аватар встаёт РОВНО туда, куда его поставили на превью.
  *          Жалоба юзера (скрин): бокс аватара утащен вправо вниз, а в готовом ролике
  *          HeyGen «не принял координаты». КОРЕНЬ: силуэтные ветки композита (альфа-webm
@@ -3742,7 +3757,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.25';
+export const APP_VERSION = '2.6.26';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
