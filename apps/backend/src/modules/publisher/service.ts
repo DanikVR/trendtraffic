@@ -22,7 +22,7 @@ import { randomUUID } from 'crypto';
 import pool from '../../db/index.js';
 import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { resolveAnthropicKey, DEFAULT_DIRECTOR_MODEL } from '../render/director.js';
-import { getTrendDNAByAsset } from '../trends/dna.js';
+import { getTrendDNAByAsset, getTrendDNAById } from '../trends/dna.js';
 import { AUTO_UGC_FOLDER } from '../media/assets.js';
 import {
   createPost, getPostStatus, cancelScheduled, BlotatoError,
@@ -424,14 +424,20 @@ const TONES: Record<string, string> = {
 };
 
 export async function generateCaptions(args: {
-  tenantId: string; title?: string; assetId?: string; platforms: string[];
+  tenantId: string; title?: string; assetId?: string; analysisId?: string; platforms: string[];
   tone?: string; language?: string; count?: number; brief?: string;
 }): Promise<{ variants: CaptionVariant[]; model: string; usedDna: boolean }> {
   const apiKey = await resolveAnthropicKey(args.tenantId);
   if (!apiKey) throw new Error('Ключ Claude не задан (Настройки → Генерация → ИИ-режиссёр)');
 
+  // Разбор берём либо ВЫБРАННЫЙ руками (analysisId — может быть от другого ролика,
+  // напр. тренда, под который сняли наш), либо свой по видео поста (assetId).
   let dna: any = null;
-  if (args.assetId) {
+  if (args.analysisId) {
+    try { const stored: any = await getTrendDNAById(args.tenantId, args.analysisId); dna = stored?.dna || null; }
+    catch { dna = null; }
+  }
+  if (!dna && args.assetId) {
     try { const stored: any = await getTrendDNAByAsset(args.tenantId, args.assetId); dna = stored?.dna || stored || null; }
     catch { dna = null; }
   }
@@ -446,11 +452,25 @@ export async function generateCaptions(args: {
   const ctx: string[] = [];
   if (args.title) ctx.push(`Название ролика: ${args.title}`);
   if (args.brief) ctx.push(`Бриф от автора: ${String(args.brief).slice(0, 500)}`);
+  // Из разбора — сначала РЕАЛЬНОЕ содержание ролика (о чём он и что там говорят),
+  // потом «рецепт» тренда. Подпись должна быть про это видео, а не про абстрактный хук.
+  if (dna?.summary) ctx.push(`О чём ролик: ${String(dna.summary).slice(0, 700)}`);
+  const speech = Array.isArray(dna?.visual?.transcript)
+    ? dna.visual.transcript.map((s: any) => String(s?.text || '').trim()).filter(Boolean).join(' ')
+    : '';
+  if (speech) ctx.push(`Речь в ролике (расшифровка): ${speech.slice(0, 1200)}`);
+  if (Array.isArray(dna?.visual?.textOverlays) && dna.visual.textOverlays.length) {
+    ctx.push(`Надписи в кадре: ${dna.visual.textOverlays.slice(0, 10).join(' | ').slice(0, 400)}`);
+  }
   if (dna?.hookType) ctx.push(`Тип хука: ${dna.hookType}`);
+  if (dna?.hookAnalysis) ctx.push(`Разбор первых секунд: ${String(dna.hookAnalysis).slice(0, 400)}`);
   if (dna?.whyItWorks) ctx.push(`Почему тренд работает: ${String(dna.whyItWorks).slice(0, 400)}`);
   if (dna?.targetAudience) ctx.push(`Аудитория: ${String(dna.targetAudience).slice(0, 200)}`);
   if (Array.isArray(dna?.keywords) && dna.keywords.length) ctx.push(`Ключевые слова тренда: ${dna.keywords.slice(0, 12).join(', ')}`);
-  if (dna?.copyReadyScript) ctx.push(`Сценарий ролика (фрагмент): ${String(dna.copyReadyScript).slice(0, 600)}`);
+  if (Array.isArray(dna?.meta?.hashtags) && dna.meta.hashtags.length) {
+    ctx.push(`Хэштеги оригинала (ориентир, не копировать дословно): ${dna.meta.hashtags.slice(0, 12).join(' ')}`);
+  }
+  if (!speech && dna?.copyReadyScript) ctx.push(`Сценарий ролика (фрагмент): ${String(dna.copyReadyScript).slice(0, 600)}`);
 
   const system =
     'Ты — SMM-редактор коротких видео. Пишешь подписи, которые дочитывают и по которым кликают. ' +

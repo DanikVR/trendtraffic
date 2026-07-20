@@ -589,6 +589,21 @@ export async function getTrendDNAByAsset(tenantId: string, mediaAssetId: string)
   }
 }
 
+/** Разбор по его собственному id — когда берём ЧУЖОЙ разбор как контекст
+ *  (напр. подпись к нашему ролику пишем по ДНК тренда, под который он снят). */
+export async function getTrendDNAById(tenantId: string, id: string): Promise<StoredTrendDNA | null> {
+  try {
+    const r = await pool.query(
+      `SELECT id, media_asset_id, source_video_id, platform, external_id, source_url, dna, model, created_at
+       FROM video_analyses WHERE tenant_id = $1 AND id = $2 LIMIT 1`,
+      [tenantId, id]
+    );
+    return r.rows[0] ? mapRow(r.rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Удалить один сохранённый анализ (карточка «Тренды → Анализ» в Галерее). */
 export async function deleteTrendDNA(tenantId: string, id: string): Promise<boolean> {
   try {

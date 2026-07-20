@@ -36,6 +36,8 @@ interface StudioInitial {
 interface TargetResult { platform: string; ok: boolean; error?: string }
 interface CaptionVariant { base: string; hashtags: string[]; platforms: Record<string, string>; youtubeTitle?: string }
 interface TemplateRow { id: number; name: string; text: string }
+/** Строка из GET /api/trends/analyses — сохранённый разбор (ДНК) ролика. */
+interface AnalysisRow { id: string; title?: string; sourceUrl?: string; platform?: string; createdAt?: string; dna?: any }
 
 export function PublisherStudio({ token, initial, onClose, onPublished }: {
   token: string | null;
@@ -101,6 +103,16 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
   const [aiVars, setAiVars] = useState<CaptionVariant[] | null>(null);
+  const [aiUsedDna, setAiUsedDna] = useState<boolean | null>(null);  // разбор реально доехал до модели?
+  // Ф3: разбор как источник текста для подписи.
+  // ownDna — есть ли разбор у видео поста; analysisPick — выбранный ВРУЧНУЮ чужой разбор
+  // (напр. тренда, под который сняли ролик) — он приоритетнее своего.
+  const [ownDna, setOwnDna] = useState<boolean | null>(null);
+  const [anaBusy, setAnaBusy] = useState(false);
+  const [anaErr, setAnaErr] = useState<string | null>(null);
+  const [anaOpen, setAnaOpen] = useState(false);
+  const [anaList, setAnaList] = useState<AnalysisRow[] | null>(null);
+  const [analysisPick, setAnalysisPick] = useState<AnalysisRow | null>(null);
   // Ф3: шаблоны
   const [tplOpen, setTplOpen] = useState(false);
   const [tpls, setTpls] = useState<TemplateRow[] | null>(null);
@@ -198,19 +210,75 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const pickFromGallery = (g: GalleryPickItem) => {
     if (g.type !== 'video' && g.type !== 'image') { setMediaNote(t('sec.publisher.mediaOnlyNote', 'Для постов подходят видео и фото.')); return; }
     setMediaNote(null);
-    setMedia({ mediaUrl: g.fileUrl, title: g.title });
+    // ВАЖНО: тащим id ассета — по нему ИИ-подпись находит разбор ролика. Но id годится
+    // только из папок Галереи (media_assets.id). Во вкладке «Тренды» id — это source_videos.id,
+    // а при пустом id пикер подставляет туда сам fileUrl: и то, и другое дало бы тихий промах.
+    const assetId = g.cat !== 'trends' && g.id && g.id !== g.fileUrl ? g.id : undefined;
+    setMedia({ assetId, mediaUrl: g.fileUrl, title: g.title });
+    setAnalysisPick(null); setOwnDna(null);
     setPickerOpen(false);
   };
 
+  // ── Разбор ролика как источник текста для подписи ──────────────────────────
+  /** Есть ли у видео поста сохранённый разбор (404 = нет). */
+  const checkOwnDna = async (assetId: string) => {
+    try {
+      const r = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: jsonHeaders() });
+      setOwnDna(r.ok);
+    } catch { setOwnDna(null); }
+  };
+  useEffect(() => {
+    if (!media?.assetId) { setOwnDna(null); return; }
+    void checkOwnDna(media.assetId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [media?.assetId]);
+
+  /** «Анализировать» — разобрать видео ЭТОГО поста и дождаться готовности.
+   *  Бэкенд отвечает сразу, разбор идёт в фоне (Gemini по кадрам + Claude), поэтому опрашиваем. */
+  const runAnalyze = async () => {
+    const assetId = media?.assetId;
+    if (!assetId || anaBusy) return;
+    setAnaBusy(true); setAnaErr(null);
+    try {
+      const r = await fetch(`/api/trends/media/${assetId}/analyze`, { method: 'POST', headers: jsonHeaders(), body: '{}' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      if (!d.analyzing) { setOwnDna(true); return; }           // разбор уже был
+      // ~2.5 мин потолок: покадровый проход тяжелее обычного текстового разбора.
+      for (let i = 0; i < 50; i++) {
+        await new Promise((s) => setTimeout(s, 3000));
+        const c = await fetch(`/api/trends/media/${assetId}/analysis`, { headers: jsonHeaders() });
+        if (c.ok) { setOwnDna(true); setAnalysisPick(null); return; }
+      }
+      throw new Error(t('sec.publisher.anaTimeout', 'Разбор идёт дольше обычного — загляните в Галерею позже.'));
+    } catch (e: any) { setAnaErr(e?.message || t('sec.publisher.anaFailed', 'Не удалось разобрать ролик')); }
+    finally { setAnaBusy(false); }
+  };
+
+  /** «Взять разбор» — список сохранённых разборов, чтобы подписать ролик по ЧУЖОЙ ДНК. */
+  const openAnalyses = async () => {
+    setAnaOpen(true); setAnaErr(null);
+    if (anaList) return;
+    try {
+      const r = await fetch('/api/trends/analyses?limit=200', { headers: jsonHeaders() });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      setAnaList((d.analyses || []) as AnalysisRow[]);
+    } catch (e: any) { setAnaErr(e?.message || t('sec.publisher.anaListFailed', 'Не удалось загрузить разборы')); }
+  };
+  const anaTitle = (a: AnalysisRow): string =>
+    a.title || a.dna?.meta?.author || a.dna?.hookType || a.sourceUrl || t('sec.publisher.anaUnnamed', 'разбор');
+
   // ── Пост-движок ────────────────────────────────────────────────────────────
   const runAi = async () => {
-    setAiBusy(true); setAiErr(null); setAiVars(null);
+    setAiBusy(true); setAiErr(null); setAiVars(null); setAiUsedDna(null);
     try {
       const r = await fetch('/api/publisher/ai-caption', {
         method: 'POST', headers: jsonHeaders(),
         body: JSON.stringify({
           title: media?.title || text.split('\n')[0] || undefined,
           assetId: media?.assetId || undefined,
+          analysisId: analysisPick?.id || undefined,
           platforms: selPlatforms.length ? selPlatforms : ['tiktok', 'instagram'],
           tone: aiTone, count: 2, brief: text.trim() ? text.slice(0, 400) : undefined,
         }),
@@ -218,6 +286,7 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       setAiVars((d.variants || []) as CaptionVariant[]);
+      setAiUsedDna(d.usedDna === true);
     } catch (e: any) { setAiErr(e?.message || t('sec.publisher.errAiGen', 'Не удалось сгенерировать')); }
     finally { setAiBusy(false); }
   };
@@ -629,7 +698,46 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                     {aiBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} {t('sec.publisher.genAb', 'Сгенерировать A/B')}
                   </button>
                 </div>
+                {/* Источник текста для подписи: разбор ролика. Либо разбираем видео поста,
+                    либо берём готовый разбор (например тренда, под который его сняли). */}
+                <div className="rounded-lg p-2 flex items-center gap-2 flex-wrap"
+                     style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
+                  <span className="text-[11.5px] font-600" style={{ color: 'var(--text-secondary)' }}>
+                    {analysisPick
+                      ? t('sec.publisher.anaPicked', 'Разбор: {{name}}', { name: anaTitle(analysisPick) })
+                      : ownDna
+                        ? t('sec.publisher.anaOwnReady', 'Разбор этого ролика готов — текст и данные пойдут в подпись')
+                        : media?.assetId
+                          ? t('sec.publisher.anaNone', 'Разбора нет — подпись будет только по названию ролика')
+                          : t('sec.publisher.anaNoAsset', 'Выберите ролик из Галереи, чтобы разобрать его')}
+                  </span>
+                  {analysisPick && (
+                    <button type="button" onClick={() => setAnalysisPick(null)}
+                      title={t('sec.publisher.anaClearTitle', 'Убрать выбранный разбор')}
+                      className="text-[11px] font-600 px-1.5 py-0.5 rounded"
+                      style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>✕</button>
+                  )}
+                  <button type="button" onClick={() => void runAnalyze()} disabled={!media?.assetId || anaBusy || !!ownDna}
+                    title={t('sec.publisher.anaRunTitle', 'Разобрать видео этого поста: речь, надписи в кадре, сцены — и писать подпись по ним')}
+                    className="inline-flex items-center gap-1.5 text-[11.5px] font-600 px-2 py-1 rounded-lg ml-auto disabled:opacity-40"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    {anaBusy ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    {anaBusy ? t('sec.publisher.anaRunning', 'Разбираю…') : t('sec.publisher.anaRun', 'Анализировать')}
+                  </button>
+                  <button type="button" onClick={() => void openAnalyses()}
+                    title={t('sec.publisher.anaPickTitle', 'Взять готовый разбор — можно от другого ролика, например тренда-образца')}
+                    className="inline-flex items-center gap-1.5 text-[11.5px] font-600 px-2 py-1 rounded-lg"
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
+                    {t('sec.publisher.anaPick', 'Взять разбор')}
+                  </button>
+                </div>
+                {anaErr && <p className="text-[11.5px]" style={{ color: '#ef4444' }}>{anaErr}</p>}
                 {aiErr && <p className="text-[11.5px]" style={{ color: '#ef4444' }}>{aiErr}</p>}
+                {aiVars && aiUsedDna === false && (
+                  <p className="text-[11.5px]" style={{ color: '#f59e0b' }}>
+                    {t('sec.publisher.aiNoDna', 'Подпись написана без разбора — модель видела только название ролика.')}
+                  </p>
+                )}
                 {aiVars && aiVars.map((v, i) => (
                   <div key={i} className="rounded-lg p-2.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)' }}>
                     <div className="flex items-start gap-2">
@@ -650,8 +758,8 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                   </div>
                 ))}
                 <p className="text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
-                  {media?.assetId
-                    ? t('sec.publisher.aiCtxDna', 'Контекст: название ролика + его разбор тренда (TrendDNA), если есть. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.')
+                  {analysisPick || ownDna
+                    ? t('sec.publisher.aiCtxDna', 'Контекст: название ролика + разбор — расшифровка речи, надписи в кадре, хук, аудитория, ключевые слова. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.')
                     : t('sec.publisher.aiCtx', 'Контекст: название ролика. Ключ Claude — «ИИ-режиссёр» в Настройках → Генерация.')}
                 </p>
               </div>
@@ -860,6 +968,46 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
         note={t('sec.publisher.pickerNote', 'Подходят видео и фото. TikTok/Instagram/YouTube/Pinterest без медиа не публикуют.')}
         onlyType={['image', 'video']}
       />
+
+      {/* Выбор готового разбора: подписать ролик по ДНК другого видео (тренда-образца) */}
+      {anaOpen && (
+        <div onClick={() => setAnaOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 96, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 520, maxHeight: '80vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 16, padding: 16 }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-base font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.publisher.anaModalTitle', 'Разбор для подписи')}</span>
+              <button onClick={() => setAnaOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--text-muted)' }}>
+              {t('sec.publisher.anaModalNote', 'Из выбранного разбора в подпись пойдут расшифровка речи, надписи в кадре, хук, аудитория и ключевые слова. Можно взять разбор ДРУГОГО ролика — например тренда, под который снят ваш.')}
+            </p>
+            {anaErr && <p className="text-[11.5px] mb-2" style={{ color: '#ef4444' }}>{anaErr}</p>}
+            {!anaList ? (
+              <div className="py-8 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
+            ) : anaList.length === 0 ? (
+              <p className="text-[11.5px] py-6 text-center" style={{ color: 'var(--text-muted)' }}>
+                {t('sec.publisher.anaEmpty', 'Сохранённых разборов пока нет. Разберите ролик кнопкой «Анализировать» или сделайте разбор тренда в «Аналитике».')}
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {anaList.map((a) => (
+                  <button key={a.id} type="button" onClick={() => { setAnalysisPick(a); setAnaOpen(false); }}
+                    className="w-full text-left rounded-lg p-2.5"
+                    style={{ background: analysisPick?.id === a.id ? 'rgba(99,102,241,0.10)' : 'var(--bg-tertiary)', border: `1px solid ${analysisPick?.id === a.id ? 'var(--brand)' : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    <div className="text-[12.5px] font-600 truncate" style={{ color: 'var(--text-primary)' }}>{anaTitle(a)}</div>
+                    {a.dna?.summary && <p className="text-[11px] mt-0.5 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{a.dna.summary}</p>}
+                    <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      {[a.platform, a.dna?.hookType, a.createdAt ? new Date(a.createdAt).toLocaleDateString() : null].filter(Boolean).join(' · ')}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

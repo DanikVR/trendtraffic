@@ -490,6 +490,7 @@ router.post('/ai-caption', async (req: AuthedRequest, res: Response) => {
       tenantId: req.tenantId!,
       title: b.title ? String(b.title) : undefined,
       assetId: b.assetId ? String(b.assetId) : undefined,
+      analysisId: b.analysisId ? String(b.analysisId) : undefined,
       platforms: Array.isArray(b.platforms) ? b.platforms : [],
       tone: b.tone, language: b.language, count: b.count, brief: b.brief,
     });

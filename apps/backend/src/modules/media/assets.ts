@@ -63,6 +63,22 @@ export async function listAssets(tenantId: string, kind: MediaKind): Promise<Med
   }
 }
 
+/** Один ассет по id (в т.ч. file_path — нужен тем, кто работает с файлом на диске:
+ *  разбор своего ролика, повторный рендер). Чужой tenant не отдаём. */
+export async function getAsset(tenantId: string, id: string): Promise<(MediaAsset & { filePath?: string }) | null> {
+  try {
+    const r = await pool.query(
+      `SELECT id, kind, media_type, original_name, file_url, file_path, mime, size, folder, origins
+       FROM media_assets WHERE tenant_id = $1 AND id = $2 LIMIT 1`,
+      [tenantId, id]
+    );
+    if (!r.rows[0]) return null;
+    return { ...mapRow(r.rows[0]), filePath: r.rows[0].file_path || undefined };
+  } catch {
+    return null;
+  }
+}
+
 /** Список ассетов конкретной папки (любого kind), напр. 'analyzed' → «Из анализа».
  *  has_analysis — есть ли рядом сохранённый разбор (video_analyses) для бейджа в Галерее. */
 export async function listFolder(tenantId: string, folder: string): Promise<MediaAsset[]> {

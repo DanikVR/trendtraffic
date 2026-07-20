@@ -29,7 +29,7 @@ import { fetchOneVideo, extractDownloadUrls, fetchTweetDetail, extractTwitterVid
 import { REFERER_BY_PLATFORM } from './ingest.js';
 import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
-import { listAssets, listFolder, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, TEXT_FOLDER, type MediaKind } from '../media/assets.js';
+import { listAssets, listFolder, getAsset, createAsset, deleteAsset, deleteAssets, ANALYZED_FOLDER, TEXT_FOLDER, type MediaKind } from '../media/assets.js';
 
 const router = Router();
 
@@ -715,6 +715,64 @@ router.get('/media/:id/analysis', async (req: AuthedRequest, res: Response) => {
     res.json({ analysis: rec });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка чтения' });
+  }
+});
+
+/**
+ * POST /media/:id/analyze — разобрать СВОЙ ролик из Галереи (не чужой тренд по ссылке).
+ *
+ * Отличие от /analyze/save: у нашего видео нет ни ссылки на площадку, ни TikHub-метрик
+ * (оно ещё не опубликовано) — единственный источник правды это сам файл. Поэтому сначала
+ * покадровый Gemini-разбор (речь + надписи + сцены), а уже его результат подаём Claude
+ * как «описание» вместо TikHub-summary. Метрики остаются пустыми, и это честно.
+ *
+ * Нужен для «ИИ-подписи» в Публикаторе: подпись пишется по РЕАЛЬНОМУ содержанию ролика,
+ * а не по имени файла. Ответ мгновенный ({ analyzing: true }), готовность опрашивается
+ * через GET /media/:id/analysis. Повторный вызов без ?force=1 отдаёт готовый разбор.
+ */
+router.post('/media/:id/analyze', async (req: AuthedRequest, res: Response) => {
+  try {
+    const tId = req.tenantId!, assetId = req.params.id;
+    const force = req.query.force === '1' || req.body?.force === true;
+    const existing = await getTrendDNAByAsset(tId, assetId);
+    if (existing && !force) return res.json({ ok: true, analyzing: false, analysis: existing });
+
+    const asset = await getAsset(tId, assetId);
+    if (!asset) return res.status(404).json({ error: 'Видео не найдено в Галерее.' });
+    if (asset.mediaType !== 'video') return res.status(400).json({ error: 'Разбирать можно только видео.' });
+    if (!asset.filePath || !fs.existsSync(asset.filePath)) {
+      return res.status(400).json({ error: 'Файл ролика недоступен на диске — перезалейте его в Галерею.' });
+    }
+
+    const fPath = asset.filePath, title = asset.originalName || 'Ролик';
+    const sLang = typeof req.body?.lang === 'string' ? req.body.lang : undefined;
+    void (async () => {
+      try {
+        const visual = await analyzeVideoVisual(tId, fPath);
+        if (!visual) { console.warn('[trends] own-analyze: покадровый разбор недоступен (нет ключа Gemini?)'); return; }
+        // Синтетический «summary» вместо TikHub: речь + надписи + как снято. Claude из этого
+        // собирает ту же TrendDNA (хук, аудитория, ключи), что и для чужих трендов.
+        const speech = (visual.transcript || []).map((s) => s.text).join(' ').trim();
+        const desc = [
+          speech && `Речь в ролике: ${speech}`,
+          visual.textOverlays?.length && `Надписи в кадре: ${visual.textOverlays.join(' | ')}`,
+          visual.hookVisual && `Первые секунды: ${visual.hookVisual}`,
+          visual.visualStyle && `Как снято: ${visual.visualStyle}`,
+        ].filter(Boolean).join('\n');
+        let dna = await generateTrendDNA(tId, {
+          summary: { desc: desc || title, author: title, duration: visual.sceneBeats?.at(-1)?.t },
+          lang: sLang,
+        });
+        dna = applyVisualInsight(dna, visual);
+        await saveTrendDNA(tId, { mediaAssetId: assetId, dna });
+      } catch (e) {
+        console.warn('[trends] own-analyze:', (e as Error).message);
+      }
+    })();
+
+    res.json({ ok: true, analyzing: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message || 'Не удалось запустить разбор' });
   }
 });
 
