@@ -3411,6 +3411,19 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.27 — ФИКС РЕГРЕССИИ: ИИ-подпись падала с 400 у ВСЕХ (жалоба юзера со скрином:
+ *          «This model does not support assistant message prefill»).
+ *          Причина — моя же правка v2.6.22: чтобы модель точно вернула JSON, я добавил
+ *          префилл ответа assistant-сообщением '{'. Модель режиссёра (Opus 4.8) этого
+ *          НЕ поддерживает и отвечает 400 «The conversation must end with a user
+ *          message». Через generateCaptions идут ВСЕ подписи, поэтому с v2.6.22 не
+ *          работали ни «Сгенерировать A/B» в композере, ни массовые черновики, ни
+ *          цепочки — везде молча срабатывал фолбэк «название ролика + ключевики ДНК».
+ *          Префилл убран: чистый JSON просим системным промптом, ответ разбирает
+ *          parseJsonLoose (он и так снимает ```-обёртку и преамбулу). Вторая попытка
+ *          при мусорном ответе — оставлена. Живой вызов к Claude НЕ проверялся (нужен
+ *          ключ тенанта) — проверка за юзером: «Сгенерировать A/B» в композере.
+ *          Файлы: publisher/service.ts. */
 /* 2.6.26 — Безопасность: закрыт обход rate-limit по IPv6 (ERR_ERL_KEY_GEN_IPV6).
  *          В логе прода 639 записей ValidationError с самой первой строки — express-rate-limit
  *          ругался на кастомный keyGenerator прокси обложек каналов: `req.ip || 'cover'`.
@@ -3757,7 +3770,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.26';
+export const APP_VERSION = '2.6.27';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

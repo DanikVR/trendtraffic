@@ -468,16 +468,19 @@ export async function generateCaptions(args: {
   const mod: any = await import('@anthropic-ai/sdk');
   const Anthropic = mod.default || mod.Anthropic || mod;
   const client = new Anthropic({ apiKey });
-  // Префилл '{' не даёт модели начать с преамбулы; вторая попытка — на случай обрыва JSON.
+  // ⚠️ БЕЗ префилла assistant-сообщением: модель режиссёра (Opus 4.8) его НЕ поддерживает
+  // и отвечает 400 "This model does not support assistant message prefill" — из-за этого
+  // в v2.6.22–2.6.26 падала ЛЮБАЯ генерация подписи. Чистый JSON просим системным
+  // промптом, разбираем через parseJsonLoose (он сам снимает ```-обёртку и преамбулу).
+  // Вторая попытка — на случай обрыва/мусора в ответе.
   let j: any = null;
   for (let attempt = 0; attempt < 2 && !j; attempt++) {
     const res = await client.messages.create({
       model: DEFAULT_DIRECTOR_MODEL, max_tokens: 2000,
-      system,
-      messages: [{ role: 'user', content: user }, { role: 'assistant', content: '{' }],
+      system, messages: [{ role: 'user', content: user }],
     });
     const txt = (res.content || []).filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('');
-    j = parseJsonLoose('{' + txt);
+    j = parseJsonLoose(txt);
   }
   const rawVars = Array.isArray(j?.variants) ? j.variants : [];
   const variants: CaptionVariant[] = rawVars.slice(0, 3).map((v: any): CaptionVariant => ({
