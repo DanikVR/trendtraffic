@@ -18,6 +18,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import { createAsset, ANALYZED_FOLDER, TEXT_FOLDER, type MediaAsset } from '../media/assets.js';
+import { type OriginKey } from '../media/origins.js';
 import type { TrendDNA, TranscriptSegment, SceneBeat } from './dna.js';
 
 const __dirname_local = path.dirname(fileURLToPath(import.meta.url));
@@ -121,7 +122,7 @@ export interface AnalysisArtifacts { doc: MediaAsset | null; subtitles: MediaAss
 /** Записать текст в uploads/analysis и зарегистрировать ассетом папки «Из анализа». */
 async function saveTextAsset(
   tenantId: string,
-  args: { text: string; ext: 'md' | 'srt' | 'txt'; originalName: string; mime: string; folder?: string },
+  args: { text: string; ext: 'md' | 'srt' | 'txt'; originalName: string; mime: string; folder?: string; origins?: OriginKey[] },
 ): Promise<MediaAsset | null> {
   const name = `tt-${randomUUID()}.${args.ext}`;
   const filePath = path.join(OUTPUT_DIR, name);
@@ -132,6 +133,7 @@ async function saveTextAsset(
     fileUrl: `/uploads/analysis/${name}`, filePath, mime: args.mime,
     size: Buffer.byteLength(args.text, 'utf8'),
     folder: args.folder || ANALYZED_FOLDER,
+    origins: args.origins || ['analytics'],
   });
   if (!asset) { try { fs.unlinkSync(filePath); } catch { /* noop */ } }
   return asset;
@@ -160,6 +162,7 @@ export async function saveTranscriptAsset(
     text: args.text, ext: 'txt', mime: 'text/plain; charset=utf-8',
     originalName: args.name.endsWith('.txt') ? args.name : `${args.name}.txt`,
     folder: TEXT_FOLDER,
+    origins: ['analytics', 'text'], // расшифровка ролика: пришла из аналитики, стала текстом
   });
 }
 

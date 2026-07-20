@@ -241,6 +241,7 @@ router.post('/analyze/save', async (req: AuthedRequest, res: Response) => {
       kind: 'reference', mediaType: 'video', originalName: `${d.platform}-${d.videoId}.mp4`,
       fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime || 'video/mp4', size: file.size,
       folder: ANALYZED_FOLDER, // сохранено из аналитики → папка «Из анализа»
+      origins: ['analytics'],
     });
     if (!asset) return res.status(500).json({ error: 'Не удалось сохранить в Галерею.' });
 
@@ -644,7 +645,7 @@ router.post('/videos/:id/download', async (req: AuthedRequest, res: Response) =>
           : await downloadVideoToDisk(urls, { referer, signal: ctrl.signal });
         await setVideoStatus(tId, vId, { status: 'downloaded', fileUrl: file.mediaUrl, filePath: file.filePath, error: null });
         try {
-          await createAsset(tId, { kind: 'reference', mediaType: 'video', originalName: `${platform}-${extId || vId}.mp4`, fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime, size: file.size });
+          await createAsset(tId, { kind: 'reference', mediaType: 'video', originalName: `${platform}-${extId || vId}.mp4`, fileUrl: file.mediaUrl, filePath: file.filePath, mime: file.mime, size: file.size, origins: ['trends'] });
         } catch (e) { console.warn('[trends] download→gallery createAsset:', (e as Error).message); }
       } catch (dlErr: any) {
         const aborted = dlErr?.name === 'AbortError';
@@ -731,6 +732,7 @@ router.post('/media/upload', uploadMedia.single('file'), async (req: AuthedReque
     const fileUrl = `/uploads/${subdir}/${path.basename(file.path)}`;
     const asset = await createAsset(req.tenantId!, {
       kind, mediaType, originalName: fixUploadName(file.originalname), fileUrl, filePath: file.path, mime, size: file.size,
+      origins: ['upload'],
     });
     if (!asset) {
       try { fs.unlinkSync(file.path); } catch {}

@@ -320,6 +320,7 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
       fileUrl: stored.fileUrl, filePath: stored.filePath,
       mime: EXT_MIME[stored.ext] || stored.mime, size: stored.size,
       folder: HOTEBOOK_FOLDER,
+      origins: ['hotebook'],
     });
 
     await pool.query(

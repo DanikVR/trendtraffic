@@ -989,6 +989,89 @@ const MIGRATIONS: Migration[] = [
     )`,
   },
   { name: 'storyboards.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_storyboards_tenant ON storyboards (tenant_id, created_at DESC)` },
+
+  // ПРОИСХОЖДЕНИЕ ФАЙЛОВ ГАЛЕРЕИ: origins = цепочка блоков-источников, хронологически.
+  // ['flow'] — сняли в Google Flow; ['flow','ugc'] — тот же клип потом собрали в UGC-студии.
+  // Ключи — apps/backend/src/modules/media/origins.ts (иконки: frontend/src/lib/mediaOrigins.tsx).
+  { name: 'media_assets.origins', sql: `ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS origins TEXT[]` },
+  { name: 'media_assets.idx_origins', sql: `CREATE INDEX IF NOT EXISTS idx_media_assets_origins ON media_assets USING GIN (origins)` },
+
+  // Разовый backfill старых файлов (у них меток нет). Точные связки — из job-таблиц,
+  // где id ассета уже сохранён; остальное — по папке, затем по имени/пути.
+  // Каждый шаг трогает только строки без меток, поэтому повторный запуск безвреден.
+  {
+    name: 'media_assets.origins_backfill_folder',
+    sql: `UPDATE media_assets SET origins = CASE folder
+            WHEN 'analyzed'   THEN ARRAY['analytics']
+            WHEN 'text'       THEN ARRAY['analytics','text']
+            WHEN 'hotebook'   THEN ARRAY['hotebook']
+            WHEN 'storyboard' THEN ARRAY['storyboard']
+            WHEN 'avatars'    THEN ARRAY['avatar']
+            WHEN 'ugc'        THEN ARRAY['ugc']
+            WHEN 'auto-ugc'   THEN ARRAY['autopilot','ugc']
+            WHEN 'flow'       THEN ARRAY['commentator']
+          END
+          WHERE origins IS NULL
+            AND folder IN ('analyzed','text','hotebook','storyboard','avatars','ugc','auto-ugc','flow')`,
+  },
+  {
+    name: 'media_assets.origins_backfill_flow',
+    // asset_id в job-таблицах — TEXT, а media_assets.id — UUID: сравниваем через ::text,
+    // иначе Postgres роняет запрос («оператор не существует: text = uuid») и метки не проставятся.
+    // Две таблицы Flow — ДВА шага: если одной ещё нет, вторая всё равно отработает.
+    sql: `UPDATE media_assets m SET origins = ARRAY['flow']
+          WHERE m.origins IS NULL
+            AND EXISTS (SELECT 1 FROM flow_ext_tasks t WHERE t.asset_id::text = m.id::text)`,
+  },
+  {
+    name: 'media_assets.origins_backfill_flow_manual',
+    sql: `UPDATE media_assets m SET origins = ARRAY['flow']
+          WHERE m.origins IS NULL
+            AND EXISTS (SELECT 1 FROM flow_ext_ingest_dedup d WHERE d.asset_id::text = m.id::text)`,
+  },
+  {
+    name: 'media_assets.origins_backfill_hotebook',
+    sql: `UPDATE media_assets m SET origins = ARRAY['hotebook']
+          WHERE m.origins IS NULL AND EXISTS (SELECT 1 FROM notebooklm_jobs j WHERE j.asset_id::text = m.id::text)`,
+  },
+  {
+    name: 'media_assets.origins_backfill_storyboard',
+    sql: `UPDATE media_assets m SET origins = ARRAY['storyboard']
+          WHERE m.origins IS NULL AND EXISTS (SELECT 1 FROM storyboards s WHERE s.result_asset_id = m.id)`,
+  },
+  {
+    name: 'media_assets.origins_backfill_autopilot',
+    sql: `UPDATE media_assets m SET origins = ARRAY['autopilot','ugc']
+          WHERE m.origins IS NULL AND EXISTS (SELECT 1 FROM auto_runs r WHERE r.result_asset_id = m.id)`,
+  },
+  // Скачанный тренд: file_url совпадает с source_videos (их пишет один и тот же обработчик).
+  // Это может быть и «голова» цепочки уже размеченного файла — тогда ставим метку первой.
+  {
+    name: 'media_assets.origins_backfill_trends',
+    sql: `UPDATE media_assets m
+          SET origins = CASE WHEN m.origins IS NULL THEN ARRAY['trends']
+                             ELSE ARRAY['trends'] || m.origins END
+          WHERE (m.origins IS NULL OR NOT ('trends' = ANY(m.origins)))
+            AND EXISTS (SELECT 1 FROM source_videos v
+                        WHERE v.tenant_id = m.tenant_id AND v.file_url = m.file_url)`,
+  },
+  {
+    name: 'media_assets.origins_backfill_names',
+    sql: `UPDATE media_assets SET origins = CASE
+            WHEN original_name ILIKE 'Omni Flash%' OR original_name ILIKE 'Omni %' THEN ARRAY['omni']
+            WHEN original_name = 'Комментатор' THEN ARRAY['commentator']
+            WHEN file_url LIKE '/uploads/renders/%' THEN ARRAY['montage']
+            WHEN file_url LIKE '/uploads/hotebook/%' THEN ARRAY['hotebook']
+          END
+          WHERE origins IS NULL
+            AND (original_name ILIKE 'Omni %' OR original_name = 'Комментатор'
+              OR file_url LIKE '/uploads/renders/%' OR file_url LIKE '/uploads/hotebook/%')`,
+  },
+  // Всё остальное без папки и без связок — это ручная загрузка с устройства.
+  {
+    name: 'media_assets.origins_backfill_upload',
+    sql: `UPDATE media_assets SET origins = ARRAY['upload'] WHERE origins IS NULL AND folder IS NULL`,
+  },
 ];
 
 export async function runStartupMigrations(): Promise<void> {

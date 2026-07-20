@@ -12,6 +12,7 @@ import path from 'path';
 import pool from '../../db/index.js';
 import { analyzeVideoVisual } from '../trends/video_insight.js';
 import { createAsset } from '../media/assets.js';
+import { chainFromUrls } from '../media/origins.js';
 import {
   sbDir, toUploadsUrl, fromUploadsUrl, normalizeSource, probeDuration,
   renderChunkProgram, assembleFinal, buildChunkPng, extractPanelFrame, buildFilmstrip,
@@ -641,6 +642,8 @@ export function startAssemble(tenantId: string, id: string): boolean {
         originalName: `${doc.name}.mp4`,
         fileUrl, filePath: outPath, mime: 'video/mp4', size: stat.size,
         folder: STORYBOARD_FOLDER, ugcFormat: '9:16',
+        // Сториборд наследует историю исходного ролика (тренд / Flow / загрузка).
+        origins: await chainFromUrls(tenantId, 'storyboard', [doc.sourceUrl]),
       });
       await patch(tenantId, id, {
         status: 'done', result_url: fileUrl, result_asset_id: asset?.id || null, error: null,

@@ -79,6 +79,7 @@ export async function ingestTrendVideo(
     originalName: `${platform}-${vid}.mp4`,
     fileUrl: stored.mediaUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
     folder: ANALYZED_FOLDER, // из аналитики → папка «Из анализа»
+    origins: ['analytics'],
   });
 
   // Анализ: текстовая ДНК (Claude) + покадровый видеоанализ (Gemini, по скачанному

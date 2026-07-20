@@ -319,6 +319,7 @@ router.post('/ingest', async (req: AuthedRequest, res: Response) => {
       originalName: (task.title || task.prompt || 'flow').slice(0, 120) + '.mp4',
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
       // Без папки → раздел «Видео» Галереи (не folder='flow', там теперь проекты Flow).
+      origins: ['flow'],
     });
 
     await pool.query(
@@ -433,6 +434,7 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
       originalName: (title || 'Flow').slice(0, 112) + (isImage ? '.' + imgExt : '.mp4'),
       fileUrl: stored.fileUrl, filePath: stored.filePath, mime: stored.mime, size: stored.size,
       // Без папки → раздел «Видео» Галереи (вкладка «Google Flow» теперь показывает проекты).
+      origins: ['flow'],
     });
     if (contentHash) {
       await pool.query(

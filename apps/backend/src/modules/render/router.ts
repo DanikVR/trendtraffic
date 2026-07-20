@@ -21,6 +21,7 @@ import { getEffectiveProviderKey } from '../tenant_settings/provider_keys.js';
 import { getEffectiveGeminiKey } from '../tenant_settings/gemini.js';
 import { generateImage, isTransientGenError } from '../quest_flow/image_gen.js';
 import { createAsset, deleteAsset, listFolder } from '../media/assets.js';
+import { chainFromUrls } from '../media/origins.js';
 import { generatePodcastDialogue, tagUgcRetention, directDialogue, translateUgcScript } from './director.js';
 import { diarizeWithGemini } from './audio_diarize.js';
 import { heygenVideoStatus, submitTalkingPhotoVideo, fetchPhotoBuffer, uploadTalkingPhotoBuf } from './avatar.js';
@@ -373,7 +374,7 @@ router.post('/ugc/avatars/generate', async (req: AuthedRequest, res: Response) =
         const asset = await createAsset(req.tenantId!, {
           kind: 'reference', mediaType: 'image', originalName: name,
           fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
-          folder: UGC_AVATARS_FOLDER,
+          folder: UGC_AVATARS_FOLDER, origins: ['avatar'],
         });
         made.push({ id: asset?.id || gen.mediaUrl, url: gen.mediaUrl, name });
       } catch (e: any) {
@@ -401,6 +402,8 @@ router.post('/ugc/avatars/add', async (req: AuthedRequest, res: Response) => {
     }
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'image', originalName: name, fileUrl: url, folder: UGC_AVATARS_FOLDER,
+      // Картинку берут из Галереи — тащим её историю (напр. кадр из Flow) и дописываем «Аватар».
+      origins: await chainFromUrls(req.tenantId!, 'avatar', [url]),
     });
     if (!asset) return res.status(500).json({ error: 'Не удалось сохранить аватар в коллекцию.' });
     res.json({ avatar: { id: asset.id, url: asset.fileUrl, name: asset.originalName || name } });
@@ -837,6 +840,19 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
       return out;
     };
 
+    // Происхождение результата: ролик наследует историю ВСЕХ своих исходников — клипы
+    // видеоряда, фото слайдшоу, аватар, врезки, заставки, музыка, слои. Так у собранного
+    // видео в Галерее остаются иконки и Google Flow, и UGC. Берём ИСХОДНЫЕ url'ы: spec.clip
+    // к этому моменту мог стать склейкой-полуфабрикатом, которой в Галерее нет.
+    const ugcOrigins = await chainFromUrls(req.tenantId!, 'ugc', [
+      ...specClips.map((c) => c.url),
+      ...clipImages,
+      ...insertLines.map((l) => l.url),
+      ...outFormats.map((f) => layerUrlFor(f.key)),
+      avatarPhotoUrl, String(spec.avatarVideoUrl || ''), String(spec.recordingUrl || ''),
+      String(spec.music?.url || ''), introUrl, outroUrl,
+    ]);
+
     // ── Ветка «Без аватара — озвучка» ────────────────────────────────────────────
     // Ваше видео + голос (своя запись как есть ИЛИ текст → ElevenLabs). HeyGen не участвует:
     // цена ≈ только озвучка. Врезки медиа реплик (по таймкодам разбора), слой, прогресс,
@@ -929,7 +945,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
                 originalName: `${nameFor('UGC — озвучка без аватара')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`,
-                fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
+                fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key, origins: ugcOrigins,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1072,7 +1088,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr });
             }
             const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC-диалог (${engagement})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
+              kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC-диалог (${engagement})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key, origins: ugcOrigins,
             });
             j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
             if (f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1179,7 +1195,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               const asset = await createAsset(j.tenantId!, {
                 kind: 'reference', mediaType: 'video',
                 originalName: `${nameFor(`UGC-удержание ${preset.name}`)}${brolls.length > 1 ? ` — ${brolls[b].name}` : ''}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`,
-                fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
+                fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key, origins: ugcOrigins,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (b === 0 && f === 0) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1353,7 +1369,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
               });
             }
             const asset = await createAsset(j.tenantId!, {
-              kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
+              kind: 'reference', mediaType: 'video', originalName: `${nameFor('UGC — готовое видео')}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key, origins: ugcOrigins,
             });
             j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
             if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1465,7 +1481,7 @@ router.post('/ugc/build', async (req: AuthedRequest, res: Response) => {
                 fileUrl = await concatBumpers({ mainPath: fileUrl, introPath: bmp.intro, outroPath: bmp.outro, dims: fmt.dims, transition: bumperTr, avatarRect: avatarRectFor(fmt.key) });
               }
               const asset = await createAsset(j.tenantId!, {
-                kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key,
+                kind: 'reference', mediaType: 'video', originalName: `${nameFor(`UGC — своё фото (Avatar IV${faceProvider === 'ext' ? ', подписка' : ''})`)}${outFormats.length > 1 ? ` · ${fmt.label}` : ''}${langSuffix}`, fileUrl, mime: 'video/mp4', folder: outFolder, ugcFormat: fmt.key, origins: ugcOrigins,
               });
               j.results!.push({ url: fileUrl, name: asset?.originalName || 'ролик' });
               if (!j.fileUrl) { j.fileUrl = fileUrl; j.assetId = asset?.id || null; }
@@ -1537,7 +1553,10 @@ router.post('/commentator/compose', async (req: AuthedRequest, res: Response) =>
         const fileUrl = await composeCommentator({ audioUrl: audioUrl!, format, lines, musicUrl: musicUrl || undefined, musicVolume });
         let assetId: string | null = null;
         try {
-          const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Комментатор', fileUrl, mime: 'video/mp4', folder: 'flow' });
+          const asset = await createAsset(tenantId, {
+            kind: 'reference', mediaType: 'video', originalName: 'Комментатор', fileUrl, mime: 'video/mp4', folder: 'flow',
+            origins: await chainFromUrls(tenantId, 'commentator', [audioUrl, musicUrl, ...lines.map((l: any) => l.visualUrl)]),
+          });
           assetId = asset?.id || null;
         } catch { /* Галерея опц. */ }
         commentatorJobs.set(jobId, { tenantId, status: 'done', fileUrl, assetId, ts: Date.now() });
@@ -1561,14 +1580,18 @@ router.get('/commentator/compose/status', (req: AuthedRequest, res: Response) =>
 
 // ── Omni Flash: генерация/правка видео (Gemini gemini-omni-flash-preview, Interactions API) ──
 /** Запустить генерацию/правку Omni Flash в фоне (в память → poll). Общая для generate/edit. */
-async function runOmniJob(tenantId: string, jobId: string, work: () => Promise<{ fileUrl: string; interactionId?: string; seconds?: number; costUsd?: number }>) {
+/** inputUrls — стартовая картинка генерации: результат унаследует её метки (кадр из Flow → Flow + Omni). */
+async function runOmniJob(tenantId: string, jobId: string, work: () => Promise<{ fileUrl: string; interactionId?: string; seconds?: number; costUsd?: number }>, inputUrls: (string | null | undefined)[] = []) {
   sweepJobs(omniJobs);
   omniJobs.set(jobId, { tenantId, status: 'processing', ts: Date.now() });
   try {
     const r = await work();
     let assetId: string | null = null;
     try {
-      const asset = await createAsset(tenantId, { kind: 'reference', mediaType: 'video', originalName: 'Omni Flash видео', fileUrl: r.fileUrl, mime: 'video/mp4' });
+      const asset = await createAsset(tenantId, {
+        kind: 'reference', mediaType: 'video', originalName: 'Omni Flash видео', fileUrl: r.fileUrl, mime: 'video/mp4',
+        origins: await chainFromUrls(tenantId, 'omni', inputUrls),
+      });
       assetId = asset?.id || null;
     } catch { /* Галерея опц. */ }
     omniJobs.set(jobId, { status: 'done', fileUrl: r.fileUrl, interactionId: r.interactionId, seconds: r.seconds, costUsd: r.costUsd, assetId, ts: Date.now() });
@@ -1594,7 +1617,7 @@ router.post('/omni/generate', async (req: AuthedRequest, res: Response) => {
     }
     const jobId = 'omni_' + Math.random().toString(36).slice(2, 10);
     const tenantId = req.tenantId!;
-    void runOmniJob(tenantId, jobId, () => generateOmniVideo({ apiKey, prompt, inputImage, aspect }));
+    void runOmniJob(tenantId, jobId, () => generateOmniVideo({ apiKey, prompt, inputImage, aspect }), [req.body?.imageUrl]);
     res.json({ jobId, note: `Omni Flash генерирует видео (~30–60с, ~$${(10 * OMNI_VIDEO_USD_PER_SEC).toFixed(2)} за 10с). Опрашиваю статус…` });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Ошибка Omni Flash' });
@@ -1653,6 +1676,7 @@ router.post('/omni/storyboard', async (req: AuthedRequest, res: Response) => {
         const asset = await createAsset(tenantId, {
           kind: 'reference', mediaType: 'image', originalName: 'Раскадровка Omni Flash',
           fileUrl: gen.mediaUrl, filePath: gen.filePath, mime: gen.mediaMime, size: gen.mediaSize,
+          origins: await chainFromUrls(tenantId, 'omni', [req.body?.imageUrl]),
         });
         return { url: gen.mediaUrl, assetId: asset?.id || null };
       } catch { return null; }
@@ -1681,6 +1705,8 @@ router.post('/omni/frame', async (req: AuthedRequest, res: Response) => {
       const asset = await createAsset(req.tenantId!, {
         kind: 'reference', mediaType: 'image', originalName: last ? 'Последний кадр Omni Flash' : 'Кадр из видео',
         fileUrl: f.fileUrl, filePath: f.filePath, mime: f.mime, size: f.size,
+        // Кадр — это то же видео: сохраняем его историю (напр. клип Google Flow) и дописываем Omni.
+        origins: await chainFromUrls(req.tenantId!, 'omni', [videoUrl]),
       });
       assetId = asset?.id || null;
     } catch { /* Галерея опц. */ }

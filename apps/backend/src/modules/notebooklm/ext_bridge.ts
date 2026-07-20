@@ -110,6 +110,7 @@ export async function ingestHotebookArtifact(
     originalName: artifactFileName(opts.title || opts.fileName || null, opts.gtype || 'artifact', stored.ext),
     fileUrl: stored.fileUrl, filePath: stored.filePath, mime: EXT_MIME[stored.ext] || stored.mime, size: stored.size,
     folder: HOTEBOOK_FOLDER,
+    origins: ['hotebook'],
   });
 }
 

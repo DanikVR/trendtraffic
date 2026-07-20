@@ -28,6 +28,7 @@ import { z } from 'zod';
 import ffmpegStatic from 'ffmpeg-static';
 import { JWT_SECRET } from '../../config/secrets.js';
 import { createAsset } from '../media/assets.js';
+import { chainFromUrls } from '../media/origins.js';
 
 const router = Router();
 
@@ -244,6 +245,8 @@ router.post('/', async (req: AuthedRequest, res: Response) => {
       filePath: outPath,
       mime: isAudio ? 'audio/mp4' : 'video/mp4',
       size: stat.size,
+      // Обрезка не рождает новый источник — она наследует путь исходника и дописывает «Монтаж».
+      origins: await chainFromUrls(req.tenantId!, 'montage', [inputUrl]),
     });
 
     res.status(201).json({ fileUrl, assetId: asset?.id || null });
@@ -319,6 +322,8 @@ router.post('/merge', async (req: AuthedRequest, res: Response) => {
     const asset = await createAsset(req.tenantId!, {
       kind: 'reference', mediaType: 'video', originalName: name || 'Склейка видео',
       fileUrl, filePath: outPath, mime: 'video/mp4', size: stat.size,
+      // Склейка собирает историю всех клипов: Flow + Тренды + … → «Монтаж».
+      origins: await chainFromUrls(req.tenantId!, 'montage', parsed.data.clips.map((c) => c.inputUrl)),
     });
     res.status(201).json({ fileUrl, assetId: asset?.id || null });
   } catch (err: any) {

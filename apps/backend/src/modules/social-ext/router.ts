@@ -722,6 +722,7 @@ manifestRouter.post('/audio-to-gallery', async (req: AuthedRequest, res: Respons
       // Папка «Из анализа»: звук ложится РЯДОМ с видео того же ролика (и .md/.srt),
       // а не отдельно в «Аудио» — иначе пара с одинаковым именем разъезжается по разделам.
       folder: ANALYZED_FOLDER,
+      origins: ['analytics'],
     });
     if (!asset) { try { fs.unlinkSync(filePath); } catch { /* noop */ } return res.status(500).json({ error: 'Не удалось сохранить аудио в Галерею.' }); }
     res.json({ ok: true, asset, name: `${base}.mp3`, title: audio.title || null });

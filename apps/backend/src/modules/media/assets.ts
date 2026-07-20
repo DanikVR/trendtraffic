@@ -9,6 +9,7 @@
 import { randomUUID } from 'crypto';
 import fs from 'fs';
 import pool from '../../db/index.js';
+import { dedupeChain, type OriginKey } from './origins.js';
 
 export type MediaKind = 'reference' | 'audio';
 
@@ -27,6 +28,7 @@ export interface MediaAsset {
   size?: number;
   folder?: string;
   hasAnalysis?: boolean; // есть ли рядом сохранённый разбор (video_analyses) — для бейджа Галереи
+  origins?: OriginKey[]; // цепочка блоков-источников, хронологически: ['flow','ugc'] — см. origins.ts
 }
 
 function mapRow(r: any): MediaAsset {
@@ -40,6 +42,7 @@ function mapRow(r: any): MediaAsset {
     size: r.size != null ? Number(r.size) : undefined,
     folder: r.folder || undefined,
     hasAnalysis: r.has_analysis === true || r.has_analysis === 't' || undefined,
+    origins: Array.isArray(r.origins) && r.origins.length ? dedupeChain(r.origins) : undefined,
   };
 }
 
@@ -48,7 +51,7 @@ function mapRow(r: any): MediaAsset {
 export async function listAssets(tenantId: string, kind: MediaKind): Promise<MediaAsset[]> {
   try {
     const r = await pool.query(
-      `SELECT id, kind, media_type, original_name, file_url, mime, size, folder
+      `SELECT id, kind, media_type, original_name, file_url, mime, size, folder, origins
        FROM media_assets
        WHERE tenant_id = $1 AND kind = $2 AND (folder IS NULL OR folder NOT IN ($3, $4, $5))
        ORDER BY created_at DESC LIMIT 500`,
@@ -65,7 +68,7 @@ export async function listAssets(tenantId: string, kind: MediaKind): Promise<Med
 export async function listFolder(tenantId: string, folder: string): Promise<MediaAsset[]> {
   try {
     const r = await pool.query(
-      `SELECT m.id, m.kind, m.media_type, m.original_name, m.file_url, m.mime, m.size, m.folder,
+      `SELECT m.id, m.kind, m.media_type, m.original_name, m.file_url, m.mime, m.size, m.folder, m.origins,
               (va.id IS NOT NULL) AS has_analysis
        FROM media_assets m
        LEFT JOIN video_analyses va ON va.tenant_id = m.tenant_id AND va.media_asset_id = m.id
@@ -81,20 +84,34 @@ export async function listFolder(tenantId: string, folder: string): Promise<Medi
 
 export async function createAsset(
   tenantId: string,
-  a: { kind: MediaKind; mediaType: string; originalName?: string; fileUrl: string; filePath?: string; mime?: string; size?: number; folder?: string; ugcFormat?: string }
+  a: { kind: MediaKind; mediaType: string; originalName?: string; fileUrl: string; filePath?: string; mime?: string; size?: number; folder?: string; ugcFormat?: string; origins?: OriginKey[] }
 ): Promise<MediaAsset | null> {
+  const id = randomUUID();
+  const base = [id, tenantId, a.kind, a.mediaType, a.originalName || null, a.fileUrl, a.filePath || null, a.mime || null, a.size ?? null, a.folder || null, a.ugcFormat || null];
+  const chain = dedupeChain(a.origins || []);
   try {
-    const id = randomUUID();
     const r = await pool.query(
-      `INSERT INTO media_assets (id, tenant_id, kind, media_type, original_name, file_url, file_path, mime, size, folder, ugc_format)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-       RETURNING id, kind, media_type, original_name, file_url, mime, size, folder`,
-      [id, tenantId, a.kind, a.mediaType, a.originalName || null, a.fileUrl, a.filePath || null, a.mime || null, a.size ?? null, a.folder || null, a.ugcFormat || null]
+      `INSERT INTO media_assets (id, tenant_id, kind, media_type, original_name, file_url, file_path, mime, size, folder, ugc_format, origins)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING id, kind, media_type, original_name, file_url, mime, size, folder, origins`,
+      [...base, chain.length ? chain : null]
     );
     return mapRow(r.rows[0]);
   } catch (e) {
-    console.warn('[media] createAsset failed:', (e as Error).message);
-    return null;
+    // Колонки origins может не быть (миграция не прошла / старая БД) — файл важнее метки.
+    console.warn('[media] createAsset with origins failed, retrying legacy:', (e as Error).message);
+    try {
+      const r = await pool.query(
+        `INSERT INTO media_assets (id, tenant_id, kind, media_type, original_name, file_url, file_path, mime, size, folder, ugc_format)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         RETURNING id, kind, media_type, original_name, file_url, mime, size, folder`,
+        base
+      );
+      return mapRow(r.rows[0]);
+    } catch (e2) {
+      console.warn('[media] createAsset failed:', (e2 as Error).message);
+      return null;
+    }
   }
 }
 

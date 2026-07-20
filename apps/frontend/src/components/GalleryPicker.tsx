@@ -23,10 +23,11 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Loader2, X, Music, Video, FileText, Check, Play, Pause, Plus } from 'lucide-react';
+import { OriginBadges } from '../lib/mediaOrigins';
 
 export type GalleryCat = 'trends' | 'reference' | 'audio' | 'analyzed' | 'hotebook';
 export type GalleryPickType = 'image' | 'video' | 'audio';
-export interface GalleryPickItem { id: string; fileUrl: string; title: string; type: string; cat: GalleryCat; cover?: string }
+export interface GalleryPickItem { id: string; fileUrl: string; title: string; type: string; cat: GalleryCat; cover?: string; origins?: string[] }
 
 // Русские ярлыки папок живут в pickerTabLabel() внутри компонента (t() с ru-дефолтом);
 // здесь label только у непереводимого имени блока. Имена = как в самой Галерее
@@ -154,15 +155,16 @@ export function GalleryPicker({
       ]);
       const out: GalleryPickItem[] = [];
       const seen = new Set<string>();
-      const push = (id: string, fileUrl: string, title2: string, type: string, cat: GalleryCat, cover?: string) => {
+      const push = (id: string, fileUrl: string, title2: string, type: string, cat: GalleryCat, cover?: string, origins?: any) => {
         const k = `${cat}:${fileUrl}`;
-        if (fileUrl && !seen.has(k)) { seen.add(k); out.push({ id: id || fileUrl, fileUrl, title: title2, type, cat, cover }); }
+        if (fileUrl && !seen.has(k)) { seen.add(k); out.push({ id: id || fileUrl, fileUrl, title: title2, type, cat, cover, origins: Array.isArray(origins) ? origins : undefined }); }
       };
-      if (tr.ok) for (const v of (await tr.json()).videos || []) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || t('sec.picker.typeVideo', 'видео'), 'video', 'trends', v.coverUrl);
-      if (r.ok) for (const m of (await r.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'reference', m.coverUrl);
-      if (a.ok) for (const m of (await a.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.typeAudio', 'аудио'), m.mediaType || 'audio', 'audio', m.coverUrl);
-      if (an.ok) for (const m of (await an.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'analyzed', m.coverUrl);
-      if (hb.ok) for (const m of (await hb.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'hotebook', m.coverUrl);
+      // Скачанный тренд — сам себе источник: в source_videos меток нет, ставим 'trends'.
+      if (tr.ok) for (const v of (await tr.json()).videos || []) if (v.fileUrl) push(v.id, v.fileUrl, v.title || v.author || t('sec.picker.typeVideo', 'видео'), 'video', 'trends', v.coverUrl, ['trends']);
+      if (r.ok) for (const m of (await r.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'reference', m.coverUrl, m.origins);
+      if (a.ok) for (const m of (await a.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.typeAudio', 'аудио'), m.mediaType || 'audio', 'audio', m.coverUrl, m.origins);
+      if (an.ok) for (const m of (await an.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'analyzed', m.coverUrl, m.origins);
+      if (hb.ok) for (const m of (await hb.json()).assets || []) push(m.id, m.fileUrl, m.originalName || t('sec.picker.fileFallback', 'файл'), m.mediaType || 'file', 'hotebook', m.coverUrl, m.origins);
       setItems(out);
     } catch { setItems([]); }
     finally { setLoading(false); }
@@ -315,6 +317,8 @@ export function GalleryPicker({
                         <FileText size={26} style={{ color: 'var(--brand)' }} />
                       )}
                       {g.type === 'video' && <span className="absolute bottom-1 left-1 z-10"><Video size={12} style={{ color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} /></span>}
+                      {/* Откуда файл: цепочка блоков (Google Flow → UGC-студия) */}
+                      <OriginBadges origins={g.origins} size={10} max={2} className="absolute top-1 left-1 z-10" />
                       {busy && <span className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}><Loader2 size={18} className="animate-spin" style={{ color: '#fff' }} /></span>}
                       {sel && <span className="absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center z-10" style={{ background: 'var(--brand)', color: '#fff' }}><Check size={12} /></span>}
                     </div>

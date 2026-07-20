@@ -43,6 +43,7 @@ import { PublisherTab, type ChainDraft, type PubFolder } from './publisher/Publi
 import { PublisherStudio } from './publisher/PublisherStudio';
 import { PublisherBulkModal, type BulkItem } from './publisher/PublisherBulkModal';
 import { StoryboardTab } from './storyboard/StoryboardTab';
+import { ORIGINS, OriginBadges } from '../lib/mediaOrigins';
 
 type Tab = 'trendhub' | 'hotebook' | 'flow' | 'ugc' | 'storyboard' | 'reference' | 'publisher';
 /** Фильтр внутри вкладки «Медиафайлы»: медиа (изображения+видео, kind=reference), аудио
@@ -62,6 +63,7 @@ interface GalleryItem {
   stats?: { play?: number; like?: number };
   isTrend: boolean;
   hasAnalysis?: boolean; // «Из анализа»: есть сохранённый разбор → бейдж + просмотр
+  origins?: string[];    // цепочка блоков-источников: ['flow','ugc'] → ряд иконок на обложке
 }
 
 // Порядок по фидбэку юзера (2026-07-08): блоки впереди, «Видео» (бывш. TrendFlow,
@@ -202,6 +204,7 @@ export default function GalleryPage() {
   const KINDS: MediaKind[] = ['reference', 'image', 'audio', 'analytics', 'text'];
   const urlKind = (() => { const k = searchParams.get('kind') as MediaKind | null; return k && KINDS.includes(k) ? k : null; })();
   const [mediaKind, setMediaKind] = useState<MediaKind>(urlKind || 'reference'); // фильтр внутри «Медиафайлов»
+  const [originFilter, setOriginFilter] = useState<string | null>(null);          // «показать только файлы из этого блока»
   const setKind = (k: MediaKind) => { setMediaKind(k); setSearchParams((prev) => { prev.set('kind', k); return prev; }, { replace: true }); };
   useEffect(() => { if (urlKind && urlKind !== mediaKind) setMediaKind(urlKind); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [urlKind]);
   const [blockReq, setBlockReq] = useState<FlowBlockRequest | null>(null); // блок TrendFlow поверх Галереи
@@ -470,6 +473,7 @@ export default function GalleryPage() {
           setItems((d.assets || []).map((a: any): GalleryItem => ({
             id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
             title: a.originalName || t('sec.gallery.fileFallback', 'файл'), isTrend: false, hasAnalysis: !!a.hasAnalysis,
+            origins: Array.isArray(a.origins) ? a.origins : undefined,
           })));
         }
         // «UGC»: рядом с рендерами — макеты (бренд-киты студии) + АВТО: шаблоны конвейера
@@ -489,6 +493,7 @@ export default function GalleryPage() {
             setAutoUgc((da.assets || []).map((a: any): GalleryItem => ({
               id: a.id, mediaType: a.mediaType, fileUrl: a.fileUrl,
               title: a.originalName || t('sec.gallery.autoRollFallback', 'авто-ролик'), isTrend: false,
+              origins: Array.isArray(a.origins) ? a.origins : undefined,
             })));
           } catch { setAutoUgc([]); }
         }
@@ -1152,7 +1157,7 @@ export default function GalleryPage() {
   }, [flowProjects, query]);
   // «Медиафайлы»-вкладка: фильтр по mediaType под выбранную папку (Видео/Изображение/Аудио).
   // Видео и Изображение приезжают вместе (kind='reference'), поэтому режем на клиенте.
-  const displayItems = useMemo(() => {
+  const byKind = useMemo(() => {
     if (tab !== 'reference') return filtered;
     if (mediaKind === 'analytics') return filtered; // папка analyzed целиком: видео + разбор + субтитры
     if (mediaKind === 'text') return filtered;      // папка text целиком: транскрибации и переводы (.txt)
@@ -1160,6 +1165,20 @@ export default function GalleryPage() {
     if (mediaKind === 'audio') return filtered.filter((v) => v.mediaType === 'audio');
     return filtered.filter((v) => v.mediaType !== 'image' && v.mediaType !== 'audio'); // Видео/файлы
   }, [tab, mediaKind, filtered]);
+
+  // Чипы «откуда файл»: считаем ДО фильтра по источнику, иначе счётчики схлопнутся
+  // до одного чипа. Файл с цепочкой ['flow','ugc'] попадает и в Flow, и в UGC.
+  const originCounts = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const v of byKind) for (const k of new Set(v.origins || [])) n.set(k, (n.get(k) || 0) + 1);
+    return ORIGINS.filter((o) => n.has(o.key)).map((o) => ({ ...o, n: n.get(o.key)! }));
+  }, [byKind]);
+  const displayItems = useMemo(
+    () => (originFilter ? byKind.filter((v) => (v.origins || []).includes(originFilter)) : byKind),
+    [byKind, originFilter]
+  );
+  // Сменили вкладку/тип — фильтр источника сбрасываем (иначе пустая сетка без причины).
+  useEffect(() => { setOriginFilter(null); }, [tab, mediaKind]);
 
   const toggleSelect = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
@@ -1635,6 +1654,32 @@ export default function GalleryPage() {
             </div>
           )}
 
+          {/* «Откуда файл» — сортировка сетки по источникам. Чипы = блоки, которые реально
+              встречаются в текущей выдаче; повторный клик по активному снимает фильтр.
+              Файл, прошедший цепочку (Google Flow → UGC), виден в обоих чипах. */}
+          {originCounts.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              <button type="button" onClick={() => setOriginFilter(null)}
+                className="text-[12px] font-600 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap transition-colors"
+                style={{ background: originFilter ? 'var(--bg-secondary)' : 'var(--brand)', color: originFilter ? 'var(--text-secondary)' : 'var(--brand-contrast)', border: `1px solid ${originFilter ? 'var(--border-medium)' : 'var(--brand)'}`, cursor: 'pointer' }}>
+                {t('sec.gallery.originAll', 'Все')} <span className="text-[10px] font-700 opacity-70">{byKind.length}</span>
+              </button>
+              {originCounts.map((o) => {
+                const on = originFilter === o.key;
+                return (
+                  <button key={o.key} type="button" onClick={() => setOriginFilter(on ? null : o.key)}
+                    title={t('sec.gallery.originFilterTitle', 'Показать только файлы из блока «{{name}}»', { name: t(`sec.origins.${o.key}`, o.label) })}
+                    className="text-[12px] font-600 px-2.5 py-1.5 rounded-xl inline-flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap transition-colors"
+                    style={{ background: on ? `${o.color}22` : 'var(--bg-secondary)', color: on ? o.color : 'var(--text-secondary)', border: `1px solid ${on ? o.color : 'var(--border-medium)'}`, cursor: 'pointer' }}>
+                    <span style={{ color: o.color, display: 'flex' }}>{o.icon(13)}</span>
+                    {t(`sec.origins.${o.key}`, o.label)}
+                    <span className="text-[10px] font-700 px-1.5 rounded-full" style={{ background: on ? `${o.color}22` : 'var(--bg-tertiary)', color: on ? o.color : 'var(--text-muted)' }}>{o.n}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Сетка карточек: первой — плитка «+ Добавить» (открывает блок раздела) */}
           <div className={CARD_GRID}>
             {renderAddTile(tab)}
@@ -1858,6 +1903,7 @@ export default function GalleryPage() {
                       className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                       {isSel ? <Check size={14} /> : null}
                     </button>
+                    <OriginBadges origins={v.origins} className="absolute top-1.5 left-9 z-20" />
                     <div className="absolute inset-x-0 bottom-0 p-2 z-10 flex flex-col gap-1.5">
                       <div className="text-[11px] font-700 leading-tight line-clamp-2 text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }} title={v.title}>{v.title}</div>
                       <AudioPlayer src={v.fileUrl} />
@@ -1882,6 +1928,8 @@ export default function GalleryPage() {
                     className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center z-20" style={ovCheckStyle(isSel)}>
                     {isSel ? <Check size={14} /> : null}
                   </button>
+                  {/* Откуда файл: цепочка блоков слева направо (Google Flow → UGC-студия) */}
+                  <OriginBadges origins={v.origins} className="absolute top-1.5 left-9 z-20" />
                   {/* Бейдж «Анализ» — у видео «Из анализа» с сохранённым разбором; клик → открыть разбор */}
                   {v.hasAnalysis && (
                     <button type="button" onClick={(e) => { e.stopPropagation(); void openAnalysis(v); }}
