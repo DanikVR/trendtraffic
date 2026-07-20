@@ -3411,7 +3411,7 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
-/* 2.6.24 — UGC-студия: аватар встаёт РОВНО туда, куда его поставили на превью.
+/* 2.6.25 — UGC-студия: аватар встаёт РОВНО туда, куда его поставили на превью.
  *          Жалоба юзера (скрин): бокс аватара утащен вправо вниз, а в готовом ролике
  *          HeyGen «не принял координаты». КОРЕНЬ: силуэтные ветки композита (альфа-webm
  *          ИЛИ «Вырезать фон аватара (ИИ)» = chroma-key) брали от бокса ТОЛЬКО высоту —
@@ -3742,7 +3742,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.24';
+export const APP_VERSION = '2.6.25';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
