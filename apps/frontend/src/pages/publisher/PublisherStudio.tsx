@@ -11,7 +11,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Loader2, Send, ImagePlus, X, Clock, CalendarClock, Zap, Check,
-  AlertTriangle, ChevronDown, RefreshCw, ExternalLink, Sparkles, Save, ListPlus,
+  AlertTriangle, ChevronDown, RefreshCw, ExternalLink, Sparkles, Save, ListPlus, Pin,
 } from 'lucide-react';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
 import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, BLOTATO_SETTINGS_URL, type PubAccount } from './PublisherTab';
@@ -44,6 +44,14 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [mediaNote, setMediaNote] = useState<string | null>(null);
   const [text, setText] = useState('');
+  /**
+   * «Обязательный текст» — ссылка на сайт и постоянные хэштеги, которые сервер дописывает
+   * в КАЖДЫЙ пост (композер, черновики, цепочки, ручной архив). Настройка тенанта, живёт
+   * между постами; здесь её видно и можно поправить, не уходя в настройки.
+   */
+  const [signature, setSignature] = useState('');
+  const [sigSaved, setSigSaved] = useState(true);
+  const [sigErr, setSigErr] = useState<string | null>(null);
   // Ф3: per-платформенные версии текста + тред
   const [textTab, setTextTab] = useState<string>('all');
   const [pOverrides, setPOverrides] = useState<Record<string, string>>({});
@@ -229,8 +237,40 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
     await loadTpls();
   };
 
+  // Обязательный текст тенанта — грузим один раз при открытии композера.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const r = await fetch('/api/publisher/settings', { headers: jsonHeaders() });
+        if (!r.ok) return;
+        const d = await r.json().catch(() => ({}));
+        setSignature(String(d?.signature || ''));
+      } catch { /* нет настроек — работаем без подписи */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveSignature = async () => {
+    setSigErr(null);
+    try {
+      const r = await fetch('/api/publisher/settings', {
+        method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ signature }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+      setSignature(String(d?.signature ?? signature));
+      setSigSaved(true);
+    } catch (e: any) { setSigErr(e?.message || t('sec.publisher.saveFailed', 'Не удалось сохранить')); }
+  };
+
   // ── Валидация ──────────────────────────────────────────────────────────────
-  const effText = (p: string) => (pOverrides[p] ?? text);
+  /** Что реально уйдёт в сеть: текст + обязательная подпись (её дописывает сервер). */
+  const effText = (p: string) => {
+    const body = String(pOverrides[p] ?? text ?? '').trim();
+    const sig = signature.trim();
+    if (!sig || body === sig || body.endsWith(sig)) return body;
+    return body ? `${body}\n\n${sig}` : sig;
+  };
   const problems = useMemo(() => {
     const list: string[] = [];
     if (manualMode) {
@@ -524,6 +564,37 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                   ))}
                 </div>
               )}
+
+              {/* Обязательный текст: сохраняется у тенанта и дописывается в каждый пост */}
+              <div className="rounded-xl p-3 space-y-1.5" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-[11.5px] font-700 inline-flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    <Pin size={12} /> {t('sec.publisher.sigTitle', 'Обязательный текст — добавляется в каждый пост')}
+                  </span>
+                  {!sigSaved ? (
+                    <button type="button" onClick={() => void saveSignature()}
+                      className="text-[11px] font-700 rounded-lg px-2.5 py-1"
+                      style={{ background: 'var(--brand)', color: 'var(--brand-contrast)', border: 'none', cursor: 'pointer' }}>
+                      {t('common.save', 'Сохранить')}
+                    </button>
+                  ) : signature.trim() ? (
+                    <span className="text-[11px] font-600 inline-flex items-center gap-1" style={{ color: '#16a34a' }}>
+                      <Check size={11} /> {t('sec.publisher.sigOn', 'включено')}
+                    </span>
+                  ) : null}
+                </div>
+                <textarea
+                  value={signature}
+                  onChange={(e) => { setSignature(e.target.value); setSigSaved(false); }}
+                  onBlur={() => { if (!sigSaved) void saveSignature(); }}
+                  rows={2}
+                  placeholder={t('sec.publisher.sigPh', 'Например: ссылка на сайт и постоянные хэштеги — https://example.com\n#бренд #ниша')}
+                  className="w-full rounded-lg p-2 text-[12.5px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/40"
+                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', color: 'var(--text-primary)', resize: 'vertical' }} />
+                <p className="text-[11px]" style={{ color: sigErr ? '#ef4444' : 'var(--text-muted)' }}>
+                  {sigErr || t('sec.publisher.sigHint', 'Пусто = выключено. Дописывается в конец текста каждой сети; если не влезает в лимит — обрежется основной текст, а не эта подпись.')}
+                </p>
+              </div>
 
               {/* ✦ Пост-движок */}
               <div className="rounded-xl p-3 space-y-2" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--brand)' }}>

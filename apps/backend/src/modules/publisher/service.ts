@@ -221,6 +221,7 @@ export async function submitPost(args: SubmitArgs): Promise<SubmitResult> {
   if (!targets.length) throw new Error('Не выбраны аккаунты (targets)');
   if (targets.length > 12) throw new Error('Слишком много целей за раз (максимум 12)');
 
+  const signature = await getSignature(tenantId);
   const media = await resolveMedia(tenantId, args);
   const base = (args.baseUrl || publicBase());
   const publicUrl = absUrl(base, media.fileUrl);
@@ -245,8 +246,9 @@ export async function submitPost(args: SubmitArgs): Promise<SubmitResult> {
     const platform = String(t.platform || '').toLowerCase() as BlotatoPlatform;
     const rowId = randomUUID();
     const opts = t.options || {};
-    // Лимит сети — последний рубеж: счётчик в Студии не блокирует, а цепочки идут мимо UI.
-    const rowText = fitText((t.textOverride ?? args.text) || '', TEXT_LIMITS[platform]);
+    // Обязательный текст тенанта + лимит сети — последний рубеж: счётчик в Студии не
+    // блокирует, а цепочки идут мимо UI. withSignature идемпотентна (см. её комментарий).
+    const rowText = withSignature((t.textOverride ?? args.text) || '', platform, signature);
     let submissionId: string | null = null;
     let status = scheduledTime ? 'scheduled' : 'submitted';
     let error: string | null = null;
@@ -526,11 +528,50 @@ function fitText(s: string, limit?: number): string {
 /** Текст + блок хэштегов так, чтобы вместе уложиться в лимит сети. */
 function joinWithinLimit(body: string, tags: string, limit?: number): string {
   if (!tags) return fitText(body, limit);
+  // Пустое тело — отдаём хвост как есть, иначе пост начнётся с двух пустых строк.
+  if (!body.trim()) return fitText(tags, limit);
   if (!limit) return `${body}\n\n${tags}`;
   const room = limit - tags.length - 2; // 2 = '\n\n'
   // Если под текст осталась пара слов — теги дороже не стоят, публикуем сам текст.
   if (room < 40) return fitText(body, limit);
   return `${fitText(body, room)}\n\n${tags}`;
+}
+
+// ── «Обязательный текст» тенанта (ссылка на сайт + постоянные хэштеги) ───────
+/**
+ * Подпись дописывается в КАЖДЫЙ пост: композер, массовые черновики, цепочки, ручной архив.
+ * Хранится одной строкой на тенанта (publisher_settings), пустая = выключено.
+ */
+export async function getSignature(tenantId: string): Promise<string> {
+  try {
+    const r = await pool.query(`SELECT signature FROM publisher_settings WHERE tenant_id=$1`, [tenantId]);
+    return String(r.rows[0]?.signature || '').trim();
+  } catch { return ''; }   // таблицы ещё нет (миграция не прошла) — просто без подписи
+}
+
+export async function setSignature(tenantId: string, signature: string): Promise<string> {
+  const sig = String(signature || '').slice(0, 1000).trim();
+  await pool.query(
+    `INSERT INTO publisher_settings (tenant_id, signature, updated_at) VALUES ($1,$2,NOW())
+     ON CONFLICT (tenant_id) DO UPDATE SET signature=EXCLUDED.signature, updated_at=NOW()`,
+    [tenantId, sig]);
+  return sig;
+}
+
+/**
+ * Дописывает обязательный текст в конец поста.
+ * ИДЕМПОТЕНТНА: если подпись уже стоит в конце — второй раз не клеит. Это важно, потому
+ * что путь черновика двухшаговый (createDrafts пишет текст → publishDrafts его отправляет),
+ * и без проверки подпись удвоилась бы. При нехватке лимита режем ТЕЛО, а не подпись:
+ * ссылка и постоянные теги — то, ради чего поле и заводили.
+ */
+export function withSignature(text: string, platform: string, signature?: string | null): string {
+  const sig = (signature || '').trim();
+  const body = (text || '').trim();
+  const chars = TEXT_LIMITS[platform];
+  if (!sig) return fitText(body, chars);
+  if (body === sig || body.endsWith(sig)) return fitText(body, chars);
+  return joinWithinLimit(body, sig, chars);
 }
 
 /** Текст подписи под КОНКРЕТНУЮ платформу из варианта Пост-движка. */
@@ -583,6 +624,7 @@ export async function createDrafts(args: BulkDraftArgs): Promise<{ groups: numbe
   const targets = (args.targets || []).filter((t) => t?.accountId && t?.platform);
   if (!items.length) throw new Error('Не выбраны ролики');
   if (!targets.length) throw new Error('Не выбраны аккаунты соцсетей');
+  const signature = await getSignature(args.tenantId);
   const errors: string[] = [];
   let groups = 0; let rows = 0;
 
@@ -620,7 +662,8 @@ export async function createDrafts(args: BulkDraftArgs): Promise<{ groups: numbe
       const opts: Record<string, any> = { ...(t.options || {}) };
       // YouTube требует заголовок: берём от Пост-движка, иначе имя ролика.
       if (platform === 'youtube' && !opts.title) opts.title = (variant.youtubeTitle || title).slice(0, 100);
-      const text = captionForPlatform(variant, platform);
+      // Подпись кладём уже здесь: publishDrafts потом отправляет row.text как есть.
+      const text = withSignature(captionForPlatform(variant, platform), platform, signature);
       await pool.query(
         `INSERT INTO publisher_posts
            (id, tenant_id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
@@ -768,6 +811,7 @@ export async function createManualPosts(args: ManualPostArgs): Promise<{ groups:
     when = new Date(args.scheduledAt).toISOString();
   }
 
+  const signature = await getSignature(args.tenantId);
   const errors: string[] = [];
   let groups = 0; let rows = 0;
 
@@ -803,7 +847,7 @@ export async function createManualPosts(args: ManualPostArgs): Promise<{ groups:
     for (const platform of platforms) {
       const opts: Record<string, any> = {};
       const ready = (args.texts?.[platform] || '').trim();
-      const body = ready || (variant ? captionForPlatform(variant, platform) : '');
+      const body = withSignature(ready || (variant ? captionForPlatform(variant, platform) : ''), platform, signature);
       // Заголовок обязателен исторически именно для YouTube, поэтому кладём его туда же.
       if (platform === 'youtube') {
         opts.title = String(args.titles?.youtube || variant?.youtubeTitle || title).slice(0, 100);

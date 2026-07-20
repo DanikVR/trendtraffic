@@ -3411,6 +3411,23 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.28 — ПУБЛИКАТОР: «Обязательный текст» — дописывается в КАЖДЫЙ пост.
+ *          Юзер руками дописывал в каждый пост ссылку на сайт и постоянные хэштеги
+ *          (скрин: https://unit.org.il/ + #израиль #приколы #строителей) — теперь это
+ *          поле, которое задаётся один раз.
+ *          1) Таблица publisher_settings (tenant_id PK, signature) + GET/PUT /settings.
+ *          2) Подпись добавляет БЭКЕНД, поэтому она попадает во ВСЕ пути разом: композер,
+ *             массовые черновики, ручные и авто-цепочки, ручной архив.
+ *          3) withSignature ИДЕМПОТЕНТНА: путь черновика двухшаговый (createDrafts пишет
+ *             текст → publishDrafts отправляет), без проверки подпись бы удвоилась.
+ *          4) Приоритет при нехватке лимита сети: режется ОСНОВНОЙ текст, а подпись
+ *             остаётся целой — ссылка и постоянные теги важнее хвоста подписи.
+ *          5) Счётчики символов в композере теперь считают текст ВМЕСТЕ с подписью —
+ *             иначе «76/2200» врало бы о том, что реально уйдёт в сеть.
+ *          Побочно починен joinWithinLimit: при пустом теле пост начинался с двух
+ *          пустых строк (ловится тестом «пустое тело = только подпись»).
+ *          Файлы: db/migrations.ts, publisher/{service,router}.ts, PublisherStudio.tsx.
+ *          tsc 0×2, vite 0, 16 проверок подписи + 19 прежних зелёные. */
 /* 2.6.27 — ФИКС РЕГРЕССИИ: ИИ-подпись падала с 400 у ВСЕХ (жалоба юзера со скрином:
  *          «This model does not support assistant message prefill»).
  *          Причина — моя же правка v2.6.22: чтобы модель точно вернула JSON, я добавил
@@ -3770,7 +3787,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.27';
+export const APP_VERSION = '2.6.28';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом

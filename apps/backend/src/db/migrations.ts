@@ -951,6 +951,17 @@ const MIGRATIONS: Migration[] = [
     )`,
   },
   { name: 'publisher_templates.tenant_idx', sql: `CREATE INDEX IF NOT EXISTS idx_publisher_templates_tenant ON publisher_templates (tenant_id, created_at DESC)` },
+  // Настройки Публикатора на тенанта. signature — «обязательный текст»: ссылка на сайт и
+  // постоянные хэштеги, которые дописываются в КАЖДЫЙ пост (композер, черновики, цепочки,
+  // ручной архив). Одна строка на тенанта, поэтому tenant_id — сам первичный ключ.
+  {
+    name: 'publisher_settings.table',
+    sql: `CREATE TABLE IF NOT EXISTS publisher_settings (
+      tenant_id VARCHAR(64) PRIMARY KEY,
+      signature TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )`,
+  },
   // Формат-маршрутизация авто-цепочек (9:16 → TikTok, 16:9 → YouTube): ugc_format пишет
   // UGC-сборка на каждый ассет, format_filter авто-цепочки берёт только свой формат.
   { name: 'media_assets.ugc_format', sql: `ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS ugc_format VARCHAR(8)` },

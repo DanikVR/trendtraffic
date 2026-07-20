@@ -30,7 +30,7 @@ import {
   listSlots, addSlots, removeSlot, nextFreeSlotTimes,
   listChains, createManualChain, cancelChain,
   generateCaptions, createDrafts, publishDrafts, updateDraft, deleteRows,
-  createManualPosts, updateManualPost,
+  createManualPosts, updateManualPost, getSignature, setSignature,
   type TargetInput, type BulkDraftItem,
 } from './service.js';
 
@@ -299,6 +299,22 @@ router.patch('/drafts/:id', async (req: AuthedRequest, res: Response) => {
     const out = await updateDraft(req.tenantId!, String(req.params.id), { text: b.text, title: b.title });
     if (!out.ok) return res.status(400).json({ error: out.error });
     res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить' }); }
+});
+
+/** GET /settings — настройки Публикатора тенанта (пока только обязательный текст). */
+router.get('/settings', async (req: AuthedRequest, res: Response) => {
+  try {
+    res.json({ signature: await getSignature(req.tenantId!) });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось загрузить настройки' }); }
+});
+
+/** PUT /settings — { signature } сохранить обязательный текст (пустая строка = выключить). */
+router.put('/settings', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const signature = await setSignature(req.tenantId!, String(b.signature ?? ''));
+    res.json({ ok: true, signature });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить' }); }
 });
 
