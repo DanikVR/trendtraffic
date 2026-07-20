@@ -507,13 +507,16 @@ async function renderTalkingHeads(opts: {
     try {
       videoId = await submitTalkingPhotoVideo(opts.hgKey, submitArgs(tp.tpId));
     } catch (e: any) {
-      // Кэшированный аватар могли удалить в кабинете HeyGen: сообщение должно называть
-      // сам talking_photo/аватар И «не найден/невалиден» — иначе (квота, битое аудио…)
-      // перезаливка бессмысленна и лишь сожгла бы слот фото-аватара.
+      // Кэшированный аватар/лук могли удалить в кабинете HeyGen (или лук живёт в ДРУГОМ
+      // аккаунте — сменили ключ): сообщение должно называть сам аватар/лук/talking_photo
+      // И «не найден/невалиден» — иначе (квота, битое аудио…) перезаливка бессмысленна и
+      // лишь сожгла бы слот фото-аватара. Живая формулировка HeyGen на выбранный лук:
+      // «avatar look not found, look_id: <id>, space_id: <id>» — слова talking_photo в ней
+      // нет вовсе, поэтому узкий шаблон её пропускал и сборка падала вместо перезаливки.
       const m = String(e?.message || '');
       const stale = tp.fromDb
-        && /talking[_\s-]?photo|photo[_\s-]?avatar/i.test(m)
-        && /not\s?found|invalid|does not exist|deleted|no longer/i.test(m);
+        && /talking[_\s-]?photo|photo[_\s-]?avatar|avatar[_\s-]?look|\blooks?\b|\blook_id\b|\bavatar_id\b/i.test(m)
+        && /not\s?found|invalid|does not exist|doesn't exist|deleted|no longer|no access|not belong/i.test(m);
       if (!stale) throw e;
       // Протух кэш ИЛИ выбранный лук: перезаливаем фото (у лука photoUrl = его превью) —
       // через тот же sha-кэш, чтобы повторные сборки не жгли слоты.

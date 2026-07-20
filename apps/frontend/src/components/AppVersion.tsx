@@ -3411,6 +3411,19 @@
  *          Файлы: matting-worker/*, render/{matting.ts,router.ts}, systemConfig.ts,
  *          ugcTypes.ts, UgcStudio.tsx, UgcPreview.tsx, локали ru+en. */
 
+/* 2.6.23 — UGC-студия: сборка больше не падает на «avatar look not found» (HeyGen).
+ *          Жалоба юзера (скрин): «Сборка не удалась: HeyGen generate: avatar look not
+ *          found, look_id: …, space_id: …» — на аватаре, выбранном из аккаунта HeyGen
+ *          («Моё фото» ← /ugc/heygen-avatars). КОРЕНЬ: у renderTalkingHeads уже была
+ *          страховка «лук протух → перезалить фото и повторить», но её шаблон искал в
+ *          тексте ошибки слова talking_photo / photo avatar. Живая формулировка HeyGen
+ *          на удалённый (или живущий в ДРУГОМ аккаунте — сменили ключ) лук звучит иначе:
+ *          «avatar look not found, look_id: …, space_id: …», слова talking_photo в ней
+ *          нет вовсе → страховка не срабатывала и сборка падала целиком.
+ *          Шаблон расширен: avatar look / look / look_id / avatar_id, плюс формулировки
+ *          «doesn't exist / no access / not belong». Теперь такой лук один раз
+ *          перезаливается своим превью (uploads/covers, кэш по sha — слот фото-аватара
+ *          HeyGen не жжётся) и сборка идёт дальше. Файлы: render/router.ts. */
 /* 2.6.22 — ПУБЛИКАТОР: описания под сети заработали и в ЦЕПОЧКАХ (были только в черновиках).
  *          Баг: captionForItem просил у Claude тексты под каждую сеть и тут же выбрасывал
  *          их — склеивал base + ВСЕ хэштеги в одну строку и слал её во все площадки. Ручные
@@ -3682,7 +3695,7 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.22';
+export const APP_VERSION = '2.6.23';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
