@@ -18,6 +18,7 @@ import {
   ChevronLeft, ChevronRight, Zap, X, Sparkles, FileEdit, CheckSquare, Square,
 } from 'lucide-react';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { PublisherPostModal } from './PublisherPostModal';
 
 /** Кабинет Blotato — соцсети подключаются там; открываем сразу нужную страницу. */
 export const BLOTATO_SETTINGS_URL = 'https://my.blotato.com/settings';
@@ -85,9 +86,11 @@ export interface ChainDraft { items: { assetId?: string; mediaUrl?: string; titl
 
 type KeyState = 'loading' | 'none' | 'bad' | 'ok';
 type SubTab = 'feed' | 'calendar' | 'schedule' | 'analytics';
-/** Папки ленты: черновики (в соцсети НЕ ушли) · очередь · опубликованные · ошибки. */
-export type PubFolder = 'drafts' | 'queue' | 'published' | 'failed';
+/** Папки ленты: вручную (архив) · черновики (в соцсети НЕ ушли) · очередь · опубликованные · ошибки.
+ *  ВАЖНО: статус без записи в FOLDER_OF пропадает из ленты молча — добавляя статус, добавляйте и сюда. */
+export type PubFolder = 'manual' | 'drafts' | 'queue' | 'published' | 'failed';
 const FOLDER_OF: Record<string, PubFolder> = {
+  manual: 'manual',
   draft: 'drafts', scheduled: 'queue', submitted: 'queue',
   published: 'published', failed: 'failed', canceled: 'failed',
 };
@@ -169,6 +172,8 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
 
   // Ф2: календарь
   const [weekOff, setWeekOff] = useState(0);
+  /** group_id раскрытого поста (окно с видео и описаниями по сетям); null = закрыто. */
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [moveId, setMoveId] = useState<string | null>(null);
   const [moveVal, setMoveVal] = useState('');
 
@@ -287,6 +292,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
   }, [posts, folder]);
 
   const counts = useMemo(() => ({
+    manual: posts.filter((p) => p.status === 'manual').length,
     drafts: posts.filter((p) => p.status === 'draft').length,
     queued: posts.filter((p) => p.status === 'scheduled' || p.status === 'submitted').length,
     published: posts.filter((p) => p.status === 'published').length,
@@ -381,9 +387,15 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     if (!moveVal) return;
     setRowBusy(row.id);
     try {
-      const r = await fetch(`/api/publisher/posts/${row.id}`, {
+      // Ручной пост в Blotato не отправлялся — двигаем его своим маршрутом и целиком
+      // группой (все сети ролика живут одной датой). Очередь Blotato — как раньше.
+      const manual = row.status === 'manual';
+      const r = await fetch(`/api/publisher/${manual ? 'manual' : 'posts'}/${row.id}`, {
         method: 'PATCH', headers: jsonHeaders(),
-        body: JSON.stringify({ scheduledAt: new Date(moveVal).toISOString() }),
+        body: JSON.stringify({
+          scheduledAt: new Date(moveVal).toISOString(),
+          ...(manual ? { wholeGroup: true } : {}),
+        }),
       });
       if (!r.ok) setErr((await r.json().catch(() => ({}))).error || t('sec.publisher.errMove', 'Не удалось перенести'));
       setMoveId(null); setMoveVal('');
@@ -550,7 +562,9 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
     const now = new Date();
     const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) + weekOff * 7);
     const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i));
-    const sched = posts.filter((p) => p.status === 'scheduled' && p.scheduled_at);
+    // В календаре живут и очередь Blotato ('scheduled'), и ручной архив ('manual'):
+    // для человека это одна доска дат, различает их значок «Вручную» на карточке.
+    const sched = posts.filter((p) => (p.status === 'scheduled' || p.status === 'manual') && p.scheduled_at);
     const byDay = (d: Date) => sched
       .filter((p) => { const t = new Date(p.scheduled_at!); return t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth() && t.getDate() === d.getDate(); })
       .sort((a, b) => new Date(a.scheduled_at!).getTime() - new Date(b.scheduled_at!).getTime());
@@ -577,14 +591,26 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                   </div>
                   {items.map((p) => (
                     <div key={p.id} className="rounded-lg p-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
-                      <div className="flex items-center gap-1.5">
-                        <PlatformMark platform={p.platform} size={16} />
-                        <span className="text-[11px] font-700 tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                          {pad2(new Date(p.scheduled_at!).getHours())}:{pad2(new Date(p.scheduled_at!).getMinutes())}
-                        </span>
-                        {p.chain_id && <span title={t('sec.publisher.chainPostTitle', 'Пост цепочки')}><Link2 size={10} style={{ color: 'var(--brand)' }} /></span>}
-                      </div>
-                      <div className="text-[10.5px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }} title={p.text || ''}>{(p.text || '').split('\n')[0] || '—'}</div>
+                      {/* Клик по дате в календаре раскрывает пост: видео + описания по сетям. */}
+                      <button
+                        type="button" onClick={() => setOpenGroup(p.group_id)}
+                        className="w-full text-left"
+                        style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                        title={t('sec.publisher.openPostTitle', 'Открыть пост')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <PlatformMark platform={p.platform} size={16} />
+                          <span className="text-[11px] font-700 tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                            {pad2(new Date(p.scheduled_at!).getHours())}:{pad2(new Date(p.scheduled_at!).getMinutes())}
+                          </span>
+                          {p.status === 'manual' && (
+                            <span className="text-[9px] px-1 rounded font-700" style={{ background: 'rgba(129,140,248,0.18)', color: '#818cf8' }}
+                              title={t('sec.publisher.manualBadge', 'Вручную')}>M</span>
+                          )}
+                          {p.chain_id && <span title={t('sec.publisher.chainPostTitle', 'Пост цепочки')}><Link2 size={10} style={{ color: 'var(--brand)' }} /></span>}
+                        </div>
+                        <div className="text-[10.5px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }} title={p.text || ''}>{(p.text || '').split('\n')[0] || '—'}</div>
+                      </button>
                       {moveId === p.id ? (
                         <div className="mt-1 space-y-1">
                           <input type="datetime-local" value={moveVal} onChange={(e) => setMoveVal(e.target.value)}
@@ -951,16 +977,27 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
                   {groupChecked ? <CheckSquare size={16} /> : <Square size={16} />}
                 </button>
               )}
-              <div className="w-[44px] h-[72px] rounded-lg overflow-hidden flex-shrink-0" style={{ background: 'var(--bg-tertiary)' }}>
+              {/* Обложка и заголовок раскрывают пост: видео + описания по сетям + скачивание. */}
+              <button
+                type="button" onClick={() => setOpenGroup(first.group_id)}
+                title={t('sec.publisher.openPostTitle', 'Открыть пост')}
+                className="w-[44px] h-[72px] rounded-lg overflow-hidden flex-shrink-0"
+                style={{ background: 'var(--bg-tertiary)', border: 'none', padding: 0, cursor: 'pointer' }}
+              >
                 {first.media_url && (/\.(png|jpe?g|webp|gif)(\?|$)/i.test(first.media_url)
                   ? <img src={first.media_url} alt="" className="w-full h-full object-cover" loading="lazy" />
                   : <video src={`${first.media_url}#t=0.1`} muted preload="metadata" className="w-full h-full object-cover" />)}
-              </div>
+              </button>
               <div className="min-w-0 flex-1">
-                <div className="text-[13px] font-600 truncate" style={{ color: 'var(--text-primary)' }}>
+                <button
+                  type="button" onClick={() => setOpenGroup(first.group_id)}
+                  title={t('sec.publisher.openPostTitle', 'Открыть пост')}
+                  className="text-[13px] font-600 truncate block w-full text-left"
+                  style={{ color: 'var(--text-primary)', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+                >
                   {first.chain_id && <Link2 size={11} className="inline mr-1" style={{ color: 'var(--brand)' }} />}
                   {(first.text || '').split('\n')[0] || t('sec.publisher.noText', 'Без текста')}
-                </div>
+                </button>
                 <div className="text-[11px] mb-1.5" style={{ color: 'var(--text-muted)' }}>{fmtDT(first.created_at)}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {rows.map((row) => (
@@ -1117,6 +1154,7 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       {/* Папки ленты (они же счётчики — клик переключает) + саб-вкладки */}
       <div className="flex items-center gap-2.5 flex-wrap">
         {([
+          { k: 'manual' as PubFolder, v: counts.manual, l: t('sec.publisher.folderManual', 'Вручную'), c: '#818cf8' },
           { k: 'drafts' as PubFolder, v: counts.drafts, l: t('sec.publisher.folderDrafts', 'Черновики'), c: 'var(--brand)' },
           { k: 'queue' as PubFolder, v: counts.queued, l: t('sec.publisher.folderQueue', 'Опубликовать'), c: '#f59e0b' },
           { k: 'published' as PubFolder, v: counts.published, l: t('sec.publisher.folderPublished', 'Опубликованные'), c: '#10b981' },
@@ -1151,6 +1189,20 @@ export function PublisherTab({ token, reloadKey, onNewPost, chainDraft, onChainD
       <p className="text-[11px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
         <Sparkles size={12} /> {t('sec.publisher.footerNote', 'Публикация — через ваш аккаунт Blotato (лимит их API — 30 постов/мин). История, слоты и цепочки хранятся у нас; упавшие посты автоповторяются (2→4→8 мин, до 3 раз).')}
       </p>
+
+      {openGroup && (() => {
+        const rows = posts.filter((p) => p.group_id === openGroup);
+        // Пост могли удалить в другой вкладке — тогда просто закрываем окно.
+        if (!rows.length) { setOpenGroup(null); return null; }
+        return (
+          <PublisherPostModal
+            rows={rows}
+            token={token}
+            onClose={() => setOpenGroup(null)}
+            onChanged={() => { void loadPosts(true); }}
+          />
+        );
+      })()}
 
       <ConfirmModal
         open={!!confirm}

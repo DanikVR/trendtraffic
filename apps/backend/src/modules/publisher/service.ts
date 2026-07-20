@@ -724,8 +724,147 @@ export async function updateDraft(tenantId: string, id: string, patch: { text?: 
   return { ok: true };
 }
 
+// ── Ф6: ручной архив (посты, которые НЕ уходят в Blotato) ────────────────────
+/**
+ * Статус 'manual' = пост живёт ТОЛЬКО у нас. Отличия от 'draft': площадка выбирается
+ * без подключённого аккаунта Blotato (account_id = 'manual:<платформа>'), ключ Blotato
+ * не нужен вовсе, а scheduled_at — это дата в календаре, а не очередь отправки
+ * (submission_id всегда NULL). Поэтому слот-занятость (nextFreeSlotTimes смотрит
+ * scheduled/submitted), статус-синк и авторетраи такие строки НЕ видят — публикует
+ * человек руками, скачав видео и текст своей сети из раскрытого поста.
+ */
+export const MANUAL_ACCOUNT_PREFIX = 'manual:';
+export const MANUAL_STATUS = 'manual';
+
+export interface ManualPostArgs {
+  tenantId: string;
+  items: BulkDraftItem[];
+  platforms: string[];          // ЛЮБЫЕ площадки — подключённый аккаунт не требуется
+  ai?: boolean;
+  tone?: string; language?: string;
+  /** Дата в календаре; пусто = пост лежит в архиве «без даты». */
+  scheduledAt?: string | null;
+  /** Готовые тексты по сетям (из Студии). Что задано здесь — ИИ не перезаписывает. */
+  texts?: Record<string, string>;
+  /** Готовые заголовки по сетям (сейчас нужен только YouTube). */
+  titles?: Record<string, string>;
+  onProgress?: (done: number, total: number, title?: string) => void;
+}
+
+/** Создание постов ручного архива: ролик × выбранные сети, у каждой сети СВОЙ текст. */
+export async function createManualPosts(args: ManualPostArgs): Promise<{ groups: number; rows: number; errors: string[] }> {
+  const items = (args.items || []).slice(0, 50);
+  if (!items.length) throw new Error('Не выбраны ролики');
+  const platforms = [...new Set((args.platforms || []).map((p) => String(p).toLowerCase()))]
+    .filter((p) => (BLOTATO_PLATFORMS as readonly string[]).includes(p));
+  if (!platforms.length) throw new Error('Не выбраны соцсети');
+
+  let when: string | null = null;
+  if (args.scheduledAt) {
+    if (Number.isNaN(Date.parse(args.scheduledAt))) throw new Error('Некорректная дата публикации');
+    when = new Date(args.scheduledAt).toISOString();
+  }
+
+  const errors: string[] = [];
+  let groups = 0; let rows = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    args.onProgress?.(i, items.length, item.title || '');
+    let media: { fileUrl: string; title: string };
+    try { media = await resolveMedia(args.tenantId, item); }
+    catch (e: any) { errors.push(`${item.title || 'ролик'}: ${e?.message || 'файл не найден'}`); continue; }
+
+    const title = item.title || media.title || 'Новое видео';
+    // Сети, для которых текст пришёл из Студии, ИИ не нужен вовсе — не платим за него.
+    const missing = platforms.filter((p) => !(args.texts?.[p] || '').trim());
+    let variant: CaptionVariant | null = null;
+    if (args.ai !== false && missing.length) {
+      try {
+        const g = await generateCaptions({
+          tenantId: args.tenantId, title, assetId: item.assetId, platforms: missing,
+          tone: args.tone, language: args.language, count: 1,
+        });
+        variant = g.variants[0] || null;
+      } catch (e: any) {
+        errors.push(`${title}: подпись без ИИ (${e?.message || 'ошибка Claude'})`);
+      }
+    }
+    if (!variant && missing.length) {
+      let dna: any = null;
+      if (item.assetId) { try { const s: any = await getTrendDNAByAsset(args.tenantId, item.assetId); dna = s?.dna || s; } catch { /* без ДНК */ } }
+      variant = { base: fallbackCaption(title, dna), hashtags: [], platforms: {} };
+    }
+
+    const groupId = randomUUID();
+    for (const platform of platforms) {
+      const opts: Record<string, any> = {};
+      const ready = (args.texts?.[platform] || '').trim();
+      const body = ready || (variant ? captionForPlatform(variant, platform) : '');
+      // Заголовок обязателен исторически именно для YouTube, поэтому кладём его туда же.
+      if (platform === 'youtube') {
+        opts.title = String(args.titles?.youtube || variant?.youtubeTitle || title).slice(0, 100);
+      }
+      await pool.query(
+        `INSERT INTO publisher_posts
+           (id, tenant_id, group_id, chain_id, asset_id, media_url, text, platform, account_id, account_name,
+            target, mode, scheduled_at, submission_id, status, error, retries, next_retry_at)
+         VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,$8,$9,$10,'time',$11,NULL,$12,NULL,0,NULL)`,
+        [randomUUID(), args.tenantId, groupId, item.assetId || null, media.fileUrl || null,
+         body, platform, `${MANUAL_ACCOUNT_PREFIX}${platform}`,
+         null, JSON.stringify(opts), when, MANUAL_STATUS]
+      );
+      rows++;
+    }
+    groups++;
+    args.onProgress?.(i + 1, items.length, title);
+  }
+  return { groups, rows, errors };
+}
+
+/**
+ * Правка поста ручного архива: текст, заголовок и дата в календаре. Дату можно менять
+ * и группой (весь ролик переезжает целиком) — так работает перетаскивание в календаре.
+ */
+export async function updateManualPost(
+  tenantId: string, id: string,
+  patch: { text?: string; title?: string; scheduledAt?: string | null; wholeGroup?: boolean },
+): Promise<{ ok: boolean; error?: string; moved?: number }> {
+  const r = await pool.query(`SELECT * FROM publisher_posts WHERE id=$1 AND tenant_id=$2`, [id, tenantId]);
+  const row = r.rows[0];
+  if (!row) return { ok: false, error: 'Пост не найден' };
+  if (row.status !== MANUAL_STATUS) return { ok: false, error: 'Это не пост ручного архива' };
+
+  if (patch.text != null || patch.title != null) {
+    const text = patch.text != null ? String(patch.text).slice(0, 5000) : row.text;
+    const opts = (typeof row.target === 'object' && row.target) ? { ...row.target } : {};
+    if (patch.title != null) opts.title = String(patch.title).slice(0, 100);
+    await pool.query(`UPDATE publisher_posts SET text=$2, target=$3, updated_at=NOW() WHERE id=$1`,
+      [row.id, text, JSON.stringify(opts)]);
+  }
+
+  let moved = 0;
+  if (patch.scheduledAt !== undefined) {
+    let when: string | null = null;
+    if (patch.scheduledAt) {
+      if (Number.isNaN(Date.parse(patch.scheduledAt))) return { ok: false, error: 'Некорректная дата' };
+      when = new Date(patch.scheduledAt).toISOString();
+    }
+    const upd = patch.wholeGroup
+      ? await pool.query(
+          `UPDATE publisher_posts SET scheduled_at=$3, updated_at=NOW()
+           WHERE tenant_id=$1 AND group_id=$2 AND status=$4`,
+          [tenantId, row.group_id, when, MANUAL_STATUS])
+      : await pool.query(
+          `UPDATE publisher_posts SET scheduled_at=$2, updated_at=NOW() WHERE id=$1`, [row.id, when]);
+    moved = upd.rowCount || 0;
+  }
+  return { ok: true, moved };
+}
+
 /** Удаление пачкой. «В полёте» (scheduled/submitted) НЕ трогаем: их надо снимать в Blotato
- *  через DELETE /posts/:id, иначе потеряем связь с уже отправленной публикацией. */
+ *  через DELETE /posts/:id, иначе потеряем связь с уже отправленной публикацией.
+ *  Строки ручного архива ('manual') удаляются свободно — их нигде больше нет. */
 export async function deleteRows(tenantId: string, ids: string[]): Promise<{ deleted: number; skipped: number }> {
   const list = (ids || []).map(String).filter(Boolean).slice(0, 400);
   if (!list.length) return { deleted: 0, skipped: 0 };

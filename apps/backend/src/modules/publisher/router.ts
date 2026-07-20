@@ -30,6 +30,7 @@ import {
   listSlots, addSlots, removeSlot, nextFreeSlotTimes,
   listChains, createManualChain, cancelChain,
   generateCaptions, createDrafts, publishDrafts, updateDraft, deleteRows,
+  createManualPosts, updateManualPost,
   type TargetInput, type BulkDraftItem,
 } from './service.js';
 
@@ -298,6 +299,56 @@ router.patch('/drafts/:id', async (req: AuthedRequest, res: Response) => {
     const out = await updateDraft(req.tenantId!, String(req.params.id), { text: b.text, title: b.title });
     if (!out.ok) return res.status(400).json({ error: out.error });
     res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить' }); }
+});
+
+// ── Ф6: ручной архив ─────────────────────────────────────────────────────────
+// Ключ Blotato здесь НЕ нужен нигде: посты никуда не отправляются, площадка выбирается
+// без подключённого аккаунта. Это единственная ветка Публикатора, живущая без Blotato.
+
+/** POST /manual — { items:[…], platforms:['tiktok',…], ai?, tone?, language?, scheduledAt? } → { jobId } */
+router.post('/manual', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const items = (Array.isArray(b.items) ? b.items : []) as BulkDraftItem[];
+    const platforms = (Array.isArray(b.platforms) ? b.platforms : []) as string[];
+    if (!items.length) return res.status(400).json({ error: 'Не выбраны ролики' });
+    if (!platforms.length) return res.status(400).json({ error: 'Не выбраны соцсети' });
+    const jobId = `pman${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    sweepDraftJobs();
+    draftJobs.set(jobId, { tenantId: req.tenantId!, status: 'running', done: 0, total: items.length, ts: Date.now() });
+    res.status(202).json({ jobId, total: items.length });
+
+    void (async () => {
+      const j = draftJobs.get(jobId)!;
+      try {
+        const out = await createManualPosts({
+          tenantId: req.tenantId!, items, platforms,
+          ai: b.ai !== false, tone: b.tone, language: b.language, scheduledAt: b.scheduledAt,
+          texts: (b.texts && typeof b.texts === 'object') ? b.texts : undefined,
+          titles: (b.titles && typeof b.titles === 'object') ? b.titles : undefined,
+          onProgress: (done, total, note) => { j.done = done; j.total = total; j.note = note; j.ts = Date.now(); },
+        });
+        j.status = 'done'; j.groups = out.groups; j.rows = out.rows; j.errors = out.errors; j.ts = Date.now();
+      } catch (e: any) {
+        j.status = 'failed'; j.error = String(e?.message || e).slice(0, 400); j.ts = Date.now();
+      }
+    })();
+  } catch (e: any) { res.status(400).json({ error: e?.message || 'Не удалось создать посты' }); }
+});
+
+/** PATCH /manual/:id — { text?, title?, scheduledAt?: string|null, wholeGroup? } */
+router.patch('/manual/:id', async (req: AuthedRequest, res: Response) => {
+  try {
+    const b = (req.body || {}) as any;
+    const out = await updateManualPost(req.tenantId!, String(req.params.id), {
+      text: b.text, title: b.title,
+      // null = снять дату; undefined (поля нет) = дату не трогаем.
+      scheduledAt: 'scheduledAt' in b ? b.scheduledAt : undefined,
+      wholeGroup: !!b.wholeGroup,
+    });
+    if (!out.ok) return res.status(400).json({ error: out.error });
+    res.json({ ok: true, moved: out.moved });
   } catch (e: any) { res.status(500).json({ error: e?.message || 'Не удалось сохранить' }); }
 });
 

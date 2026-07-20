@@ -14,7 +14,7 @@ import {
   AlertTriangle, ChevronDown, RefreshCw, ExternalLink, Sparkles, Save, ListPlus,
 } from 'lucide-react';
 import { GalleryPicker, type GalleryPickItem } from '../../components/GalleryPicker';
-import { PLATFORM_META, PlatformMark, BLOTATO_SETTINGS_URL, type PubAccount } from './PublisherTab';
+import { PLATFORM_META, PLATFORM_ORDER, PlatformMark, BLOTATO_SETTINGS_URL, type PubAccount } from './PublisherTab';
 
 /** Практические лимиты подписи по сетям (для счётчиков; жёсткую валидацию делает сама сеть). */
 const TEXT_LIMITS: Record<string, number> = {
@@ -53,6 +53,13 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const [accLoading, setAccLoading] = useState(true);
   const [accErr, setAccErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /**
+   * Ручной режим (Ф6): пост никуда не отправляется, поэтому площадка выбирается БЕЗ
+   * подключённого аккаунта Blotato — можно взять любую из девяти. Готовый пост ложится
+   * в папку «Вручную» и в календарь, откуда его скачивают и публикуют руками.
+   */
+  const [manualMode, setManualMode] = useState(false);
+  const [manualPlatforms, setManualPlatforms] = useState<Set<string>>(new Set());
 
   const [pOpts, setPOpts] = useState<Record<string, Record<string, any>>>({
     tiktok: { privacyLevel: 'PUBLIC_TO_EVERYONE', isAiGenerated: true },
@@ -116,7 +123,10 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   }, [mode]);
 
   const selAccounts = useMemo(() => accounts.filter((a) => selected.has(a.id)), [accounts, selected]);
-  const selPlatforms = useMemo(() => Array.from(new Set(selAccounts.map((a) => a.platform))), [selAccounts]);
+  const selPlatforms = useMemo(
+    () => (manualMode ? Array.from(manualPlatforms) : Array.from(new Set(selAccounts.map((a) => a.platform)))),
+    [manualMode, manualPlatforms, selAccounts],
+  );
   const threadOn = useMemo(() => selPlatforms.some((p) => THREAD_PLATFORMS.includes(p)), [selPlatforms]);
 
   useEffect(() => { if (textTab !== 'all' && !selPlatforms.includes(textTab)) setTextTab('all'); }, [selPlatforms, textTab]);
@@ -223,7 +233,11 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
   const effText = (p: string) => (pOverrides[p] ?? text);
   const problems = useMemo(() => {
     const list: string[] = [];
-    if (selAccounts.length === 0) list.push(t('sec.publisher.vSelectAccount', 'Выберите хотя бы один аккаунт.'));
+    if (manualMode) {
+      if (selPlatforms.length === 0) list.push(t('sec.publisher.vSelectNet', 'Выберите хотя бы одну соцсеть.'));
+    } else if (selAccounts.length === 0) {
+      list.push(t('sec.publisher.vSelectAccount', 'Выберите хотя бы один аккаунт.'));
+    }
     if (!media && selPlatforms.some((p) => MEDIA_REQUIRED.has(p))) {
       list.push(t('sec.publisher.vMediaRequired', 'TikTok / Instagram / YouTube / Pinterest требуют видео или фото — добавьте медиа.'));
     }
@@ -234,20 +248,63 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
       if (a.platform === 'pinterest' && !aOpts[a.id]?.boardId) list.push(t('sec.publisher.vPinBoard', 'Pinterest ({{name}}): выберите доску.', { name: a.name || a.username || a.id }));
     }
     if (mode === 'time' && !when) list.push(t('sec.publisher.vWhen', 'Укажите дату и время публикации.'));
-    if (mode === 'slot' && slotNext === 'none') list.push(t('sec.publisher.noFreeSlots', 'Нет свободных слотов — добавьте времена в «Моё расписание» (вкладка Публикатора).'));
+    // Слоты — про очередь отправки; ручной пост просто ложится в календарь на дату.
+    if (!manualMode && mode === 'slot' && slotNext === 'none') list.push(t('sec.publisher.noFreeSlots', 'Нет свободных слотов — добавьте времена в «Моё расписание» (вкладка Публикатора).'));
     for (const p of selPlatforms) {
       const lim = TEXT_LIMITS[p];
       if (lim && effText(p).length > lim) list.push(t('sec.publisher.vTooLong', '{{platform}}: текст длиннее лимита {{limit}}.', { platform: PLATFORM_META[p]?.label || p, limit: lim }));
     }
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selAccounts, selPlatforms, media, text, pOverrides, pOpts, aOpts, mode, when, slotNext]);
+  }, [manualMode, selAccounts, selPlatforms, media, text, pOverrides, pOpts, aOpts, mode, when, slotNext]);
 
   const submit = async () => {
     if (problems.length > 0 || submitting) return;
     setSubmitting(true); setSubmitErr(null); setResults(null);
     try {
       const thread = threadText.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+
+      // ── Ручной режим: пост не отправляется, а ложится в архив ────────────────
+      if (manualMode) {
+        // Текст берём тот, что человек уже видит в композере: свой для сети,
+        // иначе общий. Сервер ничего не перегенерирует поверх него.
+        const texts: Record<string, string> = {};
+        for (const p of selPlatforms) {
+          const own = (pOverrides[p] ?? text ?? '').trim();
+          if (own) texts[p] = own;
+        }
+        const r = await fetch('/api/publisher/manual', {
+          method: 'POST', headers: jsonHeaders(),
+          body: JSON.stringify({
+            items: [{ assetId: media?.assetId, mediaUrl: media?.assetId ? undefined : media?.mediaUrl, title: media?.title }],
+            platforms: selPlatforms,
+            texts,
+            titles: pOpts.youtube?.title ? { youtube: pOpts.youtube.title } : undefined,
+            // «Сейчас» в ручном режиме = пост без даты, лежит в архиве до раскладки.
+            scheduledAt: mode === 'time' && when ? new Date(when).toISOString() : null,
+            // Пустые сети дописывает ИИ; если текста нет вообще — он напишет всё.
+            ai: true,
+          }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        // Ответ 202 + jobId: с готовым текстом задача завершается почти мгновенно,
+        // но подписи для пустых сетей пишет Claude — поэтому всё же опрашиваем.
+        const jobId = d.jobId as string | undefined;
+        if (jobId) {
+          for (let i = 0; i < 90; i++) {
+            await new Promise((res) => setTimeout(res, 1000));
+            const s = await fetch(`/api/publisher/drafts/bulk/status?job=${encodeURIComponent(jobId)}`, { headers: jsonHeaders() });
+            const sj = await s.json().catch(() => ({}));
+            if (sj?.status === 'done') break;
+            if (sj?.status === 'failed') throw new Error(sj.error || t('sec.publisher.errSubmit', 'Не удалось отправить'));
+          }
+        }
+        setResults(selPlatforms.map((p) => ({ platform: p, ok: true })));
+        setTimeout(() => onPublished(), 900);
+        return;
+      }
+
       const targets = selAccounts.map((a) => ({
         accountId: a.id,
         platform: a.platform,
@@ -563,13 +620,54 @@ export function PublisherStudio({ token, initial, onClose, onPublished }: {
                 </a>
               </div>
 
-              {accLoading ? (
+              {/* Режим: через Blotato (нужен подключённый аккаунт) или вручную (любая сеть). */}
+              <div className="inline-flex gap-1 p-1 rounded-xl w-full" style={{ background: 'var(--bg-tertiary)' }}>
+                {([[false, t('sec.publisher.modeAuto', 'Через Blotato')], [true, t('sec.publisher.modeManual', 'Вручную')]] as [boolean, string][]).map(([v, l]) => (
+                  <button key={String(v)} type="button" onClick={() => setManualMode(v)}
+                    className="flex-1 px-3 py-1.5 rounded-lg text-[12px] font-600 whitespace-nowrap"
+                    style={{ background: manualMode === v ? 'var(--brand)' : 'transparent', color: manualMode === v ? 'var(--brand-contrast)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              {manualMode ? (
+                <div className="space-y-2">
+                  <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                    {t('sec.publisher.manualPick', 'Выберите любые сети — аккаунт подключать не нужно. Пост попадёт в папку «Вручную» и в календарь, откуда его можно скачать и опубликовать руками.')}
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {PLATFORM_ORDER.map((pk) => {
+                      const on = manualPlatforms.has(pk);
+                      return (
+                        <button
+                          key={pk} type="button"
+                          onClick={() => setManualPlatforms((s) => {
+                            const n = new Set(s); if (n.has(pk)) n.delete(pk); else n.add(pk); return n;
+                          })}
+                          className="rounded-xl px-2 py-2 flex flex-col items-center gap-1"
+                          style={{
+                            background: on ? 'rgba(99,102,241,0.10)' : 'var(--bg-secondary)',
+                            border: `1px solid ${on ? 'var(--brand)' : 'var(--border-medium)'}`,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <PlatformMark platform={pk} size={22} />
+                          <span className="text-[10.5px] font-600" style={{ color: on ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                            {PLATFORM_META[pk]?.label || pk}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : accLoading ? (
                 <div className="py-6 text-center"><Loader2 size={18} className="animate-spin inline-block" style={{ color: 'var(--text-muted)' }} /></div>
               ) : accErr ? (
                 <div className="text-[12.5px] rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>{accErr}</div>
               ) : accounts.length === 0 ? (
                 <div className="text-[12.5px] rounded-xl p-3" style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', color: 'var(--text-muted)' }}>
-                  {t('sec.publisher.noNetsYet', 'Соцсети ещё не подключены. Откройте кабинет Blotato (ссылка выше), подключите сети и вернитесь.')}
+                  {t('sec.publisher.noNetsYet', 'Соцсети ещё не подключены. Откройте кабинет Blotato (ссылка выше), подключите сети и вернитесь — либо переключитесь на «Вручную».')}
                 </div>
               ) : (
                 <div className="rounded-xl px-3 py-1" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)' }}>
