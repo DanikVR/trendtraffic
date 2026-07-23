@@ -3931,12 +3931,18 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-export const APP_VERSION = '2.6.36';
+/** 2.6.37 — Расширение v1.5.0: «Flow Booster» — пакетный автопилот Google Flow (клон Auto Flow),
+ *          БЕСПЛАТНО без входа: side-panel (промпты → авто-генерация → скачивание), параллельная
+ *          генерация 1–4, персонажи/консистентность (auto-scan), разрешение 720p–4K, папка/имя,
+ *          опц. «в Галерею TrendFlow». Отдельный локальный движок — прод-очередь Flow не тронута.
+ *          Файлы: trendtraffic-extension (sidepanel.*, content-flow.js, background.js, manifest,
+ *          _locales en/ru), zip пересобран, карточка «Скачать» → v1.5.0. */
+export const APP_VERSION = '2.6.37';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.4.0';
+export const TT_EXT_VERSION = '1.5.0';
 
 export function AppVersion() {
   return (

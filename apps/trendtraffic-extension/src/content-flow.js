@@ -39,6 +39,51 @@
     // Тексты кнопки «добавить медиа/загрузить/ингредиент/кадр», по которой раскрывается file-input.
     addMediaText: ['upload', 'загруз', 'добав', 'add media', 'media', 'изображ', 'референс', 'reference', 'frames', 'ingredient', 'ингредиент', 'кадр'],
   };
+
+  // ── Пакетный движок (CROM-паритет): токены для выбора режима/модели/формата/кол-ва/длины/
+  //    разрешения. Flow ЛОКАЛИЗОВАН и меняет вёрстку → матчим по ТЕКСТУ/aria на многих языках, а не
+  //    по хрупким CSS. Любую группу можно переопределить точным CSS-селектором через
+  //    chrome.storage.local['flowSelectors'] (правка без пересборки — как remote-config у CROM). ──
+  const BATCH = {
+    // Переключатель режима генерации (Текст→Видео / Кадры→Видео / Ингредиенты→Видео и картиночные).
+    modeTokens: {
+      textToVideo: ['text to video', 'текст в видео', 'text-to-video', 'テキストから動画', '文本转视频', 'texto a video', 'texte en vidéo'],
+      imageToVideo: ['frames to video', 'image to video', 'first frame', 'кадры в видео', 'изображение в видео', 'フレーム', '图像转视频', 'imagen a video'],
+      components: ['ingredients to video', 'ingredients', 'components', 'ингредиенты', 'компоненты', '要素', '元素', 'ingredientes'],
+      textToImage: ['text to image', 'текст в изображение', '文本转图像', 'texto a imagen', 'texte en image'],
+      imageToImage: ['image to image', 'изображение в изображение', '图像转图像', 'imagen a imagen'],
+    },
+    // Значения групп-переключателей — по ним же находим САМ переключатель (элемент, показывающий
+    // текущее значение группы = и есть её кнопка). target добавляем к группе при матче.
+    aspectValues: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
+    aspectAlias: { '16:9': ['landscape', 'горизонт', '横', '16:9'], '9:16': ['portrait', 'вертикал', '縦', '9:16'], '1:1': ['square', 'квадрат', '正方', '1:1'] },
+    modelHint: ['veo', 'model', 'модель', 'モデル', '模型', 'modelo', 'banana', 'imagen'],
+    countHint: ['output', 'count', 'quantity', 'videos', 'images', 'кол-во', 'количество', 'выход', '数量', '出力', 'cantidad', 'sorties'],
+    lengthHint: ['length', 'duration', 'длит', 'секунд', 'sec', '秒', 'durée', 'duración'],
+    // Скачивание готового тайла в нужном разрешении.
+    downloadTokens: ['download', 'скачать', 'загрузить файл', 'télécharger', 'descargar', 'ダウンロード', '下载', 'حفظ'],
+    resolutionTokens: {
+      '720p': ['720p', '720', 'sd'], '1080p': ['1080p', '1080', 'hd', 'full hd'],
+      '2k': ['2k', '1440', 'qhd'], '4k': ['4k', '2160', 'uhd'], '1k': ['1k', '1024'],
+    },
+    // Явные CSS-оверрайды (заполняются из storage; пусто = матчим эвристикой по тексту).
+    css: {},
+  };
+  // Подтянуть оверрайды селекторов из storage (правка вживую без релиза). Мержим неглубоко.
+  function loadSelectorOverrides() {
+    try {
+      chrome.storage.local.get('flowSelectors', (d) => {
+        const o = d && d.flowSelectors;
+        if (!o || typeof o !== 'object') return;
+        for (const k of Object.keys(o)) {
+          if (Array.isArray(o[k]) && Array.isArray(SELECTORS[k])) SELECTORS[k] = o[k];
+          else if (k === 'batchCss' && o[k] && typeof o[k] === 'object') BATCH.css = { ...BATCH.css, ...o[k] };
+          else if (BATCH[k] !== undefined) BATCH[k] = o[k];
+        }
+        log('оверрайды селекторов применены');
+      });
+    } catch { /* нет доступа к storage — работаем на дефолтах */ }
+  }
   const RESULT_POLL_MS = 4000;
   const RESULT_MAX_MS = 7 * 60_000;
 
@@ -414,6 +459,269 @@
     return { ok: true, sourceUrl: r.sourceUrl || null, dataUrl: r.dataUrl || null, meta: { title: task.title || null } };
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  ПАКЕТНЫЙ ДВИЖОК (CROM-паритет) — работает БЕЗ входа в аккаунт TrendTraffic.
+  //  Панель side-panel шлёт по одному item; здесь: режим → параметры → референсы →
+  //  промпт → генерация → ожидание N тайлов с % → (скачивание/в Галерею).
+  // ═══════════════════════════════════════════════════════════════════════════
+  const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const elText = (el) => norm((el.textContent || '') + ' ' + (el.getAttribute && (el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('data-value') || '')));
+  // «Человеческий» клик: часть меню Flow не реагирует на голый .click() (нужны pointer/mouse события).
+  function realClick(el) {
+    try { el.scrollIntoView({ block: 'center' }); } catch { /* */ }
+    const opts = { bubbles: true, cancelable: true, view: window };
+    for (const t of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      try { el.dispatchEvent(new (t.startsWith('pointer') ? PointerEvent : MouseEvent)(t, opts)); } catch { try { el.dispatchEvent(new MouseEvent('click', opts)); } catch { /* */ } }
+    }
+  }
+  // Видимые интерактивные элементы (кнопки/пункты меню/опции).
+  function interactives() {
+    return queryAllDeep('button,[role="button"],[role="option"],[role="menuitem"],[role="tab"],[role="radio"],a,li,label').filter(visible);
+  }
+  // Найти видимый элемент, чей текст/aria содержит любой из токенов.
+  function findByTokens(tokens, pool) {
+    const list = pool || interactives();
+    for (const el of list) { const t = elText(el); if (tokens.some((k) => t.includes(norm(k)))) return el; }
+    return null;
+  }
+  // Выбор из группы-переключателя: элемент, показывающий ТЕКУЩЕЕ значение группы, и есть её кнопка.
+  // Кликаем её → в раскрывшемся меню ищем пункт с целевым токеном. Уже стоит нужное — ничего не делаем.
+  async function selectFromGroup(groupTokens, targetTokens, label) {
+    // 1) уже выбрано?
+    const already = interactives().find((el) => { const t = elText(el); return targetTokens.some((k) => t.includes(norm(k))); });
+    // 2) кнопка группы = показывает любое значение группы
+    const opener = findByTokens(groupTokens);
+    if (already && (!opener || elText(opener).includes(norm(targetTokens[0])))) { return true; }
+    if (!opener) { ui.line(`⚠ ${label}: контрол не найден`); return false; }
+    realClick(opener);
+    await sleep(500);
+    // 3) пункт меню с целевым значением
+    const item = findByTokens(targetTokens);
+    if (item && item !== opener) { realClick(item); await sleep(350); return true; }
+    // меню могло не раскрыться — если нужное значение уже показано, считаем ок
+    if (already) return true;
+    ui.line(`⚠ ${label}: вариант не найден`);
+    return false;
+  }
+  async function selectMode(mode) {
+    const tokens = BATCH.modeTokens[mode];
+    if (!tokens) return true; // неизвестный режим — оставляем как есть
+    const el = findByTokens(tokens);
+    if (!el) { ui.line(`⚠ режим «${mode}» не найден`); return false; }
+    realClick(el); await sleep(500); return true;
+  }
+  async function selectAspect(aspect) {
+    if (!aspect) return true;
+    const targets = [aspect, ...((BATCH.aspectAlias[aspect]) || [])];
+    return selectFromGroup(BATCH.aspectValues, targets, `формат ${aspect}`);
+  }
+  async function selectModel(model) {
+    if (!model) return true;
+    // токены модели: сам ярлык + части («veo 3.1», «fast»/«quality»)
+    const targets = [model, ...model.split(/[-\s]+/).filter((p) => p.length > 1)];
+    return selectFromGroup(BATCH.modelHint, targets, `модель ${model}`);
+  }
+  async function selectCount(count) {
+    if (!count || count < 1) return true;
+    const opener = findByTokens(BATCH.countHint);
+    if (opener) { realClick(opener); await sleep(400); }
+    const targets = [String(count), count + 'x', count + ' '];
+    const item = findByTokens(targets, interactives().filter((el) => /^\s*\d+\s*x?\s*$/.test(el.textContent || '')));
+    if (item) { realClick(item); await sleep(300); return true; }
+    return false; // не критично — Flow сгенерит дефолтное число
+  }
+  async function selectLength(seconds) {
+    if (!seconds) return true;
+    const opener = findByTokens(BATCH.lengthHint);
+    if (opener) { realClick(opener); await sleep(400); }
+    const targets = [seconds + 's', seconds + ' s', seconds + ' сек', seconds + '秒'];
+    const item = findByTokens(targets);
+    if (item) { realClick(item); await sleep(300); return true; }
+    return false;
+  }
+  // Загрузка референс-картинок для image-driven режимов (переиспользуем injectFileIntoFlow).
+  async function uploadReferences(refs) {
+    if (!refs || !refs.length) return;
+    for (let i = 0; i < Math.min(refs.length, 6); i++) {
+      const r = refs[i];
+      try {
+        let file = null;
+        if (typeof r === 'string' && r.startsWith('data:')) file = dataUrlToFile(r, 'flow-ref-' + (i + 1) + guessExt((/^data:([^;]+)/.exec(r) || [])[1] || ''));
+        else if (typeof r === 'string') { const b = await send({ type: 'fetch-bytes', url: r }); if (b && b.ok) file = dataUrlToFile(b.dataUrl, 'flow-ref-' + (i + 1) + extFor(b.mime, 'image')); }
+        if (!file) { ui.line(`⚠ референс ${i + 1} не готов`); continue; }
+        const up = await injectFileIntoFlow(file, 'image');
+        ui.line(up.ok ? `референс ${i + 1} залит` : `референс ${i + 1}: ${up.reason}`);
+        await sleep(900);
+      } catch { ui.line(`⚠ референс ${i + 1} не залился`); }
+    }
+  }
+  // Снимок ключей текущих медиа ДО генерации — чтобы отличить НОВЫЕ тайлы от старых.
+  function snapshotMediaKeys() {
+    const set = new Set();
+    for (const el of queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)) { try { set.add(videoKey(el)); } catch { /* */ } }
+    return set;
+  }
+  // Ожидание N новых готовых тайлов с прогрессом. Возвращает массив НОВЫХ медиа-элементов.
+  async function waitForTiles(expected, baseline, itemId) {
+    const started = Date.now();
+    let lastPct = -1;
+    while (Date.now() - started < RESULT_MAX_MS) {
+      if (detectThrottle()) return { throttled: true };
+      const media = queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)
+        .filter((el) => el.tagName === 'VIDEO' || (el.clientWidth >= 120 && el.clientHeight >= 120));
+      const fresh = [];
+      const seenCycle = new Set();
+      for (const el of media) {
+        let k; try { k = videoKey(el); } catch { k = usableMediaSrc(el); }
+        if (baseline.has(k) || seenCycle.has(k)) continue;
+        const src = usableMediaSrc(el);
+        // «готов» = не blob-заглушка ИЛИ blob с прочитанными метаданными (для video)
+        const ready = src && (!src.startsWith('blob:') || el.tagName !== 'VIDEO' || (el.readyState >= 1 && Number.isFinite(el.duration)));
+        if (ready) { seenCycle.add(k); fresh.push(el); }
+      }
+      const pct = Math.min(100, Math.round((fresh.length / Math.max(1, expected)) * 100));
+      if (pct !== lastPct) { lastPct = pct; emitProgress(itemId, 'generating', fresh.length, expected, `${pct}%`); }
+      if (fresh.length >= expected) return { tiles: fresh.slice(0, expected) };
+      await sleep(RESULT_POLL_MS);
+    }
+    // таймаут: отдаём что успели
+    const media = queryAllDeep('video,img').filter(visible).filter(usableMediaSrc);
+    const fresh = media.filter((el) => { try { return !baseline.has(videoKey(el)); } catch { return false; } });
+    return fresh.length ? { tiles: fresh, partial: true } : { timeout: true };
+  }
+  // Скачать тайл в нужном разрешении ЧЕРЕЗ РОДНОЕ меню Flow (истинный 4K/2K, не превью).
+  // Наводимся на тайл → ищем кнопку «скачать» → пункт нужного разрешения. Не нашли → false
+  // (панель скачает src напрямую как фолбэк). background.js переименует загрузку Flow в нашу папку.
+  async function triggerNativeDownload(tileEl, resolution) {
+    try { tileEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); tileEl.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true })); } catch { /* */ }
+    await sleep(300);
+    // кнопка скачивания рядом с тайлом (в его контейнере) либо глобальная
+    const container = tileEl.closest('[class*="tile" i],[class*="result" i],[class*="card" i],figure,li') || document;
+    let dl = [...(container.querySelectorAll ? container.querySelectorAll('button,[role="button"],a') : [])].filter(visible).find((b) => BATCH.downloadTokens.some((k) => elText(b).includes(norm(k))));
+    if (!dl) dl = findByTokens(BATCH.downloadTokens);
+    if (!dl) return { ok: false, reason: 'no-download-btn' };
+    realClick(dl);
+    await sleep(600);
+    const resTokens = BATCH.resolutionTokens[String(resolution || '').toLowerCase()] || [];
+    if (resTokens.length) {
+      const item = findByTokens(resTokens);
+      if (item) { realClick(item); await sleep(500); return { ok: true }; }
+      // меню разрешений не появилось — но клик по «скачать» мог уже запустить загрузку дефолта
+      return { ok: true, reason: 'default-res' };
+    }
+    return { ok: true, reason: 'no-res-menu' };
+  }
+  function emitProgress(itemId, phase, ready, total, note) {
+    try { chrome.runtime.sendMessage({ type: 'flow-batch-progress', itemId, phase, ready: ready || 0, total: total || 0, note: note || '' }); } catch { /* панель могла закрыться */ }
+  }
+
+  // ── ПЕРСОНАЖИ / КОНСИСТЕНТНОСТЬ (auto-scan) ──
+  const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32) || 'ref';
+  // @-упоминание уже загруженного в Flow персонажа: печатаем «@Имя» и кликаем первую подсказку.
+  async function mentionReference(name) {
+    const input = pick(SELECTORS.promptInput);
+    if (!input || !name) return false;
+    input.focus();
+    const cur = input.isContentEditable ? (input.textContent || '') : (input.value || '');
+    const add = (cur && !/\s$/.test(cur) ? ' ' : '') + '@' + name;
+    if (input.isContentEditable) { input.textContent = cur + add; input.dispatchEvent(new InputEvent('input', { bubbles: true })); }
+    else setNativeValue(input, cur + add);
+    await sleep(800);
+    const opt = queryAllDeep('[role="option"],[role="menuitem"],li,[class*="mention" i] *').filter(visible)
+      .find((e) => norm(e.textContent).includes(norm(name)) && (e.textContent || '').length < 60);
+    if (opt) { realClick(opt); await sleep(350); return true; }
+    return false;
+  }
+  // Прикрепить персонажей к текущему промпту: сперва @-упоминание (если в библиотеке Flow),
+  // иначе загрузка картинки как референса (надёжный путь). chars = [{name?, dataUrl|url}] | [string].
+  async function attachCharacters(chars, useMention) {
+    if (!chars || !chars.length) return;
+    for (let i = 0; i < Math.min(chars.length, 8); i++) {
+      const c = chars[i];
+      const name = (c && typeof c === 'object' ? c.name : '') || ('character_' + (i + 1));
+      const src = (c && typeof c === 'object') ? (c.dataUrl || c.url) : c;
+      let done = false;
+      if (useMention && name) { try { done = await mentionReference(name); } catch { /* */ } }
+      if (done) { ui.line(`персонаж «${name}» через @mention`); continue; }
+      try {
+        let file = null;
+        if (typeof src === 'string' && src.startsWith('data:')) file = dataUrlToFile(src, 'flow-' + slug(name) + guessExt((/^data:([^;]+)/.exec(src) || [])[1] || ''));
+        else if (typeof src === 'string' && src) { const b = await send({ type: 'fetch-bytes', url: src }); if (b && b.ok) file = dataUrlToFile(b.dataUrl, 'flow-' + slug(name) + extFor(b.mime, 'image')); }
+        if (!file) { ui.line(`⚠ персонаж «${name}» не готов`); continue; }
+        const up = await injectFileIntoFlow(file, 'image');
+        ui.line(up.ok ? `персонаж «${name}» залит` : `персонаж «${name}»: ${up.reason}`);
+        await sleep(900);
+      } catch { ui.line(`⚠ персонаж «${name}» не залился`); }
+    }
+  }
+  // Применить параметры генерации (идемпотентно — no-op, если уже стоит нужное).
+  async function applyParams(it) {
+    if (it.mode) await selectMode(it.mode);
+    if (it.aspectRatio) await selectAspect(it.aspectRatio);
+    if (it.model) await selectModel(it.model);
+    if (it.outputCount) await selectCount(it.outputCount);
+    if (it.videoLength) await selectLength(it.videoLength);
+  }
+
+  // ── SUBMIT/COLLECT: разделяем ЗАПУСК и СБОР → параллельная генерация (несколько в полёте) ──
+  const batchSubmits = new Map(); // submitId → { baseline:Set, expected, collected:[], item, startedAt }
+  let batchSeq = 0;
+  const batchClaimed = new Set(); // ключи тайлов, уже отданных какому-то submit (без двойного захвата)
+  function flowResetBatch() { batchSubmits.clear(); batchClaimed.clear(); return { ok: true }; }
+
+  // Запустить ОДНУ генерацию (не ждём результата). Возвращает { ok, submitId }.
+  async function flowSubmit(item) {
+    const it = item || {};
+    ui.task('▶ ' + (it.prompt || '(без промпта)').slice(0, 120));
+    if (detectThrottle()) { send({ type: 'flow-throttled' }); return { ok: false, throttled: true }; }
+    if (!/\/project\//.test(location.href)) { try { await openProject(); } catch { /* best-effort */ } }
+    await applyParams(it);
+    const imageDriven = it.mode === 'imageToVideo' || it.mode === 'components' || it.mode === 'imageToImage';
+    if (imageDriven && it.characters && it.characters.length) { emitProgress(it.id, 'refs', 0, 0, ''); await attachCharacters(it.characters, it.useMention); }
+    const okPrompt = await setPrompt(it.prompt || '');
+    if (!okPrompt) { ui.line('⚠ поле промпта не найдено'); return { ok: false, reason: 'selector:promptInput' }; }
+    await sleep(400);
+    const baseline = snapshotMediaKeys();
+    const btn = findGenerateButton();
+    if (!btn) { ui.line('⚠ кнопка генерации не найдена'); return { ok: false, reason: 'selector:generateBtn' }; }
+    realClick(btn);
+    const submitId = ++batchSeq;
+    batchSubmits.set(submitId, { baseline, expected: Math.max(1, it.outputCount || 1), collected: [], item: it, startedAt: Date.now() });
+    ui.line(`▶ #${submitId} запущена: ${(it.prompt || '').slice(0, 40)}`);
+    emitProgress(it.id, 'submit', 0, it.outputCount || 1, '');
+    return { ok: true, submitId };
+  }
+
+  // Собрать готовые НОВЫЕ тайлы этого submit (FIFO-атрибуция через batchClaimed). Возвращает
+  // { ok, done, results?, ready, expected }. Панель поллит, пока done не станет true.
+  async function flowCollect(payload) {
+    const p = payload || {};
+    const s = batchSubmits.get(p.submitId);
+    if (!s) return { ok: false, reason: 'no-submit' };
+    if (detectThrottle()) { send({ type: 'flow-throttled' }); return { ok: false, throttled: true }; }
+    const media = queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)
+      .filter((el) => el.tagName === 'VIDEO' || (el.clientWidth >= 120 && el.clientHeight >= 120));
+    for (const el of media) {
+      if (s.collected.length >= s.expected) break;
+      let k; try { k = videoKey(el); } catch { k = usableMediaSrc(el); }
+      if (s.baseline.has(k) || batchClaimed.has(k)) continue;
+      const src = usableMediaSrc(el);
+      const ready = src && (!src.startsWith('blob:') || el.tagName !== 'VIDEO' || (el.readyState >= 1 && Number.isFinite(el.duration)));
+      if (!ready) continue;
+      batchClaimed.add(k);
+      const kind = el.tagName === 'VIDEO' ? 'video' : 'image';
+      let native = false;
+      if (p.autoDownload && p.viaNativeMenu) { const d = await triggerNativeDownload(el, p.resolution); native = !!(d && d.ok); await sleep(600); }
+      const data = await grabMediaData(el);
+      s.collected.push({ kind, native, dataUrl: data.dataUrl || null, sourceUrl: data.sourceUrl || null });
+      ui.line(`✓ тайл ${s.collected.length}/${s.expected} (#${p.submitId})`);
+    }
+    emitProgress(p.itemId, 'generating', s.collected.length, s.expected, Math.round((s.collected.length / s.expected) * 100) + '%');
+    if (s.collected.length >= s.expected) { batchSubmits.delete(p.submitId); return { ok: true, done: true, results: s.collected }; }
+    if (Date.now() - s.startedAt > RESULT_MAX_MS) { batchSubmits.delete(p.submitId); return { ok: true, done: true, results: s.collected, timeout: true }; }
+    return { ok: true, done: false, ready: s.collected.length, expected: s.expected };
+  }
+
   // ---------- 4. двусторонняя связь Flow ↔ Галерея ----------
   function blobToDataUrl(blob) {
     return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('read')); fr.readAsDataURL(blob); });
@@ -773,6 +1081,22 @@
       injectUrlCore(msg.url, msg.kind, msg.title, false).then(sendResponse).catch((e) => sendResponse({ ok: false, error: String(e && e.message || e) }));
       return true; // async
     }
+    if (msg.type === 'flow-reset') { flowTaskBusy = false; sendResponse(flowResetBatch()); return; }
+    if (msg.type === 'flow-submit') {
+      // Пакетный движок (side-panel, без входа): ЗАПУСК одной генерации (не ждём результата).
+      flowTaskBusy = true; // вотчер проектов не мешает, пока идёт пакет
+      flowSubmit(msg.item)
+        .then((r) => sendResponse(r))
+        .catch((e) => sendResponse({ ok: false, reason: String(e && e.message || e) }));
+      return true; // async
+    }
+    if (msg.type === 'flow-collect') {
+      // СБОР готовых тайлов запущенной генерации (панель поллит до done).
+      flowCollect(msg.payload)
+        .then((r) => { flowTaskBusy = batchSubmits.size > 0; sendResponse(r); })
+        .catch((e) => { flowTaskBusy = batchSubmits.size > 0; sendResponse({ ok: false, reason: String(e && e.message || e) }); });
+      return true; // async
+    }
   });
 
   // ── ВОТЧЕР ПРОЕКТА FLOW: юзер генерит ПРЯМО в Flow ─────────────────────────
@@ -872,6 +1196,7 @@
   setTimeout(() => { void flowProjectWatcher(); }, 5000);
 
   // ---------- старт ----------
+  loadSelectorOverrides(); // оверрайды селекторов из storage (правка вживую без релиза)
   injectInterceptor();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ui.mount());
   else ui.mount();

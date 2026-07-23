@@ -331,6 +331,106 @@ async function saveReconLocal(entry) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  FLOW BOOSTER — ЛОКАЛЬНЫЙ ПАКЕТНЫЙ ДВИЖОК (side-panel, БЕЗ входа в TrendTraffic)
+//  Отдельно от прод-очереди (tickFlow/runFlowTask) — та её не касается. Панель шлёт
+//  по одному item → сюда → релей в content-flow (run-batch-item) → результат назад.
+//  Скачивание на диск (папка/имя/разрешение) + переименование родных загрузок Flow.
+// ═══════════════════════════════════════════════════════════════════════════════
+// Открыть/сфокусировать вкладку Flow (кнопка «Открыть Flow» в панели).
+async function batchOpenFlow() {
+  const tabId = await ensureFlowTab(true);
+  if (!tabId) return { ok: false, error: T('bg_openFlowFailed', 'не удалось открыть Flow') };
+  try {
+    await chrome.tabs.update(tabId, { active: true });
+    const t = await chrome.tabs.get(tabId);
+    if (t && t.windowId != null) await chrome.windows.update(t.windowId, { focused: true });
+  } catch { /* фокус best-effort */ }
+  const ready = await waitForTabReady(tabId, 20_000);
+  return { ok: true, tabId, ready };
+}
+
+// Есть ли открытая вкладка Flow и поднялся ли content-script (панель показывает готовность).
+async function batchFlowStatus() {
+  const tabs = await chrome.tabs.query({ url: ['https://labs.google/fx/tools/flow*', 'https://labs.google/fx/*/tools/flow*'] });
+  if (!tabs.length) return { ok: true, present: false, ready: false };
+  let ready = false;
+  try { const r = await chrome.tabs.sendMessage(tabs[0].id, { type: 'ping' }); ready = !!(r && r.ready); } catch { /* content ещё не готов */ }
+  return { ok: true, present: true, ready, inProject: /\/project\//.test(tabs[0].url || '') };
+}
+
+// Релей сообщения в content-flow вкладки Flow (submit/collect/reset). Панель сериализует вызовы
+// сама (await), поэтому гварда занятости нет — параллелизм в РЕНДЕРЕ Flow, не в передаче сообщений.
+async function batchRelay(msgToContent, timeoutMs) {
+  const tabId = await ensureFlowTab(false); // НЕ создаём сами (панель просит открыть явно)
+  if (!tabId) return { ok: false, reason: 'no-flow-tab', retry: true };
+  const ready = await waitForTabReady(tabId, 20_000);
+  if (!ready) return { ok: false, reason: 'flow-not-ready', retry: true };
+  try { return await withTimeout(chrome.tabs.sendMessage(tabId, msgToContent), timeoutMs); }
+  catch (e) { return { ok: false, reason: String(e && e.message || e) }; }
+}
+
+// ── скачивание на диск (папка/имя/разрешение) ──
+function slugify(s) {
+  return String(s || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 48) || 'flow';
+}
+function batchExt(mime, kind, url) {
+  const m = String(mime || '').toLowerCase();
+  const u = String(url || '').toLowerCase();
+  if ((kind || '') === 'image' || /^image\//.test(m) || /\.(png|jpe?g|webp|gif)(\?|#|$)/.test(u)) {
+    return m.includes('png') || /\.png/.test(u) ? '.png' : m.includes('webp') || /\.webp/.test(u) ? '.webp' : m.includes('gif') || /\.gif/.test(u) ? '.gif' : '.jpg';
+  }
+  return m.includes('webm') || /\.webm/.test(u) ? '.webm' : '.mp4';
+}
+function batchFilename(spec, ext) {
+  const folder = spec.folder ? String(spec.folder).replace(/[\\/]+$/,'').replace(/[<>:"|?*]+/g, '_') + '/' : '';
+  const prefix = spec.prefix ? String(spec.prefix).replace(/[\\/<>:"|?*]+/g, '_') : '';
+  const base = slugify(spec.name || spec.prompt || 'flow');
+  const idx = (spec.index != null) ? '_' + String(Number(spec.index) + 1).padStart(2, '0') : '';
+  return `${folder}${prefix}${base}${idx}${ext}`;
+}
+// Прямое скачивание результата (надёжный путь): CDN-ссылка либо dataURL → downloads.download
+// с нашим именем/папкой. Флоу-меню не трогаем (это делает triggerNativeDownload + рероут ниже).
+async function batchDownload(spec) {
+  const url = spec.sourceUrl || spec.dataUrl;
+  if (!url) return { ok: false, error: 'no-url' };
+  const ext = batchExt(spec.mime, spec.kind, spec.sourceUrl);
+  const filename = batchFilename(spec, ext);
+  try {
+    const id = await chrome.downloads.download({ url, filename, saveAs: false, conflictAction: 'uniquify' });
+    return { ok: true, downloadId: id, filename };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+
+// ── переименование РОДНЫХ загрузок Flow (когда content кликает «скачать 4K» в самом Flow) ──
+// Взводим спеку ПЕРЕД кликом; onDeterminingFilename кладёт файл Flow в нашу папку с нашим именем.
+let renameArm = null; // { folder, prefix, name, index, kind, until }
+function onDetermineFilename(item, suggest) {
+  try {
+    if (!renameArm || Date.now() > renameArm.until) return false;
+    const url = item.finalUrl || item.url || '';
+    const fn = item.filename || '';
+    const isFlow = /googleusercontent|flow-content|\.google\.com|\.googleapis\.com|\.ggpht\.com/i.test(url) || /\.(mp4|webm|png|jpe?g|webp|gif)(\?|#|$)/i.test(fn);
+    if (!isFlow) return false;
+    const ext = batchExt(item.mime, renameArm.kind, fn || url);
+    suggest({ filename: batchFilename(renameArm, ext), conflictAction: 'uniquify' });
+    return true; // мы подставили имя
+  } catch { return false; }
+}
+function armRename(spec) {
+  renameArm = { ...spec, until: Date.now() + (spec.ttlMs || 120_000) };
+  try { if (!chrome.downloads.onDeterminingFilename.hasListener(onDetermineFilename)) chrome.downloads.onDeterminingFilename.addListener(onDetermineFilename); } catch { /* */ }
+}
+function disarmRename() {
+  renameArm = null;
+  try { if (chrome.downloads.onDeterminingFilename.hasListener(onDetermineFilename)) chrome.downloads.onDeterminingFilename.removeListener(onDetermineFilename); } catch { /* */ }
+}
+
+// Включить открытие side-panel по клику на иконку расширения (панель = пульт пакета).
+async function enableSidePanelOnClick() {
+  try { if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }); } catch { /* старый Chrome */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  GOOGLE NOTEBOOKLM  (Hotebook)
 // ═══════════════════════════════════════════════════════════════════════════════
 // authuser вкладки НЕЛЬЗЯ терять при навигации: голый https://notebooklm.google.com/ уводит
@@ -773,6 +873,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'push-to-flow': sendResponse(await pushToFlow(msg.url, msg.title, msg.kind)); break;
       case 'list-flow-projects': sendResponse(await listFlowProjects()); break;
 
+      // — Flow Booster (локальный пакет из side-panel, без входа) —
+      case 'flow-open': sendResponse(await batchOpenFlow()); break;
+      case 'flow-status': sendResponse(await batchFlowStatus()); break;
+      case 'flow-reset': sendResponse(await batchRelay({ type: 'flow-reset' }, 15_000)); break;
+      case 'flow-submit': sendResponse(await batchRelay({ type: 'flow-submit', item: msg.item || {} }, 120_000)); break;
+      case 'flow-collect': sendResponse(await batchRelay({ type: 'flow-collect', payload: msg.payload || {} }, 60_000)); break;
+      case 'flow-download': sendResponse(await batchDownload(msg.spec || {})); break;
+      case 'flow-arm-rename': armRename(msg.spec || {}); sendResponse({ ok: true }); break;
+      case 'flow-disarm-rename': disarmRename(); sendResponse({ ok: true }); break;
+      case 'flow-batch-progress': sendResponse({ ok: true }); break; // прогресс слушает панель; фон просто ack'ает
+
       // — NotebookLM —
       case 'nlm-status':
         sendResponse({ connected: !!(STATE.token && STATE.apiBase), loggedIn: STATE.nlmLoggedIn, apiBase: STATE.apiBase });
@@ -923,9 +1034,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 chrome.alarms.onAlarm.addListener((a) => { if (a.name === POLL_ALARM) tick(); });
-chrome.runtime.onStartup.addListener(() => loadState().then(tick));
+chrome.runtime.onStartup.addListener(() => { loadState().then(tick); void enableSidePanelOnClick(); });
 chrome.runtime.onInstalled.addListener((details) => {
   loadState().then(tick);
+  void enableSidePanelOnClick(); // клик по иконке → открыть пульт пакета (side-panel)
   // После УСТАНОВКИ/ОБНОВЛЕНИЯ переинжектим свежие content-scripts в уже открытые вкладки
   // приложения: иначе там до ручного F5 крутится СТАРЫЙ content-bridge (без новых кнопок —
   // напр. «Переподключить» молчит). NotebookLM/Flow НЕ трогаем — там reload может оборвать
@@ -940,3 +1052,4 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 loadState().then(tick);
+void enableSidePanelOnClick();

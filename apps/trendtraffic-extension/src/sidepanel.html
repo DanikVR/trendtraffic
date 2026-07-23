@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow Booster</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="hd">
+    <div class="brand"><span class="dot"></span><b>Flow Booster</b><span class="ver" id="ver"></span></div>
+    <a class="tt" id="ttLink" href="https://app.trendtraffic.pro/gallery?tab=flow" target="_blank" rel="noopener">
+      <span class="tt-dot" id="ttDot"></span><span id="ttState">TrendFlow</span>
+    </a>
+  </header>
+
+  <main>
+    <!-- Flow tab bar -->
+    <section class="bar">
+      <button class="btn pri" id="openFlow">Open Google&nbsp;Flow</button>
+      <span class="chip off" id="flowChip">no Flow tab</span>
+    </section>
+
+    <!-- Generation settings -->
+    <section class="card">
+      <div class="grid">
+        <label class="fld">
+          <span>Mode</span>
+          <select id="mode">
+            <option value="textToVideo">Text → Video</option>
+            <option value="imageToVideo">Image → Video</option>
+            <option value="components">Ingredients → Video</option>
+            <option value="textToImage">Text → Image</option>
+            <option value="imageToImage">Image → Image</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Model</span>
+          <select id="model">
+            <option value="">Auto (current)</option>
+            <option value="Veo 3.1 Fast">Veo 3.1 — Fast</option>
+            <option value="Veo 3.1 Quality">Veo 3.1 — Quality</option>
+            <option value="Veo 2 Fast">Veo 2 — Fast</option>
+            <option value="Veo 2 Quality">Veo 2 — Quality</option>
+            <option value="Nano Banana">Nano Banana (image)</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Aspect</span>
+          <select id="aspect">
+            <option value="16:9">16:9</option>
+            <option value="9:16">9:16</option>
+            <option value="1:1">1:1</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Per prompt</span>
+          <select id="count">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Resolution</span>
+          <select id="resolution">
+            <option value="">Preview (as shown)</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+            <option value="2k">2K</option>
+            <option value="4k">4K</option>
+          </select>
+        </label>
+        <label class="fld">
+          <span>Length (s)</span>
+          <select id="length">
+            <option value="">Auto</option>
+            <option value="4">4s</option>
+            <option value="6">6s</option>
+            <option value="8">8s</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- Characters / references (image-driven modes) -->
+    <section class="card refbox" id="refBox" hidden>
+      <div class="row between">
+        <span class="lbl">Characters <em>(consistency)</em></span>
+        <label class="mini-btn"><input type="file" id="refInput" accept="image/*" multiple hidden />+ add</label>
+      </div>
+      <div class="chars" id="refs"></div>
+      <label class="fld">
+        <span>Attach to prompts</span>
+        <select id="charMode">
+          <option value="mentioned">Only characters named in the prompt</option>
+          <option value="all">All characters, on every prompt</option>
+        </select>
+      </label>
+      <label class="chk"><input type="checkbox" id="useMention" /> Use Flow @mention (else upload as reference)</label>
+      <label class="chk"><input type="checkbox" id="chain" /> Chain last result as reference (forces sequential)</label>
+    </section>
+
+    <!-- Prompts -->
+    <section class="card">
+      <div class="row between">
+        <span class="lbl">Prompts <em>(one per line)</em></span>
+        <span class="count-pill"><b id="promptCount">0</b> queued</span>
+      </div>
+      <textarea id="prompts" rows="6" placeholder="A neon city street at night, cinematic…&#10;A cat surfing a giant wave, slow motion…&#10;…"></textarea>
+    </section>
+
+    <!-- Output / download -->
+    <section class="card">
+      <div class="grid2">
+        <label class="fld"><span>Folder</span><input type="text" id="folder" placeholder="FlowBooster" /></label>
+        <label class="fld"><span>Name prefix</span><input type="text" id="prefix" placeholder="" /></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="autoDl" checked /> Auto-download results to disk</label>
+      <label class="chk"><input type="checkbox" id="hiRes" /> High-res via Flow menu (true 2K/4K, slower)</label>
+      <label class="chk" id="ttSendWrap"><input type="checkbox" id="ttSend" /> Also send to TrendFlow Gallery <a id="ttSignin" href="https://app.trendtraffic.pro" target="_blank" rel="noopener" hidden>(sign in)</a></label>
+      <div class="grid2">
+        <label class="fld inline"><span>Delay (s)</span><input type="number" id="pace" min="4" max="600" value="30" /></label>
+        <label class="fld inline"><span>Parallel</span><input type="number" id="concurrency" min="1" max="4" value="1" /></label>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="controls">
+      <button class="btn pri" id="start">▶ Start</button>
+      <button class="btn" id="pause" disabled>⏸ Pause</button>
+      <button class="btn" id="stop" disabled>■ Stop</button>
+      <button class="btn ghost" id="clear">Clear</button>
+    </section>
+
+    <!-- Queue -->
+    <section class="queue" id="queue"></section>
+
+    <!-- Log -->
+    <section class="logwrap">
+      <div class="row between"><span class="lbl dim">Log</span><button class="link" id="clearLog">clear</button></div>
+      <pre class="log" id="log"></pre>
+    </section>
+
+    <footer class="foot">
+      Free · no sign-in required. Results download to your computer. TrendFlow is optional.
+    </footer>
+  </main>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

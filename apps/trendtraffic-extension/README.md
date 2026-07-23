@@ -41,6 +41,7 @@ content-script грузится только на своём домене. Од�
 | `src/content-heygen.js` | HeyGen (isolated) | панель + драйвер рендера головы под сессией (`render-head`) |
 | `src/injected-heygen.js` | HeyGen (MAIN) | перехват `fetch/XHR` студии → разведка API + session-bearer |
 | `src/content-bridge.js` | наш домен | `window.postMessage` ↔ background (передача JWT, авто-подключение) |
+| `src/sidepanel.{html,css,js}` | side-panel | **Flow Booster** — пакетный пульт (список промптов → авто-генерация → скачивание), работает БЕЗ входа |
 
 ## HeyGen: как устроен рендер по подписке
 
@@ -105,6 +106,41 @@ zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md 
 
 Версию (`manifest.json` → `version`) бампать вместе с `TT_EXT_VERSION` в
 `apps/frontend/src/components/AppVersion.tsx` — она показывается на карточке «Скачать».
+
+## v1.5.0 — Flow Booster (пакетный режим, side-panel, БЕЗ входа)
+
+Паритет с платными Flow-автоматизаторами (напр. «Auto Flow»), но **бесплатно и без
+регистрации** — с опциональным мостом в TrendFlow. Клик по иконке расширения открывает
+**side-panel** `src/sidepanel.html` (пульт). Это отдельный ЛОКАЛЬНЫЙ движок, **не** трогает
+прод-очередь `tickFlow`/`runFlowTask` (та по-прежнему обслуживает `/api/flow-ext/tasks`).
+
+**Возможности (CROM-паритет):**
+- Пакет промптов (по одному на строку) → авто-генерация «оставь и не следи».
+- **Параллельная генерация** (Parallel 1–4): несколько генераций Flow в полёте одновременно.
+- Режимы: Text→Video, Image→Video, Ingredients→Video, Text→Image, Image→Image.
+- Модель (Veo 3.1 Fast/Quality, Veo 2), формат 16:9/9:16/1:1, кол-во на промпт, длина.
+- Авто-скачивание на диск: папка + префикс имени; разрешение 720p/1080p/2K/4K.
+- **Персонажи (auto-scan консистентности):** именованные референс-картинки; авто-прикрепление
+  к промпту по режиму «только упомянутые в тексте» / «все на каждый», через Flow `@mention`
+  либо загрузку референса. Плюс «Chain» (последний результат → референс следующего).
+- Опционально «⬆ в Галерею TrendFlow» (только если расширение подключено к аккаунту).
+- Анти-бот пейсинг между промптами (по умолч. 30с, настраивается).
+
+**Поток (submit/collect):** `sidepanel.js` держит пул до N генераций → `background` релеит
+`flow-submit`/`flow-collect`/`flow-reset` → `content-flow` запускает и по одной собирает готовые
+тайлы (FIFO-атрибуция через `batchClaimed`). Прогресс — широковещательный `flow-batch-progress`.
+Скачивание: `flow-download` (прямое, папка/имя) либо `flow-arm-rename` (переименование
+РОДНОЙ загрузки Flow при «hi-res через меню Flow»). Панель открывается по клику на иконку
+(`chrome.sidePanel.setPanelBehavior({openPanelOnActionClick:true})`).
+
+**Селекторы Flow локализованы/меняются** → матчим по тексту/aria на многих языках
+(`BATCH.*Tokens`), любую группу можно переопределить точным CSS через
+`chrome.storage.local['flowSelectors']` (правка вживую без пересборки, как remote-config CROM).
+
+**Публикация в Web Store (план):** этот же движок — кандидат в публичный бесплатный
+листинг. Перед подачей: гейт/скрытие NotebookLM+HeyGen content-scripts и JWT-моста для
+правила «одна цель», отдельные скриншоты и privacy-policy. Код Booster уже работает
+автономно (без входа) — это выполняет требование «бесплатно без регистрации».
 
 ## v1.3.0 — список проектов Flow
 

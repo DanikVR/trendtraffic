@@ -544,5 +544,13 @@
   },
   "nlm_unknownAction": {
     "message": "неизвестное действие: "
-  }
+  },
+  "fb_noFlowTab": { "message": "нет вкладки Flow" },
+  "fb_flowLoading": { "message": "Flow грузится…" },
+  "fb_flowReady": { "message": "Flow готов" },
+  "fb_flowInProject": { "message": "Flow · в проекте" },
+  "fb_ttConnected": { "message": "TrendFlow ✓" },
+  "fb_openingFlow": { "message": "открываю Google Flow…" },
+  "fb_pressOpenFlow": { "message": "нажми «Open Google Flow» и войди" },
+  "fb_addPrompts": { "message": "добавь хотя бы один промпт" }
 }
