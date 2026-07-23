@@ -30,6 +30,8 @@
   let running = false, paused = false, stopFlag = false;
   let ttConnected = false;
   let lastChainImage = null; // dataURL последнего img-результата (для «Chain»)
+  let throttleTimer = null;  // один таймер паузы по троттлингу (не плодим)
+  let renameArmed = false;   // взведено ли переименование родных hi-res загрузок на весь пакет
 
   const SETTINGS_KEYS = ['mode', 'model', 'aspect', 'count', 'resolution', 'length', 'folder', 'prefix', 'pace', 'concurrency', 'charMode'];
   const FLAG_KEYS = ['autoDl', 'hiRes', 'ttSend', 'chain', 'useMention'];
@@ -159,9 +161,10 @@
   }
 
   function handleThrottle() {
+    if (throttleTimer) return; // уже на паузе по троттлингу — второй таймер обрезал бы её раньше времени
     log('⏸ Flow throttling — pausing 20 min');
     paused = true; els.pause.textContent = '▶ Resume';
-    setTimeout(() => { paused = false; els.pause.textContent = '⏸ Pause'; }, 20 * 60_000);
+    throttleTimer = setTimeout(() => { throttleTimer = null; paused = false; els.pause.textContent = '⏸ Pause'; }, 20 * 60_000);
   }
 
   // ---------- главный цикл: пул параллельных генераций ----------
@@ -169,10 +172,17 @@
     let fs = await bg({ type: 'flow-status' });
     if (!fs || !fs.present) { log(T('fb_openingFlow', 'opening Google Flow…')); await bg({ type: 'flow-open' }); await sleep(1500); }
     await bg({ type: 'flow-reset' });
+    const hiRes = () => els.hiRes.checked && !!els.resolution.value;
+    // Переименование родных hi-res загрузок Flow — взводим ОДИН раз на весь пакет: сама загрузка
+    // происходит ПОЗЖЕ (во время сбора), поэтому арм вокруг submit не срабатывал. Имя общее + uniquify
+    // (onDeterminingFilename не знает, какой промпт инициировал загрузку); папка/префикс — как заданы.
+    if (hiRes() && els.autoDl.checked) {
+      await bg({ type: 'flow-arm-rename', spec: { folder: els.folder.value.trim(), prefix: els.prefix.value.trim(), name: 'flow', kind: (els.mode.value === 'imageToImage' || els.mode.value === 'textToImage') ? 'image' : 'video', ttlMs: 6 * 3600 * 1000 } });
+      renameArmed = true;
+    }
 
     let conc = clamp(Number(els.concurrency.value) || 1, 1, 4);
     if (els.chain.checked) conc = 1; // «chain» требует последовательности (результат → референс следующего)
-    const hiRes = () => els.hiRes.checked && !!els.resolution.value;
     const inFlight = []; // [{item, submitId}]
     let qi = 0;
     const nextQueued = () => { while (qi < queue.length && queue[qi].status !== 'queued') qi++; return qi < queue.length ? queue[qi] : null; };
@@ -195,11 +205,9 @@
           videoLength: els.length.value ? Number(els.length.value) : null,
           characters: refs.map((c) => ({ name: c.name, dataUrl: c.dataUrl })), useMention: els.useMention.checked,
         };
-        if (hiRes() && els.autoDl.checked) await bg({ type: 'flow-arm-rename', spec: { folder: els.folder.value.trim(), prefix: els.prefix.value.trim(), name: item.prompt, kind: (els.mode.value === 'imageToImage' || els.mode.value === 'textToImage') ? 'image' : 'video' } });
         qi++;
         let sub;
         try { sub = await bg({ type: 'flow-submit', item: payload }); } catch (e) { sub = { ok: false, reason: String(e && e.message || e) }; }
-        if (hiRes() && els.autoDl.checked) await bg({ type: 'flow-disarm-rename' });
         if (sub && sub.throttled) { item.status = 'queued'; item.note = 'throttled'; qi--; renderQueue(); handleThrottle(); break; }
         if (!sub || !sub.ok) {
           item.status = 'failed'; item.note = (sub && sub.reason) || 'submit failed'; renderQueue();
@@ -256,6 +264,9 @@
   }
   function finishRun() {
     running = false; paused = false; stopFlag = false;
+    if (throttleTimer) { clearTimeout(throttleTimer); throttleTimer = null; }
+    if (renameArmed) { bg({ type: 'flow-disarm-rename' }); renameArmed = false; }
+    bg({ type: 'flow-reset' }); // сброс состояния пакета в content + разморозка вотчера (flowTaskBusy=false)
     els.start.disabled = false; els.pause.disabled = true; els.stop.disabled = true; els.pause.textContent = '⏸ Pause';
     for (const q of queue) if (q.status === 'running') { q.status = 'failed'; q.note = 'stopped'; }
     renderQueue();

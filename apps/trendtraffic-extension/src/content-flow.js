@@ -539,56 +539,6 @@
     if (item) { realClick(item); await sleep(300); return true; }
     return false;
   }
-  // Загрузка референс-картинок для image-driven режимов (переиспользуем injectFileIntoFlow).
-  async function uploadReferences(refs) {
-    if (!refs || !refs.length) return;
-    for (let i = 0; i < Math.min(refs.length, 6); i++) {
-      const r = refs[i];
-      try {
-        let file = null;
-        if (typeof r === 'string' && r.startsWith('data:')) file = dataUrlToFile(r, 'flow-ref-' + (i + 1) + guessExt((/^data:([^;]+)/.exec(r) || [])[1] || ''));
-        else if (typeof r === 'string') { const b = await send({ type: 'fetch-bytes', url: r }); if (b && b.ok) file = dataUrlToFile(b.dataUrl, 'flow-ref-' + (i + 1) + extFor(b.mime, 'image')); }
-        if (!file) { ui.line(`⚠ референс ${i + 1} не готов`); continue; }
-        const up = await injectFileIntoFlow(file, 'image');
-        ui.line(up.ok ? `референс ${i + 1} залит` : `референс ${i + 1}: ${up.reason}`);
-        await sleep(900);
-      } catch { ui.line(`⚠ референс ${i + 1} не залился`); }
-    }
-  }
-  // Снимок ключей текущих медиа ДО генерации — чтобы отличить НОВЫЕ тайлы от старых.
-  function snapshotMediaKeys() {
-    const set = new Set();
-    for (const el of queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)) { try { set.add(videoKey(el)); } catch { /* */ } }
-    return set;
-  }
-  // Ожидание N новых готовых тайлов с прогрессом. Возвращает массив НОВЫХ медиа-элементов.
-  async function waitForTiles(expected, baseline, itemId) {
-    const started = Date.now();
-    let lastPct = -1;
-    while (Date.now() - started < RESULT_MAX_MS) {
-      if (detectThrottle()) return { throttled: true };
-      const media = queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)
-        .filter((el) => el.tagName === 'VIDEO' || (el.clientWidth >= 120 && el.clientHeight >= 120));
-      const fresh = [];
-      const seenCycle = new Set();
-      for (const el of media) {
-        let k; try { k = videoKey(el); } catch { k = usableMediaSrc(el); }
-        if (baseline.has(k) || seenCycle.has(k)) continue;
-        const src = usableMediaSrc(el);
-        // «готов» = не blob-заглушка ИЛИ blob с прочитанными метаданными (для video)
-        const ready = src && (!src.startsWith('blob:') || el.tagName !== 'VIDEO' || (el.readyState >= 1 && Number.isFinite(el.duration)));
-        if (ready) { seenCycle.add(k); fresh.push(el); }
-      }
-      const pct = Math.min(100, Math.round((fresh.length / Math.max(1, expected)) * 100));
-      if (pct !== lastPct) { lastPct = pct; emitProgress(itemId, 'generating', fresh.length, expected, `${pct}%`); }
-      if (fresh.length >= expected) return { tiles: fresh.slice(0, expected) };
-      await sleep(RESULT_POLL_MS);
-    }
-    // таймаут: отдаём что успели
-    const media = queryAllDeep('video,img').filter(visible).filter(usableMediaSrc);
-    const fresh = media.filter((el) => { try { return !baseline.has(videoKey(el)); } catch { return false; } });
-    return fresh.length ? { tiles: fresh, partial: true } : { timeout: true };
-  }
   // Скачать тайл в нужном разрешении ЧЕРЕЗ РОДНОЕ меню Flow (истинный 4K/2K, не превью).
   // Наводимся на тайл → ищем кнопку «скачать» → пункт нужного разрешения. Не нашли → false
   // (панель скачает src напрямую как фолбэк). background.js переименует загрузку Flow в нашу папку.
@@ -664,10 +614,21 @@
   }
 
   // ── SUBMIT/COLLECT: разделяем ЗАПУСК и СБОР → параллельная генерация (несколько в полёте) ──
-  const batchSubmits = new Map(); // submitId → { baseline:Set, expected, collected:[], item, startedAt }
+  // ВАЖНО: идентичность тайлов — по ССЫЛКЕ НА DOM-ЭЛЕМЕНТ (WeakSet), НЕ по контент-ключу.
+  // Контент-ключ (videoKey) коллизит: у картинок duration/videoWidth=undefined → один ключ на все,
+  // у клипов одинаковой длины/размера — тоже; из-за этого собирался только ПЕРВЫЙ результат.
+  const batchSubmits = new Map(); // submitId → { baseline:WeakSet<el>, expected, collected:[], item, startedAt }
   let batchSeq = 0;
-  const batchClaimed = new Set(); // ключи тайлов, уже отданных какому-то submit (без двойного захвата)
-  function flowResetBatch() { batchSubmits.clear(); batchClaimed.clear(); return { ok: true }; }
+  let batchClaimedEls = new WeakSet(); // элементы-тайлы, уже отданные какому-то submit (без двойного захвата)
+  function flowResetBatch() { batchSubmits.clear(); batchClaimedEls = new WeakSet(); return { ok: true }; }
+  // Элемент внутри НАШЕЙ панели (#tt-flow-host)? — превью в пикере не считать за результат.
+  function inOurPanel(el) { try { const r = el.getRootNode && el.getRootNode(); return !!(r && r.host && r.host.id === 'tt-flow-host'); } catch { return false; } }
+  // Кандидаты-результаты на экране (видео + крупные картинки), кроме нашей панели.
+  function batchMediaEls() {
+    return queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)
+      .filter((el) => el.tagName === 'VIDEO' || (el.clientWidth >= 120 && el.clientHeight >= 120))
+      .filter((el) => !inOurPanel(el));
+  }
 
   // Запустить ОДНУ генерацию (не ждём результата). Возвращает { ok, submitId }.
   async function flowSubmit(item) {
@@ -681,7 +642,7 @@
     const okPrompt = await setPrompt(it.prompt || '');
     if (!okPrompt) { ui.line('⚠ поле промпта не найдено'); return { ok: false, reason: 'selector:promptInput' }; }
     await sleep(400);
-    const baseline = snapshotMediaKeys();
+    const baseline = new WeakSet(batchMediaEls()); // медиа, СУЩЕСТВОВАВШИЕ до этой генерации (по ссылке)
     const btn = findGenerateButton();
     if (!btn) { ui.line('⚠ кнопка генерации не найдена'); return { ok: false, reason: 'selector:generateBtn' }; }
     realClick(btn);
@@ -692,28 +653,29 @@
     return { ok: true, submitId };
   }
 
-  // Собрать готовые НОВЫЕ тайлы этого submit (FIFO-атрибуция через batchClaimed). Возвращает
+  // Собрать готовые НОВЫЕ тайлы этого submit (FIFO-атрибуция по ссылке на элемент). Возвращает
   // { ok, done, results?, ready, expected }. Панель поллит, пока done не станет true.
   async function flowCollect(payload) {
     const p = payload || {};
     const s = batchSubmits.get(p.submitId);
     if (!s) return { ok: false, reason: 'no-submit' };
     if (detectThrottle()) { send({ type: 'flow-throttled' }); return { ok: false, throttled: true }; }
-    const media = queryAllDeep('video,img').filter(visible).filter(usableMediaSrc)
-      .filter((el) => el.tagName === 'VIDEO' || (el.clientWidth >= 120 && el.clientHeight >= 120));
-    for (const el of media) {
+    for (const el of batchMediaEls()) {
       if (s.collected.length >= s.expected) break;
-      let k; try { k = videoKey(el); } catch { k = usableMediaSrc(el); }
-      if (s.baseline.has(k) || batchClaimed.has(k)) continue;
+      if (s.baseline.has(el) || batchClaimedEls.has(el)) continue; // был до генерации ИЛИ уже отдан
       const src = usableMediaSrc(el);
       const ready = src && (!src.startsWith('blob:') || el.tagName !== 'VIDEO' || (el.readyState >= 1 && Number.isFinite(el.duration)));
       if (!ready) continue;
-      batchClaimed.add(k);
+      batchClaimedEls.add(el);
       const kind = el.tagName === 'VIDEO' ? 'video' : 'image';
       let native = false;
       if (p.autoDownload && p.viaNativeMenu) { const d = await triggerNativeDownload(el, p.resolution); native = !!(d && d.ok); await sleep(600); }
-      const data = await grabMediaData(el);
-      s.collected.push({ kind, native, dataUrl: data.dataUrl || null, sourceUrl: data.sourceUrl || null });
+      // http(s) CDN-ссылку НЕ инлайним в dataUrl (крупный клип → >60с в канале сообщений и таймаут):
+      // отдаём sourceUrl, а байты качает фон (downloads.download / fetchBytes с cookie). blob/data → инлайн.
+      let out;
+      if (/^https?:/i.test(src)) out = { sourceUrl: src, kind };
+      else out = await grabMediaData(el); // blob/data → dataUrl (иначе фон не скачает)
+      s.collected.push({ kind, native, dataUrl: out.dataUrl || null, sourceUrl: out.sourceUrl || null });
       ui.line(`✓ тайл ${s.collected.length}/${s.expected} (#${p.submitId})`);
     }
     emitProgress(p.itemId, 'generating', s.collected.length, s.expected, Math.round((s.collected.length / s.expected) * 100) + '%');
@@ -1085,9 +1047,11 @@
     if (msg.type === 'flow-submit') {
       // Пакетный движок (side-panel, без входа): ЗАПУСК одной генерации (не ждём результата).
       flowTaskBusy = true; // вотчер проектов не мешает, пока идёт пакет
+      // busy сверяем с реальным числом в полёте: если submit упал (селектор не найден) и в полёте
+      // ничего нет — НЕ оставляем busy=true навсегда (иначе вотчер авто-ингеста заморожен до reset).
       flowSubmit(msg.item)
-        .then((r) => sendResponse(r))
-        .catch((e) => sendResponse({ ok: false, reason: String(e && e.message || e) }));
+        .then((r) => { flowTaskBusy = batchSubmits.size > 0; sendResponse(r); })
+        .catch((e) => { flowTaskBusy = batchSubmits.size > 0; sendResponse({ ok: false, reason: String(e && e.message || e) }); });
       return true; // async
     }
     if (msg.type === 'flow-collect') {

@@ -393,7 +393,10 @@ function batchFilename(spec, ext) {
 async function batchDownload(spec) {
   const url = spec.sourceUrl || spec.dataUrl;
   if (!url) return { ok: false, error: 'no-url' };
-  const ext = batchExt(spec.mime, spec.kind, spec.sourceUrl);
+  // dataUrl-only: mime берём из самого data:-префикса, иначе image/png сохранялся бы как .jpg.
+  let mime = spec.mime;
+  if (!spec.sourceUrl && spec.dataUrl) { const m = /^data:([^;]+)/.exec(spec.dataUrl); if (m) mime = m[1]; }
+  const ext = batchExt(mime, spec.kind, spec.sourceUrl);
   const filename = batchFilename(spec, ext);
   try {
     const id = await chrome.downloads.download({ url, filename, saveAs: false, conflictAction: 'uniquify' });
@@ -878,7 +881,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'flow-status': sendResponse(await batchFlowStatus()); break;
       case 'flow-reset': sendResponse(await batchRelay({ type: 'flow-reset' }, 15_000)); break;
       case 'flow-submit': sendResponse(await batchRelay({ type: 'flow-submit', item: msg.item || {} }, 120_000)); break;
-      case 'flow-collect': sendResponse(await batchRelay({ type: 'flow-collect', payload: msg.payload || {} }, 60_000)); break;
+      case 'flow-collect': sendResponse(await batchRelay({ type: 'flow-collect', payload: msg.payload || {} }, 120_000)); break;
       case 'flow-download': sendResponse(await batchDownload(msg.spec || {})); break;
       case 'flow-arm-rename': armRename(msg.spec || {}); sendResponse({ ok: true }); break;
       case 'flow-disarm-rename': disarmRename(); sendResponse({ ok: true }); break;
