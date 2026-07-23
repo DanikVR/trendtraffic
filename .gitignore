@@ -57,3 +57,7 @@ Desktop.ini
 # Загруженные пользователями медиа (хранятся на диске, не в git)
 **/uploads/
 __pycache__/
+
+# Flow Booster — публичный CWS-билд (генерируется build-public.py, не коммитим артефакты)
+apps/trendtraffic-extension/dist-public/
+apps/trendtraffic-extension/dist-public.zip

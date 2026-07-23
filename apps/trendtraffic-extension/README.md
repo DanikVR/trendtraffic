@@ -137,10 +137,15 @@ zip -r -X ../frontend/public/trendtraffic-extension.zip manifest.json README.md 
 (`BATCH.*Tokens`), любую группу можно переопределить точным CSS через
 `chrome.storage.local['flowSelectors']` (правка вживую без пересборки, как remote-config CROM).
 
-**Публикация в Web Store (план):** этот же движок — кандидат в публичный бесплатный
-листинг. Перед подачей: гейт/скрытие NotebookLM+HeyGen content-scripts и JWT-моста для
-правила «одна цель», отдельные скриншоты и privacy-policy. Код Booster уже работает
-автономно (без входа) — это выполняет требование «бесплатно без регистрации».
+**Публичный CWS-билд — `python build-public.py`.** Собирает Flow-only, бесплатный-без-входа
+билд в `dist-public/` (+ `dist-public.zip` для загрузки в Chrome Web Store) из ЭТОГО же
+исходника: берёт только Flow-части (background/content-flow/content-bridge/injected/sidepanel),
+ВЫБРАСЫВАЕТ NotebookLM+HeyGen (content+injected), нейтрализует их фоновые циклы в background.js
+(остаётся `tickFlow`), пишет свой manifest (своё имя-бренд, урезанные права: storage/downloads/
+tabs/alarms/sidePanel, хосты без notebooklm/heygen, без scripting) и `STORE.md` (текст листинга +
+обоснование прав + privacy). Правило CWS «одна цель» = автоматизация Google Flow; мост TrendFlow
+остаётся как ОПЦИОНАЛЬНЫЙ экспорт. `dist-public/` и `dist-public.zip` — в `.gitignore` (регенерятся
+скриптом; НЕ править руками). Enterprise-`.zip` (`trendtraffic-extension.zip`) не затрагивается.
 
 ## v1.3.0 — список проектов Flow
 
