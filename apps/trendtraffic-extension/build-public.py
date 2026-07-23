@@ -15,15 +15,15 @@ build-public.py — собирает ПУБЛИЧНЫЙ, Flow-only, беспла
 
 Запуск:  python apps/trendtraffic-extension/build-public.py   (из корня репозитория ИЛИ из папки расширения)
 """
-import json, os, re, shutil, zipfile, sys
+import json, os, re, shutil, zipfile, sys, stat, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))          # …/apps/trendtraffic-extension
 OUT = os.path.join(HERE, "dist-public")
 ZIP = os.path.join(HERE, "dist-public.zip")
 
 PUBLIC_NAME = "Flow Booster — Bulk & Auto for Google Flow"
-PUBLIC_DESC = ("Batch-generate and auto-download videos & images on Google Flow (Veo). "
-               "Queue prompts, run them automatically, save results. Free, no sign-up.")
+PUBLIC_DESC = ("Batch generate & auto-download videos and images on Google Flow (Veo). "
+               "Queue prompts, run them automatically. Free, no sign-up.")
 
 # файлы src, которые ВХОДЯТ в публичный билд (всё остальное из src/ отбрасывается)
 SRC_KEEP = ["background.js", "content-flow.js", "content-bridge.js", "injected.js",
@@ -33,6 +33,23 @@ def read(p):  return open(p, "r", encoding="utf-8").read()
 def write(p, s):
     os.makedirs(os.path.dirname(p), exist_ok=True)
     open(p, "w", encoding="utf-8", newline="\n").write(s)
+
+def robust_rmtree(path):
+    """Google Drive/AV держат кратковременные локи на файлы в repo → rmtree падает WinError 5.
+    Снимаем read-only, ретраим. Если так и не вышло — не критично: copytree(dirs_exist_ok)
+    и write() перезапишут содержимое поверх."""
+    if not os.path.isdir(path): return
+    def onexc(func, p, exc):
+        try: os.chmod(p, stat.S_IWRITE); func(p)
+        except Exception: pass
+    for _ in range(4):
+        try:
+            try: shutil.rmtree(path, onexc=onexc)        # Python 3.12+
+            except TypeError: shutil.rmtree(path, onerror=lambda f, p, e: onexc(f, p, e))
+            if not os.path.isdir(path): return
+        except Exception: pass
+        time.sleep(0.4)
+    shutil.rmtree(path, ignore_errors=True)  # финальная best-effort зачистка
 
 def manifest_version():
     return json.loads(read(os.path.join(HERE, "manifest.json")))["version"]
@@ -128,12 +145,12 @@ def main():
     try: sys.stdout.reconfigure(encoding="utf-8")  # Windows-консоль по умолчанию cp1251 → давит ✓/—
     except Exception: pass
     ver = manifest_version()
-    if os.path.isdir(OUT): shutil.rmtree(OUT)
-    os.makedirs(OUT)
+    robust_rmtree(OUT)
+    os.makedirs(OUT, exist_ok=True)
 
-    # icons + _locales — как есть
-    shutil.copytree(os.path.join(HERE, "icons"), os.path.join(OUT, "icons"))
-    shutil.copytree(os.path.join(HERE, "_locales"), os.path.join(OUT, "_locales"))
+    # icons + _locales — как есть (dirs_exist_ok: переживаем не до конца снесённую папку под локом Drive)
+    shutil.copytree(os.path.join(HERE, "icons"), os.path.join(OUT, "icons"), dirs_exist_ok=True)
+    shutil.copytree(os.path.join(HERE, "_locales"), os.path.join(OUT, "_locales"), dirs_exist_ok=True)
 
     # src — только разрешённые файлы; background.js трансформируем
     for f in SRC_KEEP:
@@ -148,7 +165,11 @@ def main():
     write(os.path.join(OUT, "STORE.md"), STORE_MD)
 
     # zip (файлы в корне архива)
-    if os.path.exists(ZIP): os.remove(ZIP)
+    for _ in range(4):
+        try:
+            if os.path.exists(ZIP): os.remove(ZIP)
+            break
+        except Exception: time.sleep(0.4)
     files = []
     for root, dirs, fs in os.walk(OUT):
         dirs.sort()
