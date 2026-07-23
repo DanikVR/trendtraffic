@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Tindakan tidak dikenal: "
+  },
+  "fb_noFlowTab": {
+    "message": "tidak ada tab Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow memuat…"
+  },
+  "fb_flowReady": {
+    "message": "Flow siap"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · dalam proyek"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "membuka Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "tekan \"Buka Google Flow\" dan masuk"
+  },
+  "fb_addPrompts": {
+    "message": "tambahkan setidaknya satu prompt"
   }
 }

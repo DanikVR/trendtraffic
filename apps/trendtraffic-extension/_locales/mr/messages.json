@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "अज्ञात क्रिया: "
+  },
+  "fb_noFlowTab": {
+    "message": "Flow टॅब नाही"
+  },
+  "fb_flowLoading": {
+    "message": "Flow लोड होत आहे…"
+  },
+  "fb_flowReady": {
+    "message": "Flow तयार"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · प्रोजेक्टमध्ये"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow उघडत आहे…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Open Google Flow\" दाबा आणि साइन इन करा"
+  },
+  "fb_addPrompts": {
+    "message": "किमान एक प्रॉम्प्ट जोडा"
   }
 }

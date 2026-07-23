@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Άγνωστη ενέργεια: "
+  },
+  "fb_noFlowTab": {
+    "message": "καμία καρτέλα Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Φόρτωση Flow…"
+  },
+  "fb_flowReady": {
+    "message": "Το Flow είναι έτοιμο"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · στο έργο"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "άνοιγμα Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "πατήστε \"Άνοιγμα Google Flow\" και συνδεθείτε"
+  },
+  "fb_addPrompts": {
+    "message": "προσθέστε τουλάχιστον μία προτροπή"
   }
 }

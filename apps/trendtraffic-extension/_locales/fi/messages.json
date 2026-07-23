@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Tuntematon toiminto: "
+  },
+  "fb_noFlowTab": {
+    "message": "ei Flow-välilehteä"
+  },
+  "fb_flowLoading": {
+    "message": "Flow latautuu…"
+  },
+  "fb_flowReady": {
+    "message": "Flow valmis"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · projektissa"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "avataan Google Flow’ta…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "paina ”Avaa Google Flow” ja kirjaudu sisään"
+  },
+  "fb_addPrompts": {
+    "message": "lisää vähintään yksi kehote"
   }
 }

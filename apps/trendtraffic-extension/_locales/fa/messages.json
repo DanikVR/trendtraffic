@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "اقدام نامشخص: "
+  },
+  "fb_noFlowTab": {
+    "message": "برگه Flow موجود نیست"
+  },
+  "fb_flowLoading": {
+    "message": "Flow در حال بارگیری…"
+  },
+  "fb_flowReady": {
+    "message": "Flow آماده است"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · در پروژه"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow در حال باز شدن…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Open Google Flow\" را فشار دهید و وارد شوید"
+  },
+  "fb_addPrompts": {
+    "message": "حداقل یک اعلان اضافه کنید"
   }
 }

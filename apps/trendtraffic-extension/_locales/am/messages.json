@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "ያልታወቀ ድርጊት፦ "
+  },
+  "fb_noFlowTab": {
+    "message": "የፍሎው ትር የለም"
+  },
+  "fb_flowLoading": {
+    "message": "ፍሎው እየጫነ ነው…"
+  },
+  "fb_flowReady": {
+    "message": "ፍሎው ዝግጁ ነው"
+  },
+  "fb_flowInProject": {
+    "message": "ፍሎው · በፕሮጀክት ውስጥ"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow እየከፈተ ነው…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "“Google Flow ክፈት”ን ይጫኑ እና ይግቡ"
+  },
+  "fb_addPrompts": {
+    "message": "ቢያንስ አንድ ጥያቄ ያክሉ"
   }
 }

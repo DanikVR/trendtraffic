@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "अज्ञात कार्रवाई: "
+  },
+  "fb_noFlowTab": {
+    "message": "कोई फ़्लो टैब नहीं"
+  },
+  "fb_flowLoading": {
+    "message": "फ़्लो लोड हो रहा है…"
+  },
+  "fb_flowReady": {
+    "message": "फ़्लो तैयार है"
+  },
+  "fb_flowInProject": {
+    "message": "फ़्लो · प्रोजेक्ट में"
+  },
+  "fb_ttConnected": {
+    "message": "ट्रेंडफ़्लो ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google फ़्लो खुल रहा है…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Google फ़्लो खोलें\" दबाएँ और साइन इन करें"
+  },
+  "fb_addPrompts": {
+    "message": "कम से कम एक प्रॉम्प्ट जोड़ें"
   }
 }

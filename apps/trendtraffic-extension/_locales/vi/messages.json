@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Hành động không xác định: "
+  },
+  "fb_noFlowTab": {
+    "message": "chưa có tab Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow đang tải…"
+  },
+  "fb_flowReady": {
+    "message": "Flow đã sẵn sàng"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · trong dự án"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "đang mở Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "nhấn \"Mở Google Flow\" và đăng nhập"
+  },
+  "fb_addPrompts": {
+    "message": "thêm ít nhất một lời nhắc"
   }
 }

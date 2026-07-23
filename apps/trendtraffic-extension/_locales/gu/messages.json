@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "અજાણી ક્રિયા: "
+  },
+  "fb_noFlowTab": {
+    "message": "કોઈ ફ્લો ટૅબ નથી"
+  },
+  "fb_flowLoading": {
+    "message": "ફ્લો લોડ થઈ રહ્યો છે…"
+  },
+  "fb_flowReady": {
+    "message": "ફ્લો તૈયાર છે"
+  },
+  "fb_flowInProject": {
+    "message": "ફ્લો · પ્રોજેક્ટમાં"
+  },
+  "fb_ttConnected": {
+    "message": "ટ્રેન્ડફ્લો ✓"
+  },
+  "fb_openingFlow": {
+    "message": "ગૂગલ ફ્લો ખોલી રહ્યું છે…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"ગૂગલ ફ્લો ખોલો\" દબાવો અને સાઇન ઇન કરો"
+  },
+  "fb_addPrompts": {
+    "message": "ઓછામાં ઓછો એક પ્રોમ્પ્ટ ઉમેરો"
   }
 }

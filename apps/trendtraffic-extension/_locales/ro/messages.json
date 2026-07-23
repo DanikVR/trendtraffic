@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Acțiune necunoscută: "
+  },
+  "fb_noFlowTab": {
+    "message": "niciun tab Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow se încarcă…"
+  },
+  "fb_flowReady": {
+    "message": "Flow gata"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · în proiect"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "se deschide Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "apăsați „Deschideți Google Flow” și conectați-vă"
+  },
+  "fb_addPrompts": {
+    "message": "adăugați cel puțin o solicitare"
   }
 }

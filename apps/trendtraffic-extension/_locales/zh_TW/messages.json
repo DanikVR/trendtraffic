@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "未知動作："
+  },
+  "fb_noFlowTab": {
+    "message": "沒有 Flow 分頁"
+  },
+  "fb_flowLoading": {
+    "message": "Flow 載入中…"
+  },
+  "fb_flowReady": {
+    "message": "Flow 已就緒"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · 在專案中"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "正在開啟 Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "按下「開啟 Google Flow」並登入"
+  },
+  "fb_addPrompts": {
+    "message": "新增至少一個提示"
   }
 }

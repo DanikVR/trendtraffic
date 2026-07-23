@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "അജ്ഞാത പ്രവർത്തനം: "
+  },
+  "fb_noFlowTab": {
+    "message": "ഫ്ലോ ടാബ് ഇല്ല"
+  },
+  "fb_flowLoading": {
+    "message": "ഫ്ലോ ലോഡുചെയ്യുന്നു…"
+  },
+  "fb_flowReady": {
+    "message": "ഫ്ലോ തയ്യാർ"
+  },
+  "fb_flowInProject": {
+    "message": "ഫ്ലോ · പ്രോജക്റ്റിൽ"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow തുറക്കുന്നു…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Google Flow തുറക്കുക\" അമർത്തി സൈൻ ഇൻ ചെയ്യുക"
+  },
+  "fb_addPrompts": {
+    "message": "കുറഞ്ഞത് ഒരു പ്രോംപ്റ്റ് ചേർക്കുക"
   }
 }

@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Ukendt handling: "
+  },
+  "fb_noFlowTab": {
+    "message": "ingen Flow-fane"
+  },
+  "fb_flowLoading": {
+    "message": "Flow indlæser…"
+  },
+  "fb_flowReady": {
+    "message": "Flow klar"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · i projekt"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "åbner Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "tryk på \"Åbn Google Flow\", og log ind"
+  },
+  "fb_addPrompts": {
+    "message": "tilføj mindst én prompt"
   }
 }

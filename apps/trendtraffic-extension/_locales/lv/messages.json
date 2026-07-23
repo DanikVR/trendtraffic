@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Nezināma darbība: "
+  },
+  "fb_noFlowTab": {
+    "message": "nav Flow cilnes"
+  },
+  "fb_flowLoading": {
+    "message": "Flow ielādējas…"
+  },
+  "fb_flowReady": {
+    "message": "Flow gatavs"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · projektā"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "atver Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "nospiediet \"Atvērt Google Flow\" un pierakstieties"
+  },
+  "fb_addPrompts": {
+    "message": "pievienojiet vismaz vienu uzvedni"
   }
 }

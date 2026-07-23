@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Ismeretlen művelet: "
+  },
+  "fb_noFlowTab": {
+    "message": "nincs Flow lap"
+  },
+  "fb_flowLoading": {
+    "message": "Flow betöltése…"
+  },
+  "fb_flowReady": {
+    "message": "Flow kész"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · projektben"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow megnyitása…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "nyomja meg az „Open Google Flow” gombot és jelentkezzen be"
+  },
+  "fb_addPrompts": {
+    "message": "adjon hozzá legalább egy promptot"
   }
 }

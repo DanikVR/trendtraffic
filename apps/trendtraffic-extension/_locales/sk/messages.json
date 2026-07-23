@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Neznáma akcia: "
+  },
+  "fb_noFlowTab": {
+    "message": "žiadna karta Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow sa načítava…"
+  },
+  "fb_flowReady": {
+    "message": "Flow je pripravený"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · v projekte"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "otvára sa Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "stlačte „Otvoriť Google Flow“ a prihláste sa"
+  },
+  "fb_addPrompts": {
+    "message": "pridajte aspoň jednu výzvu"
   }
 }

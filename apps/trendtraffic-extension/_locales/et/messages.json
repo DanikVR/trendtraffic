@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Tundmatu tegevus: "
+  },
+  "fb_noFlowTab": {
+    "message": "Flow vahelehte pole"
+  },
+  "fb_flowLoading": {
+    "message": "Flow laadimine…"
+  },
+  "fb_flowReady": {
+    "message": "Flow valmis"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · projektis"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow avamine…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "vajuta \"Ava Google Flow\" ja logi sisse"
+  },
+  "fb_addPrompts": {
+    "message": "lisa vähemalt üks viip"
   }
 }

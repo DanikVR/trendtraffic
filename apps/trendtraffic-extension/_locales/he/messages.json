@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "פעולה לא ידועה: "
+  },
+  "fb_noFlowTab": {
+    "message": "אין כרטיסיית Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow נטען…"
+  },
+  "fb_flowReady": {
+    "message": "Flow מוכן"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · בפרויקט"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "פותח את Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "לחץ על \"פתח את Google Flow\" והיכנס"
+  },
+  "fb_addPrompts": {
+    "message": "הוסף לפחות הנחיה אחת"
   }
 }

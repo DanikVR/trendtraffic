@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "తెలియని చర్య: "
+  },
+  "fb_noFlowTab": {
+    "message": "Flow ట్యాబ్ లేదు"
+  },
+  "fb_flowLoading": {
+    "message": "Flow లోడ్ అవుతోంది…"
+  },
+  "fb_flowReady": {
+    "message": "Flow సిద్ధంగా ఉంది"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · ప్రాజెక్ట్‌లో"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow తెరుస్తోంది…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"ఓపెన్ Google Flow\" నొక్కి సైన్ ఇన్ చేయండి"
+  },
+  "fb_addPrompts": {
+    "message": "కనీసం ఒక ప్రాంప్ట్‌ను జోడించండి"
   }
 }

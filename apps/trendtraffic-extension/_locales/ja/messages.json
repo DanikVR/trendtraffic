@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "不明なアクション:"
+  },
+  "fb_noFlowTab": {
+    "message": "Flowタブなし"
+  },
+  "fb_flowLoading": {
+    "message": "Flowを読み込み中…"
+  },
+  "fb_flowReady": {
+    "message": "Flowの準備ができました"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · プロジェクト内"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flowを開いています…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "「Google Flowを開く」を押してサインイン"
+  },
+  "fb_addPrompts": {
+    "message": "プロンプトを1つ以上追加してください"
   }
 }

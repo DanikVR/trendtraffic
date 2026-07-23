@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Nepoznata radnja: "
+  },
+  "fb_noFlowTab": {
+    "message": "nema kartice Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow se učitava…"
+  },
+  "fb_flowReady": {
+    "message": "Flow spreman"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · u projektu"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "otvaranje Google Flowa…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "pritisnite \"Otvori Google Flow\" i prijavite se"
+  },
+  "fb_addPrompts": {
+    "message": "dodajte barem jedan upit"
   }
 }

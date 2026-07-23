@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "ಅಜ್ಞಾತ ಕ್ರಿಯೆ: "
+  },
+  "fb_noFlowTab": {
+    "message": "ಯಾವುದೇ ಫ್ಲೋ ಟ್ಯಾಬ್ ಇಲ್ಲ"
+  },
+  "fb_flowLoading": {
+    "message": "ಫ್ಲೋ ಲೋಡ್ ಆಗುತ್ತಿದೆ…"
+  },
+  "fb_flowReady": {
+    "message": "ಫ್ಲೋ ಸಿದ್ಧವಾಗಿದೆ"
+  },
+  "fb_flowInProject": {
+    "message": "ಫ್ಲೋ · ಯೋಜನೆಯಲ್ಲಿ"
+  },
+  "fb_ttConnected": {
+    "message": "ಟ್ರೆಂಡ್‌ಫ್ಲೋ ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google ಫ್ಲೋ ತೆರೆಯಲಾಗುತ್ತಿದೆ…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Google ಫ್ಲೋ ತೆರೆಯಿರಿ\" ಒತ್ತಿ ಮತ್ತು ಸೈನ್ ಇನ್ ಮಾಡಿ"
+  },
+  "fb_addPrompts": {
+    "message": "ಕನಿಷ್ಠ ಒಂದು ಪ್ರಾಂಪ್ಟ್ ಸೇರಿಸಿ"
   }
 }

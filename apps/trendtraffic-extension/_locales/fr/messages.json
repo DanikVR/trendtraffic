@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Action inconnue : "
+  },
+  "fb_noFlowTab": {
+    "message": "pas d'onglet Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Chargement de Flow…"
+  },
+  "fb_flowReady": {
+    "message": "Flow prêt"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · dans le projet"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "ouverture de Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "appuyez sur \"Ouvrir Google Flow\" et connectez-vous"
+  },
+  "fb_addPrompts": {
+    "message": "ajoutez au moins une invite"
   }
 }

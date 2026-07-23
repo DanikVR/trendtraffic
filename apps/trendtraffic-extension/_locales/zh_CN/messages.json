@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "未知操作："
+  },
+  "fb_noFlowTab": {
+    "message": "无 Flow 标签页"
+  },
+  "fb_flowLoading": {
+    "message": "Flow 加载中…"
+  },
+  "fb_flowReady": {
+    "message": "Flow 已就绪"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · 在项目中"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "正在打开 Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "点击“打开 Google Flow”并登录"
+  },
+  "fb_addPrompts": {
+    "message": "添加至少一个提示"
   }
 }

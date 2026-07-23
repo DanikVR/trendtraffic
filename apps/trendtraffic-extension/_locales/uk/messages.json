@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Невідома дія: "
+  },
+  "fb_noFlowTab": {
+    "message": "немає вкладки Flow"
+  },
+  "fb_flowLoading": {
+    "message": "Flow завантажується…"
+  },
+  "fb_flowReady": {
+    "message": "Flow готовий"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · у проєкті"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "відкриття Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "натисніть \"Відкрити Google Flow\" та увійдіть"
+  },
+  "fb_addPrompts": {
+    "message": "додайте хоча б один запит"
   }
 }

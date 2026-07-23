@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Nežinomas veiksmas: "
+  },
+  "fb_noFlowTab": {
+    "message": "nėra Flow skirtuko"
+  },
+  "fb_flowLoading": {
+    "message": "Įkeliamas Flow…"
+  },
+  "fb_flowReady": {
+    "message": "Flow paruoštas"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · projekte"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "atidaromas Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "paspauskite „Atidaryti Google Flow“ ir prisijunkite"
+  },
+  "fb_addPrompts": {
+    "message": "pridėkite bent vieną užklausą"
   }
 }

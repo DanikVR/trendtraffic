@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "إجراء غير معروف: "
+  },
+  "fb_noFlowTab": {
+    "message": "لا توجد علامة تبويب Flow"
+  },
+  "fb_flowLoading": {
+    "message": "جارٍ تحميل Flow…"
+  },
+  "fb_flowReady": {
+    "message": "Flow جاهز"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · في المشروع"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "جارٍ فتح Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "اضغط على \"فتح Google Flow\" وسجّل الدخول"
+  },
+  "fb_addPrompts": {
+    "message": "أضف مطالبة واحدة على الأقل"
   }
 }

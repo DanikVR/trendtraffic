@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "অজানা অ্যাকশন: "
+  },
+  "fb_noFlowTab": {
+    "message": "কোনো ফ্লো ট্যাব নেই"
+  },
+  "fb_flowLoading": {
+    "message": "ফ্লো লোড হচ্ছে…"
+  },
+  "fb_flowReady": {
+    "message": "ফ্লো প্রস্তুত"
+  },
+  "fb_flowInProject": {
+    "message": "ফ্লো · প্রোজেক্টে"
+  },
+  "fb_ttConnected": {
+    "message": "ট্রেন্ডফ্লো ✓"
+  },
+  "fb_openingFlow": {
+    "message": "গুগল ফ্লো খোলা হচ্ছে…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"ওপেন গুগল ফ্লো\" টিপুন এবং সাইন ইন করুন"
+  },
+  "fb_addPrompts": {
+    "message": "অন্তত একটি প্রম্পট যোগ করুন"
   }
 }

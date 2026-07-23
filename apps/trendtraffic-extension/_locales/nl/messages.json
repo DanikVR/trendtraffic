@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Onbekende actie: "
+  },
+  "fb_noFlowTab": {
+    "message": "geen Flow-tabblad"
+  },
+  "fb_flowLoading": {
+    "message": "Flow wordt geladen…"
+  },
+  "fb_flowReady": {
+    "message": "Flow is klaar"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · in project"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow wordt geopend…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "druk op \"Open Google Flow\" en meld u aan"
+  },
+  "fb_addPrompts": {
+    "message": "voeg ten minste één prompt toe"
   }
 }

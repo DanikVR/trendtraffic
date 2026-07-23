@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "தெரியாத செயல்: "
+  },
+  "fb_noFlowTab": {
+    "message": "Flow தாவல் இல்லை"
+  },
+  "fb_flowLoading": {
+    "message": "Flow ஏற்றப்படுகிறது…"
+  },
+  "fb_flowReady": {
+    "message": "Flow தயார்"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · திட்டத்தில் உள்ளது"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow திறக்கப்படுகிறது…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Open Google Flow\" என்பதை அழுத்தி உள்நுழையவும்"
+  },
+  "fb_addPrompts": {
+    "message": "குறைந்தது ஒரு தூண்டுதலைச் சேர்க்கவும்"
   }
 }

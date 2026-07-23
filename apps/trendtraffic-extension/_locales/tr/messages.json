@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "Bilinmeyen eylem: "
+  },
+  "fb_noFlowTab": {
+    "message": "Flow sekmesi yok"
+  },
+  "fb_flowLoading": {
+    "message": "Flow yükleniyor…"
+  },
+  "fb_flowReady": {
+    "message": "Flow hazır"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · projede"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "Google Flow açılıyor…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "\"Google Flow'u Aç\" düğmesine basın ve oturum açın"
+  },
+  "fb_addPrompts": {
+    "message": "en az bir istem ekleyin"
   }
 }

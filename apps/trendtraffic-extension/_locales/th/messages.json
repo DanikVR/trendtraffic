@@ -544,5 +544,29 @@
   },
   "nlm_unknownAction": {
     "message": "การดำเนินการที่ไม่รู้จัก: "
+  },
+  "fb_noFlowTab": {
+    "message": "ไม่มีแท็บ Flow"
+  },
+  "fb_flowLoading": {
+    "message": "กำลังโหลด Flow…"
+  },
+  "fb_flowReady": {
+    "message": "Flow พร้อมแล้ว"
+  },
+  "fb_flowInProject": {
+    "message": "Flow · ในโปรเจกต์"
+  },
+  "fb_ttConnected": {
+    "message": "TrendFlow ✓"
+  },
+  "fb_openingFlow": {
+    "message": "กำลังเปิด Google Flow…"
+  },
+  "fb_pressOpenFlow": {
+    "message": "กด \"เปิด Google Flow\" และลงชื่อเข้าใช้"
+  },
+  "fb_addPrompts": {
+    "message": "เพิ่มอย่างน้อยหนึ่งข้อความแจ้ง"
   }
 }
