@@ -130,6 +130,9 @@
         waitingTask: T('flow_waitingTask', 'Ожидаю задачи из TrendTraffic…'),
         pauseBtn: T('flow_pauseBtn', 'Пауза'),
         openTT: T('flow_openTT', 'Открыть TrendTraffic'),
+        boosterBtn: T('flow_boosterBtn', '⚡ Flow Booster — пакет промптов'),
+        boosterTitle: T('flow_boosterTitle', 'Открыть пульт пакетной генерации (боковая панель Chrome)'),
+        boosterHint: T('flow_boosterHint', 'Панель не открылась — кликните иконку расширения TrendTraffic на панели Chrome'),
         toGalBtn: T('flow_toGalleryBtn', '⬆ В галерею'),
         toGalTitle: T('flow_toGalleryTitle', 'Отправить готовый клип из Flow в Галерею TrendTraffic'),
         fromGalBtn: T('flow_fromGalleryBtn', '⬇ Из Галереи'),
@@ -188,6 +191,7 @@
             <span class="sub" id="ver"></span>
           </div>
           <div class="bd" id="bd">
+            <div class="btns"><button class="pri" id="boost" title="${TXT.boosterTitle}">${TXT.boosterBtn}</button></div>
             <div class="row"><span>${TXT.state}</span><span class="pill off" id="st">${TXT.notConnected}</span></div>
             <div class="wire" id="wire"></div>
             <div class="task" id="task">${TXT.waitingTask}</div>
@@ -220,6 +224,11 @@
       // «Открыть TrendTraffic» → вкладка «Google Flow» Галереи (там — готовые проекты + генерация).
       els.open.addEventListener('click', () => window.open('https://app.trendtraffic.pro/gallery?tab=flow', '_blank'));
       els.pause.addEventListener('click', () => send({ type: 'flow-throttled' }).then(() => line(T('flow_pauseManual', 'Пауза включена вручную'))));
+      // «Flow Booster» → открыть боковую панель Chrome (пульт пакета). Открывает background:
+      // sidePanel.open доступен только там и требует пользовательский жест (клик доносится с сообщением).
+      sh.getElementById('boost').addEventListener('click', () => {
+        send({ type: 'open-booster' }).then((r) => { if (!r || !r.ok) line(TXT.boosterHint); });
+      });
       sh.getElementById('toGal').addEventListener('click', () => sendToGallery());
       sh.getElementById('fromGal').addEventListener('click', () => openGalleryPicker());
       sh.getElementById('recBtn').addEventListener('click', () => runRecon(false));

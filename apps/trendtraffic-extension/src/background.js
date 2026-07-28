@@ -877,6 +877,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'list-flow-projects': sendResponse(await listFlowProjects()); break;
 
       // — Flow Booster (локальный пакет из side-panel, без входа) —
+      case 'open-booster': {
+        // Открыть пульт пакета по кнопке из плавающей панели. sidePanel.open ТРЕБУЕТ
+        // пользовательский жест: вызов обязан случиться ДО первого await этого обработчика
+        // (тело async-IIFE до await выполняется синхронно — жест клика ещё жив).
+        try {
+          const t = sender && sender.tab;
+          const opts = t && t.id != null ? { tabId: t.id } : (t && t.windowId != null ? { windowId: t.windowId } : null);
+          if (!opts || !chrome.sidePanel || !chrome.sidePanel.open) { sendResponse({ ok: false, error: 'no sidePanel API' }); break; }
+          await chrome.sidePanel.open(opts);
+          sendResponse({ ok: true });
+        } catch (e) { sendResponse({ ok: false, error: String(e && e.message || e) }); }
+        break;
+      }
       case 'flow-open': sendResponse(await batchOpenFlow()); break;
       case 'flow-status': sendResponse(await batchFlowStatus()); break;
       case 'flow-reset': sendResponse(await batchRelay({ type: 'flow-reset' }, 15_000)); break;

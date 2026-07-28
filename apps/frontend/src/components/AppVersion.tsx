@@ -3931,18 +3931,27 @@
  *          Файлы: provider_keys.ts, render/{matting.ts,router.ts}, systemConfig.ts,
  *          UgcStudio.tsx, локали ru+en, matting-worker/README.md. */
 
-/** 2.6.37 — Расширение v1.5.0: «Flow Booster» — пакетный автопилот Google Flow (клон Auto Flow),
+/* 2.6.37 — Расширение v1.5.0: «Flow Booster» — пакетный автопилот Google Flow (клон Auto Flow),
  *          БЕСПЛАТНО без входа: side-panel (промпты → авто-генерация → скачивание), параллельная
  *          генерация 1–4, персонажи/консистентность (auto-scan), разрешение 720p–4K, папка/имя,
  *          опц. «в Галерею TrendFlow». Отдельный локальный движок — прод-очередь Flow не тронута.
  *          Файлы: trendtraffic-extension (sidepanel.*, content-flow.js, background.js, manifest,
  *          _locales en/ru), zip пересобран, карточка «Скачать» → v1.5.0. */
-export const APP_VERSION = '2.6.37';
+/** 2.6.38 — Расширение v1.5.1: Flow Booster стало видно. (1) В плавающей панели на Flow —
+ *          заметная кнопка «⚡ Flow Booster — пакет промптов»: открывает боковую панель-пульт
+ *          (background sidePanel.open по клику; жест доезжает с сообщением — вызов ДО await),
+ *          иконку расширения искать больше не нужно. (2) Side-panel полностью локализован:
+ *          вся статичная вёрстка + логи/статусы через T('fb_*') c русскими фолбэками,
+ *          72 новых ключа переведены на все 52 Chrome-локали (targeted merge, Gemini);
+ *          sidepanel.js добавлен в SRC_FILES харвестера — полный реген больше не теряет
+ *          ключи панели. Файлы: trendtraffic-extension (sidepanel.{html,js}, content-flow.js,
+ *          background.js, manifest, _locales ×52), translate-ext-runtime.mjs, zip пересобран. */
+export const APP_VERSION = '2.6.38';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.5.0';
+export const TT_EXT_VERSION = '1.5.1';
 
 export function AppVersion() {
   return (

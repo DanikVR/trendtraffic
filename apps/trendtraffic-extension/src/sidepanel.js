@@ -7,6 +7,10 @@
  * поэтому умеет держать НЕСКОЛЬКО генераций Flow в полёте одновременно (Parallel N). Атрибуция
  * готовых тайлов к промптам — FIFO (в content-flow через batchClaimed). Прогресс приходит
  * широковещательным flow-batch-progress (слушатель ниже).
+ *
+ * i18n: ВСЕ видимые тексты — T('fb_*', 'русский фолбэк'); статичную вёрстку локализует applyI18n().
+ * Ключи харвестит apps/frontend/scripts/translate-ext-runtime.mjs (sidepanel.js в SRC_FILES),
+ * фолбэки ОБЯЗАНЫ быть русскими — они источник локали ru при полном регене переводов.
  */
 (() => {
   'use strict';
@@ -14,6 +18,7 @@
   const bg = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(null); } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const T = (key, fallback) => { try { const m = chrome.i18n.getMessage(key); return m || fallback; } catch { return fallback; } };
+  const fmt = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars && vars[k] != null ? String(vars[k]) : '{' + k + '}'));
   const jitter = (base) => Math.max(6000, Math.round((base || 30) * 1000 * (0.75 + Math.random() * 0.6)));
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -25,6 +30,17 @@
    'promptCount', 'folder', 'prefix', 'autoDl', 'hiRes', 'ttSend', 'ttSendWrap', 'ttSignin', 'pace',
    'concurrency', 'start', 'pause', 'stop', 'clear', 'queue', 'log', 'clearLog'].forEach((id) => (els[id] = $(id)));
 
+  // Часто используемые подписи (кнопка «Пауза» переключается в 5 местах).
+  const LBL_PAUSE = T('fb_pause', '⏸ Пауза');
+  const LBL_RESUME = T('fb_resume', '▶ Продолжить');
+  // Подписи статусов очереди (сами значения статусов не переводим — это ещё и css-классы).
+  const ST_LBL = {
+    queued: T('fb_stQueued', 'в очереди'),
+    running: T('fb_stRunning', 'генерится'),
+    done: T('fb_stDone', 'готово'),
+    failed: T('fb_stFailed', 'ошибка'),
+  };
+
   let characters = [];       // [{id, name, dataUrl}] — референс-персонажи (в памяти)
   let queue = [];            // [{id, prompt, status, note, pct}]
   let running = false, paused = false, stopFlag = false;
@@ -35,6 +51,54 @@
 
   const SETTINGS_KEYS = ['mode', 'model', 'aspect', 'count', 'resolution', 'length', 'folder', 'prefix', 'pace', 'concurrency', 'charMode'];
   const FLAG_KEYS = ['autoDl', 'hiRes', 'ttSend', 'chain', 'useMention'];
+
+  // ---------- локализация статичной вёрстки ----------
+  function applyI18n() {
+    const setTxt = (id, txt) => { const el = $(id); if (el) el.textContent = txt; };
+    const setOpt = (sel, txt) => { const el = document.querySelector(sel); if (el) el.textContent = txt; };
+    setTxt('openFlow', T('fb_openFlow', 'Открыть Google Flow'));
+    setTxt('lMode', T('fb_mode', 'Режим'));
+    setTxt('lModel', T('fb_model', 'Модель'));
+    setTxt('lAspect', T('fb_aspect', 'Формат'));
+    setTxt('lCount', T('fb_perPrompt', 'На промпт'));
+    setTxt('lResolution', T('fb_resolution', 'Разрешение'));
+    setTxt('lLength', T('fb_lengthS', 'Длина (сек)'));
+    setOpt('#mode option[value="textToVideo"]', T('fb_modeT2V', 'Текст → Видео'));
+    setOpt('#mode option[value="imageToVideo"]', T('fb_modeI2V', 'Картинка → Видео'));
+    setOpt('#mode option[value="components"]', T('fb_modeIngr', 'Ингредиенты → Видео'));
+    setOpt('#mode option[value="textToImage"]', T('fb_modeT2I', 'Текст → Картинка'));
+    setOpt('#mode option[value="imageToImage"]', T('fb_modeI2I', 'Картинка → Картинка'));
+    setOpt('#model option[value=""]', T('fb_modelAuto', 'Авто (как выбрано в Flow)'));
+    setOpt('#resolution option[value=""]', T('fb_resPreview', 'Превью (как показывает Flow)'));
+    setOpt('#length option[value=""]', T('fb_lenAuto', 'Авто'));
+    setTxt('lChars', T('fb_characters', 'Персонажи'));
+    setTxt('lCharsEm', T('fb_consistency', '(консистентность)'));
+    setTxt('lAddRef', T('fb_addRef', '+ добавить'));
+    setTxt('lAttach', T('fb_attachTo', 'Прикреплять к промптам'));
+    setOpt('#charMode option[value="mentioned"]', T('fb_charMentioned', 'Только персонажей, названных в промпте'));
+    setOpt('#charMode option[value="all"]', T('fb_charAll', 'Всех персонажей, к каждому промпту'));
+    setTxt('lUseMention', T('fb_useMention', 'Через @упоминание Flow (иначе — загрузка референсом)'));
+    setTxt('lChain', T('fb_chain', 'Цепочка: последний результат — референс следующего (последовательно)'));
+    setTxt('lPrompts', T('fb_prompts', 'Промпты'));
+    setTxt('lPromptsEm', T('fb_onePerLine', '(один на строку)'));
+    setTxt('lQueued', T('fb_queued', 'в очереди'));
+    els.prompts.placeholder = T('fb_promptsPh', 'Неоновая улица ночью, кинематографично…\nКот сёрфит на гигантской волне, слоу-мо…\n…');
+    setTxt('lFolder', T('fb_folder', 'Папка'));
+    setTxt('lPrefix', T('fb_prefix', 'Префикс имени'));
+    setTxt('lAutoDl', T('fb_autoDl', 'Авто-скачивание результатов на диск'));
+    setTxt('lHiRes', T('fb_hiRes', 'Hi-res через меню Flow (честные 2K/4K, медленнее)'));
+    setTxt('lTtSend', T('fb_ttSend', 'Также отправлять в Галерею TrendFlow'));
+    setTxt('ttSignin', T('fb_signIn', '(войти)'));
+    setTxt('lDelay', T('fb_delayS', 'Пауза (сек)'));
+    setTxt('lParallel', T('fb_parallel', 'Параллель'));
+    setTxt('start', T('fb_start', '▶ Старт'));
+    setTxt('pause', LBL_PAUSE);
+    setTxt('stop', T('fb_stop', '■ Стоп'));
+    setTxt('clear', T('fb_clear', 'Очистить'));
+    setTxt('lLog', T('fb_log', 'Лог'));
+    setTxt('clearLog', T('fb_clearLog', 'очистить'));
+    setTxt('fbFoot', T('fb_footer', 'Бесплатно · вход не нужен. Результаты скачиваются на ваш компьютер. TrendFlow — опционально.'));
+  }
 
   // ---------- persistence ----------
   function saveSettings() {
@@ -74,7 +138,7 @@
     for (const f of files) {
       if (!/^image\//.test(f.type)) continue;
       if (characters.length >= 10) break;
-      try { characters.push({ id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6), name: baseName(f.name) || ('Character ' + (characters.length + 1)), dataUrl: await fileToDataUrl(f) }); } catch { /* */ }
+      try { characters.push({ id: 'c' + Date.now() + Math.random().toString(36).slice(2, 6), name: baseName(f.name) || (T('fb_characterN', 'Персонаж') + ' ' + (characters.length + 1)), dataUrl: await fileToDataUrl(f) }); } catch { /* */ }
     }
     renderCharacters();
   }
@@ -83,7 +147,7 @@
     characters.forEach((c) => {
       const row = document.createElement('div'); row.className = 'charrow';
       const img = document.createElement('img'); img.src = c.dataUrl; row.appendChild(img);
-      const inp = document.createElement('input'); inp.type = 'text'; inp.value = c.name; inp.placeholder = 'name (used in prompts)';
+      const inp = document.createElement('input'); inp.type = 'text'; inp.value = c.name; inp.placeholder = T('fb_charName', 'имя (используется в промптах)');
       inp.addEventListener('input', () => { c.name = inp.value; });
       row.appendChild(inp);
       const x = document.createElement('span'); x.className = 'x'; x.textContent = '×';
@@ -107,10 +171,10 @@
   async function refreshFlowStatus() {
     const r = await bg({ type: 'flow-status' });
     const chip = els.flowChip;
-    if (!r || !r.present) { chip.className = 'chip off'; chip.textContent = T('fb_noFlowTab', 'no Flow tab'); return; }
-    if (!r.ready) { chip.className = 'chip wait'; chip.textContent = T('fb_flowLoading', 'Flow loading…'); return; }
+    if (!r || !r.present) { chip.className = 'chip off'; chip.textContent = T('fb_noFlowTab', 'нет вкладки Flow'); return; }
+    if (!r.ready) { chip.className = 'chip wait'; chip.textContent = T('fb_flowLoading', 'Flow грузится…'); return; }
     chip.className = 'chip on';
-    chip.textContent = r.inProject ? T('fb_flowInProject', 'Flow · in project') : T('fb_flowReady', 'Flow ready');
+    chip.textContent = r.inProject ? T('fb_flowInProject', 'Flow · в проекте') : T('fb_flowReady', 'Flow готов');
   }
   async function refreshTtStatus() {
     const r = await bg({ type: 'tt-status' });
@@ -130,7 +194,7 @@
       const top = document.createElement('div'); top.className = 'top';
       const st = document.createElement('span'); st.className = 'st';
       const txt = document.createElement('div'); txt.className = 'txt'; txt.textContent = it.prompt;
-      const meta = document.createElement('span'); meta.className = 'meta'; meta.textContent = it.note || it.status;
+      const meta = document.createElement('span'); meta.className = 'meta'; meta.textContent = it.note || ST_LBL[it.status] || it.status;
       top.append(st, txt, meta); box.appendChild(top);
       if (it.status === 'running') {
         const prog = document.createElement('div'); prog.className = 'prog';
@@ -149,11 +213,11 @@
       if (els.autoDl.checked && !r.native) {
         const spec = { folder: els.folder.value.trim(), prefix: els.prefix.value.trim(), name: prompt, index: idx, kind, sourceUrl: r.sourceUrl, dataUrl: r.dataUrl };
         const dl = await bg({ type: 'flow-download', spec });
-        if (dl && dl.ok) log('💾 ' + dl.filename); else log('⚠ download: ' + ((dl && dl.error) || 'failed'));
-      } else if (r.native) { log('💾 saved via Flow menu (hi-res)'); }
+        if (dl && dl.ok) log('💾 ' + dl.filename); else log(T('fb_dlFail', '⚠ скачивание: ') + ((dl && dl.error) || T('fb_failed', 'не удалось')));
+      } else if (r.native) { log(T('fb_savedNative', '💾 сохранено через меню Flow (hi-res)')); }
       if (els.ttSend.checked && ttConnected) {
         const ing = await bg({ type: 'manual-ingest', payload: { sourceUrl: r.sourceUrl, dataUrl: r.dataUrl, kind, title: prompt.slice(0, 80) } });
-        if (ing && ing.ok) log('⬆ TrendFlow Gallery ✓'); else log('⚠ TrendFlow: ' + ((ing && ing.error) || 'failed'));
+        if (ing && ing.ok) log(T('fb_ttSent', '⬆ в Галерею TrendFlow ✓')); else log(T('fb_ttFail', '⚠ TrendFlow: ') + ((ing && ing.error) || T('fb_failed', 'не удалось')));
       }
       if (els.chain.checked && kind === 'image' && r.dataUrl) lastChainImage = r.dataUrl;
       idx++;
@@ -162,15 +226,15 @@
 
   function handleThrottle() {
     if (throttleTimer) return; // уже на паузе по троттлингу — второй таймер обрезал бы её раньше времени
-    log('⏸ Flow throttling — pausing 20 min');
-    paused = true; els.pause.textContent = '▶ Resume';
-    throttleTimer = setTimeout(() => { throttleTimer = null; paused = false; els.pause.textContent = '⏸ Pause'; }, 20 * 60_000);
+    log(T('fb_throttlePause', '⏸ Flow троттлит — пауза 20 мин'));
+    paused = true; els.pause.textContent = LBL_RESUME;
+    throttleTimer = setTimeout(() => { throttleTimer = null; paused = false; els.pause.textContent = LBL_PAUSE; }, 20 * 60_000);
   }
 
   // ---------- главный цикл: пул параллельных генераций ----------
   async function runQueue() {
     let fs = await bg({ type: 'flow-status' });
-    if (!fs || !fs.present) { log(T('fb_openingFlow', 'opening Google Flow…')); await bg({ type: 'flow-open' }); await sleep(1500); }
+    if (!fs || !fs.present) { log(T('fb_openingFlow', 'открываю Google Flow…')); await bg({ type: 'flow-open' }); await sleep(1500); }
     await bg({ type: 'flow-reset' });
     const hiRes = () => els.hiRes.checked && !!els.resolution.value;
     // Переименование родных hi-res загрузок Flow — взводим ОДИН раз на весь пакет: сама загрузка
@@ -192,7 +256,7 @@
       while (inFlight.length < conc && !paused && !stopFlag) {
         const item = nextQueued();
         if (!item) break;
-        item.status = 'running'; item.note = 'submit…'; item.pct = 0; renderQueue();
+        item.status = 'running'; item.note = T('fb_submitting', 'запуск…'); item.pct = 0; renderQueue();
         const refs = [];
         if (isImageMode()) {
           if (els.chain.checked && lastChainImage) refs.push({ name: 'previous', dataUrl: lastChainImage });
@@ -208,11 +272,11 @@
         qi++;
         let sub;
         try { sub = await bg({ type: 'flow-submit', item: payload }); } catch (e) { sub = { ok: false, reason: String(e && e.message || e) }; }
-        if (sub && sub.throttled) { item.status = 'queued'; item.note = 'throttled'; qi--; renderQueue(); handleThrottle(); break; }
+        if (sub && sub.throttled) { item.status = 'queued'; item.note = T('fb_throttled', 'троттлинг'); qi--; renderQueue(); handleThrottle(); break; }
         if (!sub || !sub.ok) {
-          item.status = 'failed'; item.note = (sub && sub.reason) || 'submit failed'; renderQueue();
-          log('✕ submit: ' + item.note);
-          if (item.note === 'no-flow-tab' || item.note === 'flow-not-ready') { log(T('fb_pressOpenFlow', 'press "Open Google Flow" and sign in')); stopFlag = true; }
+          item.status = 'failed'; item.note = (sub && sub.reason) || T('fb_submitFailed', 'запуск не удался'); renderQueue();
+          log(T('fb_submitErrPrefix', '✕ запуск: ') + item.note);
+          if (item.note === 'no-flow-tab' || item.note === 'flow-not-ready') { log(T('fb_pressOpenFlow', 'нажми «Open Google Flow» и войди')); stopFlag = true; }
           continue;
         }
         inFlight.push({ item, submitId: sub.submitId });
@@ -233,15 +297,15 @@
         try { r = await bg({ type: 'flow-collect', payload: { submitId: f.submitId, itemId: f.item.id, autoDownload: els.autoDl.checked, viaNativeMenu: hiRes(), resolution: els.resolution.value } }); }
         catch (e) { r = { ok: false, reason: String(e && e.message || e) }; }
         if (r && r.throttled) { handleThrottle(); throttledNow = true; still.push(f); continue; }
-        if (!r || !r.ok) { f.item.status = 'failed'; f.item.note = (r && r.reason) || 'collect failed'; renderQueue(); continue; } // выбывает
+        if (!r || !r.ok) { f.item.status = 'failed'; f.item.note = (r && r.reason) || T('fb_collectFailed', 'сбор не удался'); renderQueue(); continue; } // выбывает
         if (r.done) {
           const n = (r.results || []).length;
           f.item.status = n ? 'done' : 'failed';
-          f.item.note = n ? ('✓ ' + n + (r.timeout ? ' (timeout)' : '')) : (r.timeout ? 'timeout' : 'no result');
+          f.item.note = n ? ('✓ ' + n + (r.timeout ? ' (' + T('fb_timeout', 'таймаут') + ')' : '')) : (r.timeout ? T('fb_timeout', 'таймаут') : T('fb_noResult', 'нет результата'));
           renderQueue();
           await handleResults(f.item.prompt, r.results || []);
           // «delay между промптами» — только последовательно (в параллели интервал задаёт стаггер запусков)
-          if (conc === 1 && nextQueued()) { const d = jitter(Number(els.pace.value) || 30); log(`⏳ pacing ${Math.round(d / 1000)}s…`); await sleep(d); }
+          if (conc === 1 && nextQueued()) { const d = jitter(Number(els.pace.value) || 30); log(fmt(T('fb_pacing', '⏳ пауза {s}с…'), { s: Math.round(d / 1000) })); await sleep(d); }
         } else { still.push(f); } // ещё генерится — оставляем в полёте
       }
       inFlight.length = 0; inFlight.push(...still);
@@ -253,13 +317,13 @@
 
   function startRun() {
     const prompts = parsePrompts();
-    if (!prompts.length) { log(T('fb_addPrompts', 'add at least one prompt')); return; }
+    if (!prompts.length) { log(T('fb_addPrompts', 'добавь хотя бы один промпт')); return; }
     queue = prompts.map((p, i) => ({ id: 'q' + Date.now() + '_' + i, prompt: p, status: 'queued', note: '', pct: 0 }));
     lastChainImage = null;
     running = true; paused = false; stopFlag = false;
-    els.start.disabled = true; els.pause.disabled = false; els.stop.disabled = false; els.pause.textContent = '⏸ Pause';
+    els.start.disabled = true; els.pause.disabled = false; els.stop.disabled = false; els.pause.textContent = LBL_PAUSE;
     renderQueue();
-    log(`▶ batch started — ${prompts.length} prompts, parallel ${clamp(Number(els.concurrency.value) || 1, 1, 4)}`);
+    log(fmt(T('fb_batchStarted', '▶ пакет запущен — {n} промптов, параллель {p}'), { n: prompts.length, p: clamp(Number(els.concurrency.value) || 1, 1, 4) }));
     runQueue();
   }
   function finishRun() {
@@ -267,15 +331,15 @@
     if (throttleTimer) { clearTimeout(throttleTimer); throttleTimer = null; }
     if (renameArmed) { bg({ type: 'flow-disarm-rename' }); renameArmed = false; }
     bg({ type: 'flow-reset' }); // сброс состояния пакета в content + разморозка вотчера (flowTaskBusy=false)
-    els.start.disabled = false; els.pause.disabled = true; els.stop.disabled = true; els.pause.textContent = '⏸ Pause';
-    for (const q of queue) if (q.status === 'running') { q.status = 'failed'; q.note = 'stopped'; }
+    els.start.disabled = false; els.pause.disabled = true; els.stop.disabled = true; els.pause.textContent = LBL_PAUSE;
+    for (const q of queue) if (q.status === 'running') { q.status = 'failed'; q.note = T('fb_stopped', 'остановлено'); }
     renderQueue();
     const done = queue.filter((q) => q.status === 'done').length;
     const failed = queue.filter((q) => q.status === 'failed').length;
-    log(`■ finished — ${done} done, ${failed} failed`);
+    log(fmt(T('fb_finished', '■ готово — {d} успешно, {f} с ошибкой'), { d: done, f: failed }));
   }
-  function togglePause() { if (!running) return; paused = !paused; els.pause.textContent = paused ? '▶ Resume' : '⏸ Pause'; log(paused ? '⏸ paused' : '▶ resumed'); }
-  function stopRun() { if (!running) return; stopFlag = true; paused = false; log('■ stopping after current…'); }
+  function togglePause() { if (!running) return; paused = !paused; els.pause.textContent = paused ? LBL_RESUME : LBL_PAUSE; log(paused ? T('fb_pausedLog', '⏸ пауза') : T('fb_resumedLog', '▶ продолжаю')); }
+  function stopRun() { if (!running) return; stopFlag = true; paused = false; log(T('fb_stopping', '■ останавливаю после текущих…')); }
   function clearAll() { if (running) return; queue = []; renderQueue(); els.prompts.value = ''; updatePromptCount(); saveSettings(); }
 
   // ---------- прогресс от content-flow ----------
@@ -290,8 +354,9 @@
 
   // ---------- события UI ----------
   function wire() {
+    applyI18n();
     els.ver.textContent = 'v' + chrome.runtime.getManifest().version;
-    els.openFlow.onclick = async () => { els.openFlow.disabled = true; log(T('fb_openingFlow', 'opening Google Flow…')); await bg({ type: 'flow-open' }); setTimeout(() => { els.openFlow.disabled = false; refreshFlowStatus(); }, 1500); };
+    els.openFlow.onclick = async () => { els.openFlow.disabled = true; log(T('fb_openingFlow', 'открываю Google Flow…')); await bg({ type: 'flow-open' }); setTimeout(() => { els.openFlow.disabled = false; refreshFlowStatus(); }, 1500); };
     els.prompts.addEventListener('input', () => { updatePromptCount(); saveSettings(); });
     els.mode.addEventListener('change', () => { syncModeUI(); saveSettings(); });
     for (const k of SETTINGS_KEYS) if (els[k]) els[k].addEventListener('change', saveSettings);

@@ -23,7 +23,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FE_ROOT = path.resolve(__dirname, '..');
 const REPO = path.resolve(FE_ROOT, '..', '..');
 const EXT = path.join(REPO, 'apps', 'trendtraffic-extension');
-const SRC_FILES = ['background.js', 'content-flow.js', 'content-heygen.js', 'content-notebook.js']
+const SRC_FILES = ['background.js', 'content-flow.js', 'content-heygen.js', 'content-notebook.js', 'sidepanel.js']
   .map((f) => path.join(EXT, 'src', f));
 
 const args = process.argv.slice(2);
