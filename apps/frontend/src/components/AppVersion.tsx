@@ -3937,7 +3937,7 @@
  *          опц. «в Галерею TrendFlow». Отдельный локальный движок — прод-очередь Flow не тронута.
  *          Файлы: trendtraffic-extension (sidepanel.*, content-flow.js, background.js, manifest,
  *          _locales en/ru), zip пересобран, карточка «Скачать» → v1.5.0. */
-/** 2.6.38 — Расширение v1.5.1: Flow Booster стало видно. (1) В плавающей панели на Flow —
+/* 2.6.38 — Расширение v1.5.1: Flow Booster стало видно. (1) В плавающей панели на Flow —
  *          заметная кнопка «⚡ Flow Booster — пакет промптов»: открывает боковую панель-пульт
  *          (background sidePanel.open по клику; жест доезжает с сообщением — вызов ДО await),
  *          иконку расширения искать больше не нужно. (2) Side-panel полностью локализован:
@@ -3946,12 +3946,25 @@
  *          sidepanel.js добавлен в SRC_FILES харвестера — полный реген больше не теряет
  *          ключи панели. Файлы: trendtraffic-extension (sidepanel.{html,js}, content-flow.js,
  *          background.js, manifest, _locales ×52), translate-ext-runtime.mjs, zip пересобран. */
-export const APP_VERSION = '2.6.38';
+/** 2.6.39 — «Сценарий → ролик» конвейер Flow Booster (ext v1.6.0). (1) Панель: секция
+ *          «Сценарий → пакет» — сценарный план с таймкодами режется на промпты ≤8с (локальный
+ *          парсер; при подключении — ИИ-нарезка Claude с EN-промптами и «no on-screen text»),
+ *          сплит-сцены (Слева:/Справа:) → пара промптов, план хранится, клипы шлются в Галерею
+ *          с метой пакета (batch id/index). (2) Бэкенд flow-ext: таблица flow_batch_specs
+ *          (спека+реестр клипов), /batch-spec, /batches, /audio, /scenario-plan (ключ Anthropic
+ *          тенанта), /compose-ad + status (джобы). (3) НОВЫЙ render/ad_compose.ts: посценная
+ *          нормализация + сплит hstack + конкат + ASS-титры по таймкодам + голос (дакинг клипов)
+ *          + SFX-«дзинь» (aevalsrc) + QR (пакет qrcode, graceful skip). (4) Галерея → Google Flow:
+ *          карточки пакетов (готовность клипов) + форма «Собрать ролик» (титры/голос/QR/формат)
+ *          + поллинг сборки; локали sec.gallery.fb* ru+en, fb_scen* — 52 локали расширения.
+ *          Файлы: ad_compose.ts, flow-ext/router.ts, podcast_compose.ts (экспорт хелперов),
+ *          GalleryPage.tsx, sidepanel.{html,js,css}, background.js, manifest, package.json (qrcode). */
+export const APP_VERSION = '2.6.39';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.5.1';
+export const TT_EXT_VERSION = '1.6.0';
 
 export function AppVersion() {
   return (

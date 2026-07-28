@@ -21,6 +21,22 @@
       <span class="chip off" id="flowChip">no Flow tab</span>
     </section>
 
+    <!-- Scenario → batch: нарезка сценарного плана на пакет промптов (подписи — applyI18n) -->
+    <section class="card">
+      <div class="row between">
+        <span class="lbl" id="lScen">Scenario → batch</span>
+        <button class="link" id="scenToggle">expand</button>
+      </div>
+      <div id="scenBody" hidden>
+        <textarea id="scenario" rows="7" placeholder="0:00 – 0:08 | Hook&#10;Визуал: …&#10;Текст на экране: …"></textarea>
+        <div class="row between">
+          <button class="btn pri" id="scenPlan">Split into prompts</button>
+          <span class="count-pill" id="scenInfo"></span>
+        </div>
+        <div class="hint" id="scenHint"></div>
+      </div>
+    </section>
+
     <!-- Generation settings (подписи локализует applyI18n в sidepanel.js) -->
     <section class="card">
       <div class="grid">

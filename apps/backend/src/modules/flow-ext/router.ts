@@ -31,6 +31,9 @@ import { hasEnterpriseAccess } from '../billing/feature_gate.js';
 import pool from '../../db/index.js';
 import { createAsset, listAssets } from '../media/assets.js';
 import { downloadVideoToDisk } from '../media/store_video.js';
+import { composeAdVideo, type AdSegment } from '../render/ad_compose.js';
+import { resolveAnthropicKey } from '../render/director.js';
+import { callClaudeText, extractJson } from '../skills/claude.js';
 
 /** Легаси-папка старых клипов Flow. Новые клипы сохраняются в «Видео» (без папки);
  *  константа оставлена для совместимости — listAssets('reference') всё равно включает эти клипы. */
@@ -128,6 +131,22 @@ async function ensureTables(): Promise<void> {
       media_type TEXT,
       created_at TIMESTAMPTZ DEFAULT now(),
       PRIMARY KEY (tenant_id, content_hash)
+    )`);
+  // ПАКЕТЫ «Сценарий → пакет» (Flow Booster): спека ролика (сцены/титры/тайминг) + реестр
+  // доехавших клипов (index → asset). По готовности пакета Галерея предлагает «Собрать ролик».
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS flow_batch_specs (
+      tenant_id TEXT NOT NULL,
+      batch_id TEXT NOT NULL,
+      title TEXT,
+      total INT NOT NULL DEFAULT 0,
+      spec JSONB,
+      clips JSONB NOT NULL DEFAULT '{}'::jsonb,
+      composed_asset_id TEXT,
+      composed_file_url TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (tenant_id, batch_id)
     )`);
 }
 ensureTables().catch((e) => console.warn('[flow-ext] init таблиц:', (e as Error).message));
@@ -402,11 +421,36 @@ router.get('/observed', async (req: AuthedRequest, res: Response) => {
   } catch { res.json({ observed: {} }); }
 });
 
+/** Клип пакета «Сценарий → пакет»: регистрируем index→asset в flow_batch_specs (upsert-стабом,
+ *  если спека ещё не приехала). Ошибка регистрации НЕ валит ingest — только warn. */
+async function registerBatchClip(tenantId: string, batch: any, assetId: string | null, fileUrl: string, mediaType: string): Promise<void> {
+  try {
+    const id = String(batch?.id || '').trim().slice(0, 80);
+    const index = Math.max(0, Math.min(999, Math.round(Number(batch?.index) || 0)));
+    if (!id || !index) return; // индексация 1-базная: 0 = «не пакетный клип»
+    const total = Math.max(0, Math.min(999, Math.round(Number(batch?.total) || 0)));
+    const title = batch?.title ? String(batch.title).slice(0, 160) : null;
+    await pool.query(
+      `INSERT INTO flow_batch_specs (tenant_id, batch_id, title, total, clips)
+       VALUES ($1,$2,$3,$4, jsonb_build_object($5::text, $6::jsonb))
+       ON CONFLICT (tenant_id, batch_id) DO UPDATE SET
+         clips = flow_batch_specs.clips || EXCLUDED.clips,
+         total = GREATEST(flow_batch_specs.total, EXCLUDED.total),
+         title = COALESCE(flow_batch_specs.title, EXCLUDED.title),
+         updated_at = now()`,
+      [tenantId, id, title, total, String(index), JSON.stringify({ assetId, fileUrl, mediaType })]
+    );
+  } catch (e) {
+    console.warn('[flow-ext] регистрация клипа пакета:', (e as Error).message);
+  }
+}
+
 router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
   const sourceUrl = req.body?.sourceUrl ? String(req.body.sourceUrl) : '';
   const dataUrl = req.body?.dataUrl ? String(req.body.dataUrl) : '';
   const title = req.body?.title ? String(req.body.title).slice(0, 120) : 'Flow';
   const kind = req.body?.kind === 'image' ? 'image' : req.body?.kind === 'video' ? 'video' : '';
+  const batch = req.body?.batch && typeof req.body.batch === 'object' ? req.body.batch : null;
   if (!sourceUrl && !dataUrl) return res.status(400).json({ error: 'нет sourceUrl/dataUrl' });
   // Картинка — если так сказало расширение, либо по mime dataUrl / расширению ссылки. Иначе видео.
   const isImage = kind === 'image'
@@ -425,6 +469,7 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
       );
       if (dup.rowCount) {
         try { fs.unlinkSync(stored.filePath); } catch { /* */ }
+        if (batch) await registerBatchClip(req.tenantId!, batch, dup.rows[0].asset_id, dup.rows[0].file_url, dup.rows[0].media_type || (isImage ? 'image' : 'video'));
         return res.json({ ok: true, assetId: dup.rows[0].asset_id, fileUrl: dup.rows[0].file_url, mediaType: dup.rows[0].media_type || (isImage ? 'image' : 'video'), dedup: true });
       }
     }
@@ -443,6 +488,7 @@ router.post('/ingest-manual', async (req: AuthedRequest, res: Response) => {
         [req.tenantId, contentHash, asset?.id || null, stored.fileUrl, isImage ? 'image' : 'video']
       );
     }
+    if (batch) await registerBatchClip(req.tenantId!, batch, asset?.id || null, stored.fileUrl, isImage ? 'image' : 'video');
     res.json({ ok: true, assetId: asset?.id || null, fileUrl: stored.fileUrl, mediaType: isImage ? 'image' : 'video' });
   } catch (e: any) {
     res.status(502).json({ error: 'не удалось сохранить медиа: ' + (e?.message || e) });
@@ -474,6 +520,261 @@ router.get('/recon', async (req: AuthedRequest, res: Response) => {
   if (!r.rowCount) return res.json({ recon: null });
   const row = r.rows[0];
   res.json({ recon: { data: row.data, url: row.url, updatedAt: row.updated_at } });
+});
+
+// ═══════════════ «Сценарий → пакет» → «Собрать ролик» (Flow Booster) ═══════════════
+// Спека пакета: { title, format:'9x16'|..., qrText?, sfxTimes?:[сек], totalClips,
+//   scenes:[{ idx, start, end, caption?, voice?, layout:'single'|'split',
+//             clips:[{ index (1-базный глобальный), t0, t1, side?:'L'|'R', prompt }] }] }
+
+const UPLOADS_PARENT = path.resolve(__dirname_f, '../../../..');
+/** /uploads/…-URL → абсолютный путь на диске (с защитой от traversal). */
+function localPathFromUrl(u: string): string | null {
+  if (!u || !u.startsWith('/uploads/')) return null;
+  const p = path.resolve(UPLOADS_PARENT, '.' + u);
+  return p.startsWith(path.join(UPLOADS_PARENT, 'uploads')) ? p : null;
+}
+
+/** Панель прислала спеку пакета (до/во время генерации). Клипы, доехавшие раньше спеки, сохраняются. */
+router.post('/batch-spec', async (req: AuthedRequest, res: Response) => {
+  const batchId = String(req.body?.batchId || '').trim().slice(0, 80);
+  const spec = req.body?.spec;
+  if (!batchId || !spec || typeof spec !== 'object' || !Array.isArray(spec.scenes)) {
+    return res.status(400).json({ error: 'нужны batchId и spec.scenes' });
+  }
+  const title = String(spec.title || req.body?.title || 'Пакет Flow').slice(0, 160);
+  const total = Math.max(0, Math.min(999, Math.round(Number(spec.totalClips) || 0)));
+  try {
+    await pool.query(
+      `INSERT INTO flow_batch_specs (tenant_id, batch_id, title, total, spec)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (tenant_id, batch_id) DO UPDATE SET
+         spec = EXCLUDED.spec, title = EXCLUDED.title,
+         total = GREATEST(flow_batch_specs.total, EXCLUDED.total), updated_at = now()`,
+      [req.tenantId, batchId, title, total, JSON.stringify(spec)]
+    );
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }); }
+});
+
+/** Галерея: пакеты тенанта (прогресс клипов + собранный ролик, свежие сверху). */
+router.get('/batches', async (req: AuthedRequest, res: Response) => {
+  try {
+    const r = await pool.query(`SELECT * FROM flow_batch_specs WHERE tenant_id=$1 ORDER BY updated_at DESC LIMIT 20`, [req.tenantId]);
+    res.json({
+      batches: (r.rows as any[]).map((row) => ({
+        batchId: row.batch_id, title: row.title || 'Пакет Flow',
+        total: Number(row.total) || 0,
+        ready: Object.keys(row.clips || {}).length,
+        clips: row.clips || {}, spec: row.spec || null,
+        composedAssetId: row.composed_asset_id || null,
+        composedFileUrl: row.composed_file_url || null,
+        updatedAt: row.updated_at,
+      })),
+    });
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }); }
+});
+
+/** Аудио-ассеты тенанта — выбор дорожки голоса в форме «Собрать ролик». */
+router.get('/audio', async (req: AuthedRequest, res: Response) => {
+  try {
+    const all = await listAssets(req.tenantId!, 'reference');
+    const items = all
+      .filter((a: any) => String(a.mediaType || '').startsWith('audio') || /\.(mp3|wav|m4a|aac|ogg|opus)(\?|#|$)/i.test(a.fileUrl || ''))
+      .slice(0, 100)
+      .map((a: any) => ({ id: a.id, title: a.originalName || 'аудио', fileUrl: a.fileUrl }));
+    res.json({ items });
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }); }
+});
+
+/** Санитайзер сцен из ответа ИИ → спека с нарезкой на куски ≤8с и глобальной 1-базной нумерацией. */
+function buildSpecFromScenes(rawScenes: any[], defaults: { title: string; format: string; qrText?: string; sfxTimes?: number[] }) {
+  const scenes: any[] = [];
+  let g = 1;
+  const clean = (rawScenes || []).slice(0, 12)
+    .map((s: any) => ({
+      start: Math.max(0, Number(s?.start) || 0),
+      end: Math.max(0, Number(s?.end) || 0),
+      caption: s?.caption ? String(s.caption).slice(0, 200) : '',
+      voice: s?.voice ? String(s.voice).slice(0, 500) : '',
+      layout: s?.layout === 'split' ? 'split' : 'single',
+      prompts: Array.isArray(s?.prompts) ? s.prompts.map((p: any) => String(p || '').slice(0, 900)).filter(Boolean) : [],
+      left: Array.isArray(s?.left) ? s.left.map((p: any) => String(p || '').slice(0, 900)).filter(Boolean) : [],
+      right: Array.isArray(s?.right) ? s.right.map((p: any) => String(p || '').slice(0, 900)).filter(Boolean) : [],
+    }))
+    .filter((s: any) => s.end > s.start && (s.prompts.length || (s.left.length && s.right.length)))
+    .sort((a: any, b: any) => a.start - b.start);
+
+  clean.forEach((s: any, idx: number) => {
+    const dur = Math.min(120, s.end - s.start);
+    const nChunks = Math.max(1, Math.ceil(dur / 8 - 1e-6));
+    const chunkDur = dur / nChunks;
+    const split = s.layout === 'split' && s.left.length && s.right.length;
+    const clips: any[] = [];
+    for (let k = 0; k < nChunks; k++) {
+      const t0 = s.start + k * chunkDur;
+      const t1 = k === nChunks - 1 ? s.end : s.start + (k + 1) * chunkDur;
+      if (split) {
+        const pl = s.left[Math.min(k, s.left.length - 1)];
+        const pr = s.right[Math.min(k, s.right.length - 1)];
+        clips.push({ index: g++, t0, t1, side: 'L', prompt: pl });
+        clips.push({ index: g++, t0, t1, side: 'R', prompt: pr });
+      } else {
+        const p = s.prompts[Math.min(k, s.prompts.length - 1)] || s.left[Math.min(k, s.left.length - 1)] || '';
+        if (!p) continue;
+        clips.push({ index: g++, t0, t1, prompt: p });
+      }
+    }
+    if (clips.length) scenes.push({ idx, start: s.start, end: s.end, caption: s.caption, voice: s.voice, layout: split ? 'split' : 'single', clips });
+  });
+
+  const spec = {
+    title: defaults.title, format: defaults.format,
+    qrText: defaults.qrText || '', sfxTimes: (defaults.sfxTimes || []).slice(0, 6),
+    totalClips: g - 1, scenes,
+  };
+  const items = scenes.flatMap((sc: any) => sc.clips.map((c: any) => ({
+    index: c.index, prompt: c.prompt, sceneIdx: sc.idx, side: c.side || null,
+    len: Math.min(8, Math.max(1, Math.round(c.t1 - c.t0))),
+  })));
+  return { spec, items };
+}
+
+/** ИИ-нарезка сценария (Enterprise, ключ Anthropic тенанта): сценарный план → сцены/промпты Veo (EN). */
+router.post('/scenario-plan', async (req: AuthedRequest, res: Response) => {
+  const scenario = String(req.body?.scenario || '').trim().slice(0, 14000);
+  if (scenario.length < 40) return res.status(400).json({ error: 'сценарий слишком короткий' });
+  let apiKey: string | null = null;
+  try { apiKey = await resolveAnthropicKey(req.tenantId!); } catch { /* нет ключа */ }
+  if (!apiKey) return res.status(400).json({ error: 'Нет ключа Anthropic — панель нарежет сценарий локально', code: 'no-key' });
+
+  const system =
+    'Ты — режиссёр коротких рекламных роликов и промпт-инженер Google Veo (Flow). '
+    + 'Превращаешь сценарный план в JSON-раскадровку для пакетной генерации клипов длиной не более 8 секунд каждый. '
+    + 'Правила промптов: АНГЛИЙСКИЙ язык, кинематографичные детали (свет, оптика, движение камеры), '
+    + 'один и тот же герой описывается ОДИНАКОВОЙ короткой формулой в каждом промпте (консистентность), '
+    + 'НИКАКОГО текста/логотипов/надписей в кадре — добавь в каждый промпт "no on-screen text, no logos, no text on clothing". '
+    + 'Сцена длиннее 8с делится на ceil(длительность/8) кусков — по одному промпту на кусок (продолжение действия). '
+    + 'Сплит-скрин сцена: массивы left и right (по куску на каждый), обычная сцена: массив prompts.';
+  const user =
+    `Сценарный план:\n"""\n${scenario}\n"""\n\n`
+    + 'Верни ТОЛЬКО JSON без пояснений:\n'
+    + '{"title":"короткое название ролика","format":"9x16|16x9","qrText":"ссылка для QR из сценария или пустая строка",'
+    + '"sfxTimes":[секунды звуковых акцентов из сценария],'
+    + '"scenes":[{"start":0,"end":8,"caption":"текст на экране ЯЗЫКОМ сценария","voice":"текст голоса за кадром","layout":"single|split",'
+    + '"prompts":["EN prompt куска 1",...],"left":["EN prompt левой половины",...],"right":["EN prompt правой половины",...]}]}\n'
+    + 'start/end — секунды из сценария. caption — краткий главный титр сцены (не абзац).';
+
+  try {
+    const raw = await callClaudeText({ apiKey, system, user, maxTokens: 6000 });
+    const j = extractJson(raw);
+    if (!j || !Array.isArray(j.scenes)) return res.status(502).json({ error: 'ИИ вернул неожиданный формат' });
+    const fmt = ['9x16', '16x9', '1x1', '4x5'].includes(j.format) ? j.format : '9x16';
+    const sfx = Array.isArray(j.sfxTimes) ? j.sfxTimes.map(Number).filter((t: number) => Number.isFinite(t) && t >= 0) : [];
+    const { spec, items } = buildSpecFromScenes(j.scenes, {
+      title: String(j.title || 'Рекламный ролик').slice(0, 120), format: fmt,
+      qrText: j.qrText ? String(j.qrText).slice(0, 300) : '', sfxTimes: sfx,
+    });
+    if (!items.length) return res.status(502).json({ error: 'ИИ не дал ни одного промпта' });
+    res.json({ ok: true, spec, items, planSource: 'claude' });
+  } catch (e: any) {
+    res.status(502).json({ error: 'ИИ-нарезка недоступна: ' + String(e?.message || e).slice(0, 200) });
+  }
+});
+
+// ── Сборка ролика из пакета (джобы в памяти, по паттерну commentatorJobs) ──
+const adJobs = new Map<string, { tenantId?: string; status: 'processing' | 'done' | 'failed'; fileUrl?: string; assetId?: string | null; warnings?: string[]; error?: string; ts: number }>();
+function sweepAdJobs() {
+  const cutoff = Date.now() - 2 * 3600_000;
+  for (const [k, v] of adJobs) if (v.ts < cutoff) adJobs.delete(k);
+}
+
+/** Собрать рекламный ролик из готового пакета. body: { batchId, format?, captions?{sceneIdx:text},
+ *  voiceUrl?, qrText?, clipVolume?, capPos?, sfxTimes? } → { jobId }. */
+router.post('/compose-ad', async (req: AuthedRequest, res: Response) => {
+  const batchId = String(req.body?.batchId || '').trim().slice(0, 80);
+  if (!batchId) return res.status(400).json({ error: 'нет batchId' });
+  const r = await pool.query(`SELECT * FROM flow_batch_specs WHERE tenant_id=$1 AND batch_id=$2`, [req.tenantId, batchId]);
+  if (!r.rowCount) return res.status(404).json({ error: 'пакет не найден' });
+  const row: any = r.rows[0];
+  const spec: any = row.spec;
+  if (!spec || !Array.isArray(spec.scenes) || !spec.scenes.length) {
+    return res.status(400).json({ error: 'у пакета нет спеки сцен — соберите его через «Сценарий → пакет» в Flow Booster' });
+  }
+  const clips: Record<string, any> = row.clips || {};
+
+  // все ли клипы доехали
+  const missing: number[] = [];
+  for (const sc of spec.scenes) for (const c of (sc.clips || [])) if (!clips[String(c.index)]?.fileUrl) missing.push(Number(c.index));
+  if (missing.length) return res.status(409).json({ error: 'клипы ещё не в Галерее: №' + missing.sort((a, b) => a - b).join(', ') });
+
+  // таймлайн: сегменты (пары L/R одного интервала → сплит-скрин) + титры сцен
+  const shift = Math.min(...spec.scenes.map((s: any) => Number(s.start) || 0));
+  const groups = new Map<string, { t0: number; t1: number; parts: { side: string; path: string }[] }>();
+  for (const sc of spec.scenes) {
+    for (const c of (sc.clips || [])) {
+      const p = localPathFromUrl(String(clips[String(c.index)].fileUrl || ''));
+      if (!p) return res.status(400).json({ error: `клип №${c.index}: не локальный файл` });
+      const key = `${Number(c.t0).toFixed(2)}|${Number(c.t1).toFixed(2)}`;
+      const gr = groups.get(key) || { t0: Number(c.t0) - shift, t1: Number(c.t1) - shift, parts: [] };
+      gr.parts.push({ side: c.side === 'R' ? 'R' : 'L', path: p });
+      groups.set(key, gr);
+    }
+  }
+  const segments: AdSegment[] = [...groups.values()]
+    .map((gr) => ({ t0: gr.t0, t1: gr.t1, clipPaths: gr.parts.sort((a, b) => a.side.localeCompare(b.side)).map((x) => x.path).slice(0, 2) }))
+    .sort((a, b) => a.t0 - b.t0);
+
+  const capOverrides = req.body?.captions && typeof req.body.captions === 'object' ? req.body.captions : {};
+  const captions = spec.scenes
+    .map((sc: any) => ({
+      t0: (Number(sc.start) || 0) - shift, t1: (Number(sc.end) || 0) - shift,
+      text: String(capOverrides[String(sc.idx)] ?? sc.caption ?? '').slice(0, 200),
+    }))
+    .filter((c: any) => c.text && c.t1 > c.t0);
+
+  const fmt = ['9x16', '16x9', '1x1', '4x5'].includes(req.body?.format) ? req.body.format : (['9x16', '16x9', '1x1', '4x5'].includes(spec.format) ? spec.format : '9x16');
+  const voiceUrl = typeof req.body?.voiceUrl === 'string' ? req.body.voiceUrl : '';
+  const voicePath = voiceUrl ? localPathFromUrl(voiceUrl) : null;
+  if (voiceUrl && !voicePath) return res.status(400).json({ error: 'дорожка голоса должна быть файлом из Галереи (/uploads/…)' });
+  const qrText = typeof req.body?.qrText === 'string' ? req.body.qrText.slice(0, 300) : String(spec.qrText || '');
+  const sfxSrc = Array.isArray(req.body?.sfxTimes) ? req.body.sfxTimes : (Array.isArray(spec.sfxTimes) ? spec.sfxTimes : []);
+  const sfxTimes = sfxSrc.map(Number).filter((t: number) => Number.isFinite(t) && t >= 0).map((t: number) => t - shift).filter((t: number) => t >= 0);
+  const capPos = ['bottom', 'center', 'top'].includes(req.body?.capPos) ? req.body.capPos : 'top';
+  const clipVolume = Number.isFinite(Number(req.body?.clipVolume)) ? Math.max(0, Math.min(1, Number(req.body.clipVolume))) : undefined;
+
+  const jobId = randomUUID();
+  sweepAdJobs();
+  adJobs.set(jobId, { tenantId: req.tenantId, status: 'processing', ts: Date.now() });
+  const tenantId = req.tenantId!;
+  void (async () => {
+    try {
+      const out = await composeAdVideo({ segments, captions, format: fmt as any, voicePath, sfxTimes, qrText: qrText || null, clipVolume, capPos: capPos as any });
+      const asset = await createAsset(tenantId, {
+        kind: 'reference', mediaType: 'video',
+        originalName: (row.title || 'Рекламный ролик').slice(0, 110) + '.mp4',
+        fileUrl: out.fileUrl, filePath: out.filePath, mime: 'video/mp4',
+        size: (() => { try { return fs.statSync(out.filePath).size; } catch { return 0; } })(),
+        origins: ['flow'],
+      });
+      await pool.query(
+        `UPDATE flow_batch_specs SET composed_asset_id=$1, composed_file_url=$2, updated_at=now() WHERE tenant_id=$3 AND batch_id=$4`,
+        [asset?.id || null, out.fileUrl, tenantId, batchId]
+      );
+      adJobs.set(jobId, { tenantId, status: 'done', fileUrl: out.fileUrl, assetId: asset?.id || null, warnings: out.warnings, ts: Date.now() });
+    } catch (e: any) {
+      adJobs.set(jobId, { tenantId, status: 'failed', error: String(e?.message || e).slice(0, 400), ts: Date.now() });
+    }
+  })();
+  res.json({ ok: true, jobId });
+});
+
+/** Статус сборки ролика. */
+router.get('/compose-ad/status', (req: AuthedRequest, res: Response) => {
+  const jobId = String(req.query.jobId || '');
+  const j = adJobs.get(jobId);
+  if (!j || j.tenantId !== req.tenantId) return res.status(404).json({ error: 'джоба не найдена' });
+  res.json({ status: j.status, fileUrl: j.fileUrl || null, assetId: j.assetId || null, warnings: j.warnings || [], error: j.error || null });
 });
 
 export const INGEST_LIMIT = INGEST_JSON_LIMIT;

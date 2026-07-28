@@ -436,6 +436,73 @@ export default function GalleryPage() {
   const authHeader = (): HeadersInit => (token ? { Authorization: `Bearer ${token}` } : {});
   const jsonHeaders = (): HeadersInit => ({ 'Content-Type': 'application/json', ...authHeader() });
 
+  // ── «Сценарий → пакет» (Flow Booster): пакеты клипов + сборка рекламного ролика ──
+  interface FlowBatch { batchId: string; title: string; total: number; ready: number; clips: Record<string, unknown>; spec: any; composedAssetId: string | null; composedFileUrl: string | null }
+  const [flowBatches, setFlowBatches] = useState<FlowBatch[]>([]);
+  const [adForm, setAdForm] = useState<null | { batch: FlowBatch; captions: Record<string, string>; voiceUrl: string; qrText: string; format: string; capPos: string }>(null);
+  const [adAudio, setAdAudio] = useState<{ id: string; title: string; fileUrl: string }[]>([]);
+  const [adJob, setAdJob] = useState<null | { batchId: string; jobId: string; status: 'processing' | 'done' | 'failed'; error?: string }>(null);
+  const [adBusy, setAdBusy] = useState(false);
+
+  const loadFlowBatches = async () => {
+    try {
+      const r = await fetch('/api/flow-ext/batches', { headers: jsonHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      setFlowBatches(Array.isArray(d.batches) ? d.batches : []);
+    } catch { /* не критично */ }
+  };
+  useEffect(() => {
+    if (tab !== 'flow') return;
+    void loadFlowBatches();
+    const iv = setInterval(() => void loadFlowBatches(), 12_000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  const openAdForm = async (b: FlowBatch) => {
+    const caps: Record<string, string> = {};
+    (b.spec?.scenes || []).forEach((sc: any) => { caps[String(sc.idx)] = sc.caption || ''; });
+    setAdForm({ batch: b, captions: caps, voiceUrl: '', qrText: b.spec?.qrText || '', format: ['9x16', '16x9', '1x1', '4x5'].includes(b.spec?.format) ? b.spec.format : '9x16', capPos: 'top' });
+    try {
+      const r = await fetch('/api/flow-ext/audio', { headers: jsonHeaders() });
+      if (r.ok) { const d = await r.json(); setAdAudio(Array.isArray(d.items) ? d.items : []); }
+    } catch { /* без аудио-списка */ }
+  };
+  const startAdCompose = async () => {
+    if (!adForm) return;
+    setAdBusy(true);
+    try {
+      const r = await fetch('/api/flow-ext/compose-ad', {
+        method: 'POST', headers: jsonHeaders(),
+        body: JSON.stringify({
+          batchId: adForm.batch.batchId, captions: adForm.captions,
+          voiceUrl: adForm.voiceUrl || null, qrText: adForm.qrText,
+          format: adForm.format, capPos: adForm.capPos,
+        }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setAdJob({ batchId: adForm.batch.batchId, jobId: '', status: 'failed', error: d.error || `HTTP ${r.status}` }); setAdForm(null); return; }
+      setAdJob({ batchId: adForm.batch.batchId, jobId: d.jobId, status: 'processing' });
+      setAdForm(null);
+    } finally { setAdBusy(false); }
+  };
+  // Поллинг сборки ролика; готово → обновить пакеты (ролик появится в «Видео» Галереи).
+  useEffect(() => {
+    if (!adJob || adJob.status !== 'processing' || !adJob.jobId) return;
+    const iv = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/flow-ext/compose-ad/status?jobId=${encodeURIComponent(adJob.jobId)}`, { headers: jsonHeaders() });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.status === 'done') { setAdJob((j) => (j ? { ...j, status: 'done' } : j)); void loadFlowBatches(); }
+        else if (d.status === 'failed') setAdJob((j) => (j ? { ...j, status: 'failed', error: d.error || 'ошибка сборки' } : j));
+      } catch { /* сеть мигнула — следующий тик */ }
+    }, 5_000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adJob?.jobId, adJob?.status]);
+
   const load = async (which: Tab = tab, kindOverride?: MediaKind) => {
     // «Публикатор» / «Сториборд» — данные грузят сами компоненты вкладок.
     if (which === 'publisher' || which === 'storyboard') { setItems([]); setLoading(false); setError(null); setSelected(new Set()); return; }
@@ -1552,6 +1619,108 @@ export default function GalleryPage() {
                   <button type="button" onClick={loadFlowProjects} className="underline hover:opacity-80" style={{ cursor: 'pointer' }}>{t('sec.gallery.linkRefresh', 'Обновить')}</button>
                   <span>· {t('sec.gallery.flowClickHint', 'клик по проекту откроет его в Flow')}</span></>
               )}
+            </div>
+          )}
+
+          {/* «Сценарий → пакет»: пакеты Flow Booster — прогресс клипов + «Собрать ролик». */}
+          {tab === 'flow' && flowBatches.length > 0 && (
+            <div className="mb-3 flex flex-col gap-2">
+              {flowBatches.map((b) => {
+                const complete = b.total > 0 && b.ready >= b.total;
+                const composing = !!(adJob && adJob.batchId === b.batchId && adJob.status === 'processing');
+                const failedMsg = adJob && adJob.batchId === b.batchId && adJob.status === 'failed' ? (adJob.error || t('sec.gallery.fbFailed', 'ошибка сборки')) : '';
+                return (
+                  <div key={b.batchId} className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
+                    <Clapperboard size={16} style={{ color: '#6366f1', flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-600 truncate" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.fbBatch', 'Пакет')}: {b.title}</div>
+                      <div className="text-[11.5px]" style={{ color: failedMsg ? '#ef4444' : 'var(--text-muted)' }}>
+                        {t('sec.gallery.fbClips', 'клипов {{r}} из {{n}}', { r: b.ready, n: b.total || '?' })}
+                        {!b.spec ? ' · ' + t('sec.gallery.fbNoSpec', 'нет спеки сцен — нарежьте сценарий в Booster') : ''}
+                        {!complete && b.spec ? ' · ' + t('sec.gallery.fbWaiting', 'жду остальные клипы из Flow') : ''}
+                        {composing ? ' · ' + t('sec.gallery.fbComposing', 'собираю ролик…') : ''}
+                        {failedMsg ? ' · ' + failedMsg : ''}
+                      </div>
+                    </div>
+                    {composing && <Loader2 size={16} className="animate-spin" style={{ color: '#6366f1', flexShrink: 0 }} />}
+                    {!composing && b.composedFileUrl && (
+                      <a href={b.composedFileUrl} target="_blank" rel="noreferrer" className="text-[12.5px] font-600 underline whitespace-nowrap" style={{ color: '#10b981' }}>
+                        {t('sec.gallery.fbReady', 'Ролик готов')}
+                      </a>
+                    )}
+                    <button type="button" disabled={!complete || !b.spec || composing} onClick={() => void openAdForm(b)}
+                      className="inline-flex items-center gap-1.5 text-[12.5px] font-600 px-2.5 py-1.5 rounded-lg disabled:opacity-40 whitespace-nowrap"
+                      style={{ background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                      <Clapperboard size={14} /> {b.composedFileUrl ? t('sec.gallery.fbRebuild', 'Пересобрать') : t('sec.gallery.fbCompose', 'Собрать ролик')}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Модалка «Собрать ролик»: титры по сценам, голос, QR, формат. */}
+          {adForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setAdForm(null)}>
+              <div className="w-full max-w-lg rounded-2xl p-4 flex flex-col gap-3 max-h-[86vh] overflow-y-auto" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }} onClick={(e) => e.stopPropagation()}>
+                <div className="text-[15px] font-700" style={{ color: 'var(--text-primary)' }}>{t('sec.gallery.fbFormTitle', 'Собрать ролик')}: {adForm.batch.title}</div>
+                {(adForm.batch.spec?.scenes || []).map((sc: any) => (
+                  <label key={sc.idx} className="flex flex-col gap-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    {t('sec.gallery.fbSceneCap', 'Титр сцены {{a}}–{{b}}с', { a: Math.round(sc.start), b: Math.round(sc.end) })}{sc.layout === 'split' ? ' · ' + t('sec.gallery.fbSplitMark', 'сплит-скрин из двух клипов') : ''}
+                    <input value={adForm.captions[String(sc.idx)] || ''} placeholder={t('sec.gallery.fbNoCap', 'без титра')}
+                      onChange={(e) => setAdForm({ ...adForm, captions: { ...adForm.captions, [String(sc.idx)]: e.target.value } })}
+                      className="px-2.5 py-2 rounded-lg text-[13px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
+                  </label>
+                ))}
+                <label className="flex flex-col gap-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  {t('sec.gallery.fbVoice', 'Голос за кадром — аудио из Галереи (озвучьте текст в студии и выберите дорожку)')}
+                  <select value={adForm.voiceUrl} onChange={(e) => setAdForm({ ...adForm, voiceUrl: e.target.value })}
+                    className="px-2.5 py-2 rounded-lg text-[13px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                    <option value="">{t('sec.gallery.fbNoVoice', 'без голоса (звук клипов как есть)')}</option>
+                    {adAudio.map((a) => <option key={a.id} value={a.fileUrl}>{a.title}</option>)}
+                  </select>
+                </label>
+                {(adForm.batch.spec?.scenes || []).some((sc: any) => sc.voice) && (
+                  <details className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    <summary style={{ cursor: 'pointer' }}>{t('sec.gallery.fbVoiceText', 'Текст для озвучки (из сценария)')}</summary>
+                    <div className="mt-1 whitespace-pre-wrap">{(adForm.batch.spec?.scenes || []).map((sc: any) => sc.voice ? `${Math.round(sc.start)}–${Math.round(sc.end)}с: ${sc.voice}` : '').filter(Boolean).join('\n')}</div>
+                  </details>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    {t('sec.gallery.fbFormat', 'Формат кадра')}
+                    <select value={adForm.format} onChange={(e) => setAdForm({ ...adForm, format: e.target.value })}
+                      className="px-2.5 py-2 rounded-lg text-[13px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                      <option value="9x16">9:16</option><option value="16x9">16:9</option><option value="1x1">1:1</option><option value="4x5">4:5</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    {t('sec.gallery.fbCapPos', 'Положение титров')}
+                    <select value={adForm.capPos} onChange={(e) => setAdForm({ ...adForm, capPos: e.target.value })}
+                      className="px-2.5 py-2 rounded-lg text-[13px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                      <option value="top">{t('sec.gallery.fbPosTop', 'сверху')}</option><option value="bottom">{t('sec.gallery.fbPosBottom', 'снизу')}</option><option value="center">{t('sec.gallery.fbPosCenter', 'по центру')}</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="flex flex-col gap-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                  {t('sec.gallery.fbQr', 'QR-код на финале (ссылка; пусто — без QR)')}
+                  <input value={adForm.qrText} onChange={(e) => setAdForm({ ...adForm, qrText: e.target.value })}
+                    className="px-2.5 py-2 rounded-lg text-[13px]" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }} />
+                </label>
+                <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {t('sec.gallery.fbHint', 'Соберём: клипы по таймкодам (сплит-сцены — два клипа в кадре), титры, голос поверх (звук клипов приглушится), звуковой акцент на стыке и QR. Готовый ролик появится здесь и в «Видео».')}
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" onClick={() => setAdForm(null)}
+                    className="text-[13px] font-600 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>
+                    {t('sec.gallery.fbCancel', 'Отмена')}
+                  </button>
+                  <button type="button" onClick={() => void startAdCompose()} disabled={adBusy}
+                    className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl disabled:opacity-50" style={{ background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    {adBusy ? <Loader2 size={15} className="animate-spin" /> : <Clapperboard size={15} />} {t('sec.gallery.fbGo', 'Собрать')}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

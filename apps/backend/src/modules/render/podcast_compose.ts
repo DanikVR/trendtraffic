@@ -20,7 +20,7 @@ const RENDERS_DIR = path.join(UPLOADS_ROOT, 'renders');
 const FFMPEG_BIN: string = process.env.FFMPEG_PATH || (ffmpegStatic as unknown as string) || 'ffmpeg';
 const FFPROBE_BIN: string = (process.env.FFMPEG_PATH && process.env.FFMPEG_PATH.replace(/ffmpeg(\.exe)?$/i, 'ffprobe$1')) || 'ffprobe';
 
-function ffmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
+export function ffmpeg(args: string[], timeoutMs = 600_000): Promise<void> {
   return new Promise((resolve, reject) => {
     const ff = spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'ignore', 'pipe'] });
     let err = '';
@@ -203,7 +203,7 @@ export function probeImageSize(input: string): Promise<{ w: number; h: number } 
 
 // ── ASS-титры: помощники времени/экранирования (используются UGC/диалог/комментатор) ──
 
-function assTime(sec: number): string {
+export function assTime(sec: number): string {
   const cs = Math.max(0, Math.round(sec * 100));
   const h = Math.floor(cs / 360000);
   const m = Math.floor((cs % 360000) / 6000);
@@ -213,12 +213,12 @@ function assTime(sec: number): string {
 }
 
 /** Экранирование текста для ASS: фигурные скобки открывают override-блоки, \n → \N. */
-function assEsc(text: string): string {
+export function assEsc(text: string): string {
   return String(text).replace(/\{/g, '(').replace(/\}/g, ')').replace(/\r?\n/g, '\\N').trim();
 }
 
 /** Путь для фильтра subtitles: прямые слэши + экранированные ':' ',' '\''. */
-function subFilterPath(p: string): string {
+export function subFilterPath(p: string): string {
   return p.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/,/g, '\\,').replace(/'/g, "\\'");
 }
 
@@ -415,7 +415,7 @@ function assColor(hex: string): string {
  *  «Караоке» (строка с заливкой слов фиолетовым по мере речи). Позиция: низ/центр/верх.
  *  wish — разобранные «Пожелания к стилю» (цвет/обводка/размер/подложка): они же красят
  *  живой пример в превью студии, рендер обязан совпадать. */
-function buildUgcAss(opts: {
+export function buildUgcAss(opts: {
   W: number; H: number;
   captions: UgcCaption[];
   style: 'word' | 'karaoke' | 'plain';
@@ -483,7 +483,7 @@ function buildUgcAss(opts: {
 }
 
 /** Есть ли аудио-дорожка (для опц. подмешивания звука клипа). */
-function hasAudioStream(input: string): Promise<boolean> {
+export function hasAudioStream(input: string): Promise<boolean> {
   return new Promise((resolve) => {
     const ff = spawn(FFPROBE_BIN, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=codec_type', '-of', 'csv=p=0', input], { stdio: ['ignore', 'pipe', 'ignore'] });
     let out = '';

@@ -28,7 +28,8 @@
   ['ver', 'ttLink', 'ttDot', 'ttState', 'openFlow', 'flowChip', 'mode', 'model', 'aspect', 'count',
    'resolution', 'length', 'refBox', 'refInput', 'refs', 'charMode', 'useMention', 'chain', 'prompts',
    'promptCount', 'folder', 'prefix', 'autoDl', 'hiRes', 'ttSend', 'ttSendWrap', 'ttSignin', 'pace',
-   'concurrency', 'start', 'pause', 'stop', 'clear', 'queue', 'log', 'clearLog'].forEach((id) => (els[id] = $(id)));
+   'concurrency', 'start', 'pause', 'stop', 'clear', 'queue', 'log', 'clearLog',
+   'scenario', 'scenPlan', 'scenToggle', 'scenBody', 'scenInfo'].forEach((id) => (els[id] = $(id)));
 
   // Часто используемые подписи (кнопка «Пауза» переключается в 5 местах).
   const LBL_PAUSE = T('fb_pause', '⏸ Пауза');
@@ -98,6 +99,11 @@
     setTxt('lLog', T('fb_log', 'Лог'));
     setTxt('clearLog', T('fb_clearLog', 'очистить'));
     setTxt('fbFoot', T('fb_footer', 'Бесплатно · вход не нужен. Результаты скачиваются на ваш компьютер. TrendFlow — опционально.'));
+    setTxt('lScen', T('fb_scenTitle', 'Сценарий → пакет'));
+    setTxt('scenPlan', T('fb_scenBtn', 'Разбить на промпты'));
+    setTxt('scenToggle', els.scenBody && !els.scenBody.hidden ? T('fb_collapse', 'свернуть') : T('fb_expand', 'развернуть'));
+    setTxt('scenHint', T('fb_scenHint', 'Вставьте сценарный план с таймкодами («0:00 – 0:08 | Хук»…) — нарежется на клипы ≤8с, сплит-сцены (Слева:/Справа:) станут парой промптов, титры и QR уйдут в спеку. Подключён TrendFlow — нарезает ИИ с EN-промптами, а в Галерее появится «Собрать ролик».'));
+    if (els.scenario) els.scenario.placeholder = T('fb_scenPh', '0:00 – 0:08 | Хук\nВизуал: Слева: герой прощается с коровой… Справа: он же на стройке…\nТекст на экране: ГЛАВНЫЙ ТИТР\n\n0:08 – 0:20 | Проблема\nВизуал: …');
   }
 
   // ---------- persistence ----------
@@ -106,6 +112,7 @@
     for (const k of SETTINGS_KEYS) if (els[k]) s[k] = els[k].value;
     for (const k of FLAG_KEYS) if (els[k]) s[k] = els[k].checked;
     s.promptsText = els.prompts.value;
+    s.scenarioText = els.scenario ? els.scenario.value : '';
     try { chrome.storage.local.set({ flowBooster: s }); } catch { /* */ }
   }
   function loadSettings() {
@@ -115,6 +122,7 @@
         for (const k of SETTINGS_KEYS) if (s[k] != null && els[k]) els[k].value = s[k];
         for (const k of FLAG_KEYS) if (s[k] != null && els[k]) els[k].checked = !!s[k];
         if (s.promptsText != null) els.prompts.value = s.promptsText;
+        if (s.scenarioText != null && els.scenario) els.scenario.value = s.scenarioText;
         updatePromptCount(); syncModeUI();
       });
     } catch { /* */ }
@@ -130,6 +138,145 @@
   const updatePromptCount = () => { els.promptCount.textContent = String(parsePrompts().length); };
   const isImageMode = () => ['imageToVideo', 'components', 'imageToImage'].includes(els.mode.value);
   const syncModeUI = () => { els.refBox.hidden = !isImageMode(); };
+
+  // ---------- «Сценарий → пакет»: нарезка сценарного плана ----------
+  let plan = null; // { batchId, spec, items } — активный пакет (переживает переоткрытие панели)
+  const savePlan = () => { try { chrome.storage.local.set({ flowBoosterPlan: plan }); } catch { /* */ } };
+  const loadPlan = () => {
+    try {
+      chrome.storage.local.get('flowBoosterPlan', (d) => {
+        if (d && d.flowBoosterPlan && d.flowBoosterPlan.items) {
+          plan = d.flowBoosterPlan;
+          if (els.scenInfo) els.scenInfo.textContent = plan.items.length + ' × ≤8s';
+        }
+      });
+    } catch { /* */ }
+  };
+
+  const TC_RE = /(\d{1,3}):(\d{2})\s*[–—-]{1,2}\s*(\d{1,3}):(\d{2})/;
+  const toSec = (m, s) => Number(m) * 60 + Number(s);
+  const stripMd = (s) => String(s || '').replace(/[*_`#]+/g, '').replace(/^\s*[-•|]\s*/, '').trim();
+
+  /** Локальная (без ИИ) нарезка: сцены по таймкодам, титры «Текст на экране», сплит «Слева/Справа»,
+   *  куски ≤8с. Язык промптов — как в сценарии. Умная EN-нарезка — через TrendFlow (runScenarioPlan). */
+  function parseScenarioLocal(text) {
+    const lines = String(text || '').split('\n');
+    const marks = [];
+    lines.forEach((ln, i) => { const m = TC_RE.exec(ln); if (m) marks.push({ i, start: toSec(m[1], m[2]), end: toSec(m[3], m[4]) }); });
+    if (!marks.length) return null;
+    const scenes = [];
+    marks.forEach((mk, k) => {
+      if (!(mk.end > mk.start)) return;
+      const body = lines.slice(mk.i + 1, k + 1 < marks.length ? marks[k + 1].i : lines.length).join('\n');
+      const cap = /(?:Текст на экране|Text on screen)[^:：]*[:：]\s*([^\n]+)/i.exec(body);
+      const voi = /(?:Аудио|Голос за кадром|Voice-?over|Audio)[^:：]*[:：]\s*([^\n]+)/i.exec(body);
+      let visual = body;
+      const vm = /(?:Визуал|Visual)[^:：]*[:：]\s*/i.exec(body);
+      if (vm) {
+        visual = body.slice(vm.index + vm[0].length);
+        const cut = visual.search(/(?:Аудио|Текст на экране|Text on screen|Audio|Voice|Голос)[^:：]*[:：]/i);
+        if (cut > 0) visual = visual.slice(0, cut);
+      }
+      const wantSplit = /сплит|split|разделён|разделен|две части/i.test(body);
+      let left = '', right = '';
+      if (wantSplit) {
+        const lm = /(?:Слева|Left)[^:：]*[:：]\s*([\s\S]*?)(?=(?:Справа|Right)[^:：]*[:：]|$)/i.exec(visual);
+        const rm = /(?:Справа|Right)[^:：]*[:：]\s*([\s\S]*?)$/i.exec(visual);
+        left = stripMd((lm && lm[1] || '').replace(/\n+/g, ' ')).slice(0, 700);
+        right = stripMd((rm && rm[1] || '').replace(/\n+/g, ' ')).slice(0, 700);
+      }
+      const vis = stripMd(visual.replace(/\n+/g, ' ')).slice(0, 800);
+      if (!vis && !(left && right)) return;
+      scenes.push({
+        start: mk.start, end: mk.end,
+        caption: cap ? stripMd(cap[1]).slice(0, 200) : '', voice: voi ? stripMd(voi[1]).slice(0, 400) : '',
+        split: !!(wantSplit && left && right), vis, left, right,
+      });
+    });
+    if (!scenes.length) return null;
+
+    const noText = T('fb_noTextSuffix', ', без надписей, логотипов и текста в кадре');
+    const outScenes = []; let g = 1;
+    scenes.forEach((s, idx) => {
+      const dur = Math.max(1, s.end - s.start);
+      const n = Math.max(1, Math.ceil(dur / 8 - 1e-6));
+      const cd = dur / n;
+      const clips = [];
+      for (let k = 0; k < n; k++) {
+        const t0 = s.start + k * cd;
+        const t1 = k === n - 1 ? s.end : s.start + (k + 1) * cd;
+        const cont = n > 1 ? ' ' + fmt(T('fb_contPart', '(часть {k} из {n}, продолжение действия)'), { k: k + 1, n }) : '';
+        if (s.split) {
+          clips.push({ index: g++, t0, t1, side: 'L', prompt: s.left + cont + noText });
+          clips.push({ index: g++, t0, t1, side: 'R', prompt: s.right + cont + noText });
+        } else {
+          clips.push({ index: g++, t0, t1, prompt: s.vis + cont + noText });
+        }
+      }
+      outScenes.push({ idx, start: s.start, end: s.end, caption: s.caption, voice: s.voice, layout: s.split ? 'split' : 'single', clips });
+    });
+    const bot = /@([A-Za-z0-9_]{4,32}bot)/i.exec(text);
+    const url = /(https?:\/\/[^\s)»"']+)/.exec(text);
+    const sfxTimes = [];
+    const sfxm = /(?:SFX|Звуков)[\s\S]{0,400}?\((\d{1,3}):(\d{2})\)/i.exec(text);
+    if (sfxm) sfxTimes.push(toSec(sfxm[1], sfxm[2]));
+    const firstLine = stripMd(lines.find((l) => stripMd(l)) || '').slice(0, 100);
+    const spec = {
+      title: firstLine || 'Flow batch', format: '9x16',
+      qrText: bot ? 'https://t.me/' + bot[1] : (url ? url[1] : ''),
+      sfxTimes, totalClips: g - 1, scenes: outScenes,
+    };
+    const items = outScenes.flatMap((sc) => sc.clips.map((c) => ({
+      index: c.index, prompt: c.prompt, sceneIdx: sc.idx, side: c.side || null,
+      len: Math.min(8, Math.max(1, Math.round(c.t1 - c.t0))),
+    })));
+    return { spec, items };
+  }
+
+  /** Применить план: промпты в textarea, длина 8с, 1 результат/промпт, персонажи «все». */
+  function applyPlan(p, sourceLbl) {
+    plan = { batchId: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), spec: p.spec, items: p.items };
+    els.prompts.value = p.items.map((i) => i.prompt).join('\n');
+    if (els.length) els.length.value = '8';
+    if (els.count) els.count.value = '1'; // мета пакета однозначна при 1 результате на промпт
+    if (!els.folder.value.trim()) els.folder.value = 'FlowAd';
+    if (characters.length && els.charMode) els.charMode.value = 'all';
+    updatePromptCount(); saveSettings(); savePlan();
+    if (els.scenInfo) els.scenInfo.textContent = p.items.length + ' × ≤8s';
+    log(fmt(T('fb_scenDone', '🎬 нарезано: {n} промптов из {s} сцен — {src}'), { n: p.items.length, s: p.spec.scenes.length, src: sourceLbl }));
+    if (p.spec.qrText) log('QR: ' + p.spec.qrText);
+  }
+
+  /** Спека пакета → TrendFlow (Галерея покажет пакет и «Собрать ролик»). */
+  async function sendSpec() {
+    if (!ttConnected || !plan) return;
+    const r = await bg({ type: 'batch-spec', batchId: plan.batchId, spec: plan.spec });
+    log(r && r.ok
+      ? T('fb_scenSpecSent', '📦 спека пакета в TrendFlow — в Галерее появится «Собрать ролик»')
+      : T('fb_scenSpecFail', '⚠ спека не отправилась (клипы всё равно соберутся в пакет)'));
+  }
+
+  async function runScenarioPlan() {
+    const text = (els.scenario ? els.scenario.value : '').trim();
+    if (text.length < 30) { log(T('fb_scenShort', 'вставьте сценарный план с таймкодами (пример: 0:00 – 0:08)')); return; }
+    els.scenPlan.disabled = true;
+    try {
+      if (ttConnected) {
+        log(T('fb_scenAsking', '🧠 ИИ-нарезка через TrendFlow…'));
+        const r = await bg({ type: 'scenario-plan', scenario: text });
+        if (r && r.ok && Array.isArray(r.items) && r.items.length) {
+          applyPlan(r, T('fb_scenSmart', 'ИИ (EN-промпты)'));
+          await sendSpec();
+          return;
+        }
+        log(((r && r.error) ? r.error + ' — ' : '') + T('fb_scenFallback', 'нарезаю локально'));
+      }
+      const p = parseScenarioLocal(text);
+      if (!p) { log(T('fb_scenNone', 'не нашёл сцен с таймкодами (пример: 0:00 – 0:08)')); return; }
+      applyPlan(p, T('fb_scenLocal', 'локально, без перевода'));
+      await sendSpec();
+    } finally { els.scenPlan.disabled = false; }
+  }
 
   // ---------- персонажи (референсы) ----------
   const fileToDataUrl = (file) => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(new Error('read')); fr.readAsDataURL(file); });
@@ -206,17 +353,25 @@
   }
 
   // ---------- скачивание + отправка результата ----------
-  async function handleResults(prompt, results) {
+  async function handleResults(item, results) {
+    const prompt = item.prompt;
     let idx = 0;
     for (const r of results) {
       const kind = r.kind || 'video';
       if (els.autoDl.checked && !r.native) {
-        const spec = { folder: els.folder.value.trim(), prefix: els.prefix.value.trim(), name: prompt, index: idx, kind, sourceUrl: r.sourceUrl, dataUrl: r.dataUrl };
+        // Пакет сценария: номер клипа в начале имени файла — порядок монтажа виден в папке.
+        const nm = (item.batchIndex ? String(item.batchIndex).padStart(2, '0') + ' ' : '') + prompt;
+        const spec = { folder: els.folder.value.trim(), prefix: els.prefix.value.trim(), name: nm, index: idx, kind, sourceUrl: r.sourceUrl, dataUrl: r.dataUrl };
         const dl = await bg({ type: 'flow-download', spec });
         if (dl && dl.ok) log('💾 ' + dl.filename); else log(T('fb_dlFail', '⚠ скачивание: ') + ((dl && dl.error) || T('fb_failed', 'не удалось')));
       } else if (r.native) { log(T('fb_savedNative', '💾 сохранено через меню Flow (hi-res)')); }
       if (els.ttSend.checked && ttConnected) {
-        const ing = await bg({ type: 'manual-ingest', payload: { sourceUrl: r.sourceUrl, dataUrl: r.dataUrl, kind, title: prompt.slice(0, 80) } });
+        const payload = { sourceUrl: r.sourceUrl, dataUrl: r.dataUrl, kind, title: prompt.slice(0, 80) };
+        // Мета пакета — только у первого результата промпта (реестр клипов: index → один ассет).
+        if (item.batchIndex && idx === 0 && plan) {
+          payload.batch = { id: plan.batchId, index: item.batchIndex, total: plan.spec.totalClips, title: plan.spec.title };
+        }
+        const ing = await bg({ type: 'manual-ingest', payload });
         if (ing && ing.ok) log(T('fb_ttSent', '⬆ в Галерею TrendFlow ✓')); else log(T('fb_ttFail', '⚠ TrendFlow: ') + ((ing && ing.error) || T('fb_failed', 'не удалось')));
       }
       if (els.chain.checked && kind === 'image' && r.dataUrl) lastChainImage = r.dataUrl;
@@ -303,7 +458,7 @@
           f.item.status = n ? 'done' : 'failed';
           f.item.note = n ? ('✓ ' + n + (r.timeout ? ' (' + T('fb_timeout', 'таймаут') + ')' : '')) : (r.timeout ? T('fb_timeout', 'таймаут') : T('fb_noResult', 'нет результата'));
           renderQueue();
-          await handleResults(f.item.prompt, r.results || []);
+          await handleResults(f.item, r.results || []);
           // «delay между промптами» — только последовательно (в параллели интервал задаёт стаггер запусков)
           if (conc === 1 && nextQueued()) { const d = jitter(Number(els.pace.value) || 30); log(fmt(T('fb_pacing', '⏳ пауза {s}с…'), { s: Math.round(d / 1000) })); await sleep(d); }
         } else { still.push(f); } // ещё генерится — оставляем в полёте
@@ -319,6 +474,13 @@
     const prompts = parsePrompts();
     if (!prompts.length) { log(T('fb_addPrompts', 'добавь хотя бы один промпт')); return; }
     queue = prompts.map((p, i) => ({ id: 'q' + Date.now() + '_' + i, prompt: p, status: 'queued', note: '', pct: 0 }));
+    // Пакет сценария: мета клипов по ПОЗИЦИИ строки (строка i = items[i]); строки менялись — без меты.
+    if (plan && plan.items && plan.items.length === queue.length) {
+      queue.forEach((q, i) => { q.batchIndex = plan.items[i].index; });
+      log(T('fb_scenMeta', '📦 пакет активен: клипы уйдут с метой сцен'));
+    } else if (plan) {
+      log(T('fb_scenMismatch', '⚠ число строк не совпадает с планом — клипы уйдут без меты пакета'));
+    }
     lastChainImage = null;
     running = true; paused = false; stopFlag = false;
     els.start.disabled = true; els.pause.disabled = false; els.stop.disabled = false; els.pause.textContent = LBL_PAUSE;
@@ -340,7 +502,13 @@
   }
   function togglePause() { if (!running) return; paused = !paused; els.pause.textContent = paused ? LBL_RESUME : LBL_PAUSE; log(paused ? T('fb_pausedLog', '⏸ пауза') : T('fb_resumedLog', '▶ продолжаю')); }
   function stopRun() { if (!running) return; stopFlag = true; paused = false; log(T('fb_stopping', '■ останавливаю после текущих…')); }
-  function clearAll() { if (running) return; queue = []; renderQueue(); els.prompts.value = ''; updatePromptCount(); saveSettings(); }
+  function clearAll() {
+    if (running) return;
+    queue = []; renderQueue(); els.prompts.value = ''; updatePromptCount();
+    plan = null; savePlan();
+    if (els.scenInfo) els.scenInfo.textContent = '';
+    saveSettings();
+  }
 
   // ---------- прогресс от content-flow ----------
   chrome.runtime.onMessage.addListener((msg) => {
@@ -367,11 +535,21 @@
     els.stop.onclick = stopRun;
     els.clear.onclick = clearAll;
     els.clearLog.onclick = () => { els.log.textContent = ''; };
+    if (els.scenToggle) {
+      els.scenToggle.onclick = () => {
+        const wasHidden = els.scenBody.hidden;
+        els.scenBody.hidden = !wasHidden;
+        els.scenToggle.textContent = wasHidden ? T('fb_collapse', 'свернуть') : T('fb_expand', 'развернуть');
+      };
+    }
+    if (els.scenPlan) els.scenPlan.onclick = runScenarioPlan;
+    if (els.scenario) els.scenario.addEventListener('input', saveSettings);
   }
 
   // ---------- старт ----------
   wire();
   loadSettings();
+  loadPlan();
   refreshFlowStatus(); refreshTtStatus();
   setInterval(refreshFlowStatus, 4000);
   setInterval(refreshTtStatus, 6000);

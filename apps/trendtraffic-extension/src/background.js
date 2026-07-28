@@ -204,11 +204,37 @@ async function manualIngest(payload) {
   try {
     const res = await fetch(api('/api/flow-ext/ingest-manual'), {
       method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ sourceUrl: payload.sourceUrl || null, dataUrl: payload.dataUrl || null, title: payload.title || 'Flow', kind: payload.kind || null }),
+      body: JSON.stringify({ sourceUrl: payload.sourceUrl || null, dataUrl: payload.dataUrl || null, title: payload.title || 'Flow', kind: payload.kind || null, batch: payload.batch || null }),
     });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) return { ok: false, error: d.error || ('HTTP ' + res.status) };
     return { ok: true, fileUrl: d.fileUrl, assetId: d.assetId };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+/** ИИ-нарезка сценарного плана на бэкенде TrendFlow (Enterprise, ключ Anthropic тенанта). */
+async function scenarioPlan(scenario) {
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
+  try {
+    const res = await fetch(api('/api/flow-ext/scenario-plan'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ scenario: String(scenario || '') }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: d.error || ('HTTP ' + res.status), code: d.code || null };
+    return { ok: true, spec: d.spec, items: d.items, planSource: d.planSource || 'claude' };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+/** Спека пакета «Сценарий → пакет» → бэкенд (Галерея покажет пакет и кнопку «Собрать ролик»). */
+async function sendBatchSpec(batchId, spec) {
+  if (!STATE.token || !STATE.apiBase) return { ok: false, error: T('bg_notConnected', 'не подключено') };
+  try {
+    const res = await fetch(api('/api/flow-ext/batch-spec'), {
+      method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ batchId: String(batchId || ''), spec: spec || null }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: d.error || ('HTTP ' + res.status) };
+    return { ok: true };
   } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 }
 /** Список видео Галереи для кнопки «Из Галереи» (Flow). */
@@ -899,6 +925,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'flow-arm-rename': armRename(msg.spec || {}); sendResponse({ ok: true }); break;
       case 'flow-disarm-rename': disarmRename(); sendResponse({ ok: true }); break;
       case 'flow-batch-progress': sendResponse({ ok: true }); break; // прогресс слушает панель; фон просто ack'ает
+      case 'scenario-plan': sendResponse(await scenarioPlan(msg.scenario)); break;
+      case 'batch-spec': sendResponse(await sendBatchSpec(msg.batchId, msg.spec)); break;
 
       // — NotebookLM —
       case 'nlm-status':
