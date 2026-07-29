@@ -28,14 +28,37 @@ export interface TikHubResult<T = any> {
  * Низкоуровневый авторизованный GET к TikHub. Никогда не бросает — возвращает
  * типизированный результат (по образцу channels/instagram/ig_client.ts).
  */
+/**
+ * Разворачивает цепочку err.cause в одну читаемую строку. Node/undici почти всегда
+ * кладёт НАСТОЯЩУЮ причину сетевого сбоя в cause: верхний уровень — бесполезное
+ * «TypeError: terminated» или «fetch failed», а внутри — «SocketError: other side
+ * closed» / «ConnectTimeoutError» / ECONNRESET. Без разворота в логах и в UI
+ * оставалось одно слово, по которому диагностировать нечего.
+ */
+function describeFetchError(err: any): string {
+  const chain: string[] = [];
+  let e: any = err;
+  for (let depth = 0; e && depth < 4; depth++) {
+    const name = e.name && e.name !== 'Error' ? `${e.name}: ` : '';
+    const msg = typeof e.message === 'string' && e.message ? e.message : String(e);
+    chain.push(`${name}${msg}${e.code ? ` [${e.code}]` : ''}`);
+    e = e.cause;
+  }
+  return chain.join(' ← ');
+}
+
 export async function tikhubGet<T = any>(
   apiKey: string,
   pathAndQuery: string,
   opts?: { timeoutMs?: number }
 ): Promise<TikHubResult<T>> {
   const url = pathAndQuery.startsWith('http') ? pathAndQuery : `${TIKHUB_BASE}${pathAndQuery}`;
+  const timeoutMs = opts?.timeoutMs ?? 20000;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts?.timeoutMs ?? 20000);
+  // Свой флаг таймаута обязателен: по имени ошибки таймаут НЕ опознаётся, если
+  // abort() пришёл уже на чтении тела ответа (см. catch ниже).
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
   try {
     const resp = await fetch(url, {
       method: 'GET',
@@ -56,14 +79,24 @@ export async function tikhubGet<T = any>(
         // detail у FastAPI-валидации — массив объектов; объект сериализуем в JSON, а не String() → "[object Object]".
         apiMsg = m == null ? '' : (typeof m === 'string' ? m : JSON.stringify(m));
       } else if (typeof data === 'string') {
-        apiMsg = data;
+        // Тело не разобралось как JSON (бывает при обрыве/HTML-заглушке прокси) — в текст
+        // ошибки идёт короткая выжимка, а не 400 символов сырого мусора.
+        apiMsg = `неразборчивый ответ: ${data.replace(/\s+/g, ' ').slice(0, 120)}`;
       }
-      return { ok: false, status: resp.status, error: (apiMsg || `HTTP ${resp.status}`).slice(0, 400) };
+      return { ok: false, status: resp.status, error: (apiMsg || `HTTP ${resp.status}`).slice(0, 200) };
     }
     return { ok: true, status: resp.status, data: data as T };
   } catch (err: any) {
-    const aborted = err?.name === 'AbortError';
-    return { ok: false, status: 0, error: aborted ? 'Таймаут запроса к Trend' : (err?.message || String(err)) };
+    // ГРАБЛИ: сработавший AbortController виден как AbortError только если сигнал пришёл
+    // ДО заголовков. Если он рвёт уже идущее тело ответа (`await resp.text()`), undici
+    // бросает «TypeError: terminated» — и раньше этот таймаут уходил пользователю как
+    // загадочное «Trend вернул ошибку: terminated». Поэтому таймаут определяем ФЛАГОМ.
+    if (timedOut || err?.name === 'AbortError') {
+      return { ok: false, status: 0, error: `Trend не ответил за ${Math.round(timeoutMs / 1000)}с (таймаут)` };
+    }
+    const detail = describeFetchError(err);
+    console.warn(`[tikhub] сетевой сбой ${pathAndQuery.split('?')[0]} → ${detail}`);
+    return { ok: false, status: 0, error: `обрыв связи с Trend (${detail})`.slice(0, 400) };
   } finally {
     clearTimeout(timer);
   }
@@ -161,6 +194,9 @@ export interface NormalizedVideo {
  * Ретрай транзиентных сбоев TikHub. Их скрапер периодически отвечает
  * 400 «Request failed. Please retry … You won't be charged for this request»
  * — это НЕ ошибка параметров, а временный сбой апстрима, лечится повтором.
+ * Сюда же обрывы соединения (status 0) и «terminated» самого скрапера.
+ * Попыток немного (запрос платный), зато каждая пишется в лог — молчаливые
+ * ретраи скрывали, что скан вообще боролся с апстримом.
  */
 async function withTikhubRetry<T>(fn: () => Promise<TikHubResult<T>>, tries = 3): Promise<TikHubResult<T>> {
   let last: TikHubResult<T> = { ok: false, status: 0, error: 'нет попытки' };
@@ -170,9 +206,14 @@ async function withTikhubRetry<T>(fn: () => Promise<TikHubResult<T>>, tries = 3)
     const e = (last.error || '').toLowerCase();
     const transient =
       last.status === 429 || last.status >= 500 || last.status === 0 ||
-      /please retry|request failed|try again|timeout|rate limit|временно/.test(e);
+      /please retry|request failed|try again|timeout|rate limit|временно/.test(e) ||
+      /terminated|обрыв|таймаут|socket|econnreset|epipe|und_err|fetch failed/.test(e);
     if (!transient) return last;
-    if (i < tries - 1) await new Promise((r) => setTimeout(r, 700 * (i + 1)));
+    if (i < tries - 1) {
+      const delay = 800 * 2 ** i; // 0.8с → 1.6с: обрыв соединения не лечится мгновенно
+      console.warn(`[tikhub] попытка ${i + 1}/${tries} не удалась (${(last.error || '').slice(0, 160)}) — повтор через ${delay}мс`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
   }
   return last;
 }
@@ -194,6 +235,25 @@ export function normalizeRegion(v?: string | null): string | undefined {
   return /^[A-Z]{2}$/.test(s) ? s : undefined;
 }
 
+/**
+ * ГРАБЛИ APP V3 (замерено 29.07.2026, воспроизводится 100% на любом ключевике):
+ * `app/v3/fetch_video_search_result` отдаёт 200 и заголовки, а потом РВЁТ тело ответа,
+ * если запросить много — count=30 и count=20 стабильно падают на ~4-й секунде
+ * «TypeError: terminated ← SocketError: other side closed [UND_ERR_SOCKET]», а count=15
+ * проходит. Сырой aweme весит ~70 КБ, то есть апстрим (Cloudflare у TikHub) обрывает
+ * отдачу где-то за ~1.2 МБ: 15 → ~1.05 МБ ok, 20 → ~1.4 МБ обрыв.
+ * Поэтому app-режим НИКОГДА не просит больше APP_MAX_COUNT, а если тело оборвалось
+ * всё равно (апстрим ужмёт лимит ещё) — спускаемся по лестнице.
+ */
+export const TIKTOK_APP_MAX_COUNT = 15;
+const APP_MAX_COUNT = TIKTOK_APP_MAX_COUNT;
+const APP_COUNT_LADDER = [10, 6];
+
+/** Обрыв ТЕЛА ответа (не сети): повтор тем же запросом даст тот же обрыв — нужен меньший count. */
+function isTruncatedBody(r: TikHubResult<any>): boolean {
+  return r.status === 0 && /terminated|und_err_socket|other side closed/i.test(r.error || '');
+}
+
 export async function searchVideos(
   apiKey: string,
   keyword: string,
@@ -205,11 +265,7 @@ export async function searchVideos(
   const mode: SearchMode = opts?.mode || 'app';
   const region = normalizeRegion(opts?.region);
 
-  let path: string;
-  if (mode === 'general') {
-    // Общий поиск (Web API не принимает count/region).
-    path = `/api/v1/tiktok/web/fetch_general_search?keyword=${kw}&offset=${offset}`;
-  } else if (mode === 'app') {
+  if (mode === 'app') {
     // ВАЖНО: всегда sort_type=0 (по релевантности). У TikTok только этот режим даёт
     // ИНТЕЛЛЕКТУАЛЬНЫЙ, устойчивый к опечаткам topical-матч ("wordpres" → WordPress).
     // sort_type=1/2 матчат строго: при опечатке/широком запросе отдают свежий мусор,
@@ -220,7 +276,26 @@ export async function searchVideos(
     // region (default 'US' у API) — единственный поисковый эндпоинт TikTok с гео:
     // подсказывает алгоритму, контент какого региона приоритизировать в выдаче.
     const pub = opts?.publishTime ?? 0;
-    path = `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${count}&offset=${offset}&sort_type=0&publish_time=${pub}${region ? `&region=${region}` : ''}`;
+    const appPath = (c: number) =>
+      `/api/v1/tiktok/app/v3/fetch_video_search_result?keyword=${kw}&count=${c}&offset=${offset}` +
+      `&sort_type=0&publish_time=${pub}${region ? `&region=${region}` : ''}`;
+    const first = Math.min(count, APP_MAX_COUNT);
+    if (count > APP_MAX_COUNT) {
+      console.warn(`[tikhub] app-поиск: count ${count} → ${APP_MAX_COUNT} (выше апстрим рвёт тело ответа)`);
+    }
+    let last: TikHubResult<any> = { ok: false, status: 0, error: 'нет попытки' };
+    for (const c of [first, ...APP_COUNT_LADDER.filter((x) => x < first)]) {
+      last = await withTikhubRetry(() => tikhubGet(apiKey, appPath(c), { timeoutMs: 30000 }));
+      if (last.ok || !isTruncatedBody(last)) return last;
+      console.warn(`[tikhub] app-поиск: тело оборвано на count=${c} — пробую меньше`);
+    }
+    return last;
+  }
+
+  let path: string;
+  if (mode === 'general') {
+    // Общий поиск (Web API не принимает count/region).
+    path = `/api/v1/tiktok/web/fetch_general_search?keyword=${kw}&offset=${offset}`;
   } else {
     // Web «Поиск по слову» (fetch_search_video) — region не поддерживает.
     path = `/api/v1/tiktok/web/fetch_search_video?keyword=${kw}&count=${count}&offset=${offset}`;

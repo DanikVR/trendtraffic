@@ -17,7 +17,7 @@ import { getEffectiveTikHubKey } from '../tenant_settings/tikhub.js';
 import {
   searchVideos, fetchOneVideo, extractOneVideoCover, fetchInstagramPostInfo, extractInstagramCover,
   extractOneVideoMeta, extractInstagramMeta, extractYoutubeMeta, extractDownloadUrls, fetchYoutubeStreams,
-  normalizeRegion, type NormalizedVideo,
+  normalizeRegion, TIKTOK_APP_MAX_COUNT, type NormalizedVideo,
 } from '../tikhub/tikhub_client.js';
 import { TREND_PROVIDERS, isTrendPlatform, type TrendPlatform } from '../tikhub/providers.js';
 import { shapeOf } from './analytics.js';
@@ -121,12 +121,18 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
       // App-поиск всегда тянет по релевантности (опечатко-устойчивый матч). Чтобы
       // «Новее»/«Больше лайков» пересортировывались осмысленно, тянем ПОЛНЫЙ пул
       // (одна оплата за запрос — count не влияет на цену), потом режем до count.
+      // Пул ограничен TIKTOK_APP_MAX_COUNT: выше апстрим рвёт тело ответа (см. граблю
+      // в tikhub_client). А при sort_type=0 пересортировки нет вовсе — верхние count
+      // relevance-выдачи те же, что и в ответе на count, поэтому не тянем лишнего:
+      // ответ на 15 сырых aweme весит ~1 МБ, а в «Таргете на ЦА» скан идёт по каждой
+      // нише подряд, и эти мегабайты множились на 10 ниш.
       // region уходит только в app-режим (единственный поисковый эндпоинт TikTok с гео).
-      const fetchCount = params.mode === 'app' ? 30 : count;
+      const needsPool = params.sortType === 1 || params.sortType === 2;
+      const fetchCount = params.mode === 'app' && needsPool ? TIKTOK_APP_MAX_COUNT : count;
       resp = await searchVideos(key, q, { count: fetchCount, mode: params.mode, publishTime: params.publishTime, region });
       // Web-эндпоинты (Видео/Общий) периодически нестабильны — молча падаем на App V3.
       if (!resp.ok && params.mode !== 'app') {
-        const fb = await searchVideos(key, q, { count: 30, mode: 'app', publishTime: params.publishTime, region });
+        const fb = await searchVideos(key, q, { count: TIKTOK_APP_MAX_COUNT, mode: 'app', publishTime: params.publishTime, region });
         if (fb.ok) { resp = fb; fellBackToApp = true; }
       }
     } else {
@@ -140,7 +146,13 @@ export async function scanTrends(tenantId: string, params: ScanParams): Promise<
   }
 
   if (!resp.ok) {
-    throw new Error(`Trend вернул ошибку: ${resp.error || `HTTP ${resp.status}`}`);
+    // Код держим в тексте ВСЕГДА (раньше он терялся, если апстрим прислал любое своё
+    // сообщение): без кода «terminated» от скрапера TikHub неотличим от обрыва сети,
+    // а лечатся они по-разному. status 0 = ответа не было вовсе (сеть/таймаут).
+    const detail = resp.status > 0
+      ? `HTTP ${resp.status}${resp.error ? ` — ${resp.error}` : ''}`
+      : (resp.error || 'нет ответа');
+    throw new Error(`Trend вернул ошибку: ${detail}`);
   }
 
   // Клиентская сортировка (для TikTok app-поиска): 2 — новее, 1 — больше лайков, 0 — как есть.

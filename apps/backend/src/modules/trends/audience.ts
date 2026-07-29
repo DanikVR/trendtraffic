@@ -204,17 +204,25 @@ export async function buildAudienceMap(tenantId: string, input: BuildAudienceInp
     await Promise.all(niches.map(async (n) => {
       const seed = (n.keywords[0] || n.name).slice(0, 60);
       let real: string[] = [];
+      // Причину провала заземления логируем: без этого «ключевики от ИИ» в UI не
+      // отличить от «эндпоинт подсказок недоступен/не в скоупе ключа», и обрыв связи
+      // с TikHub выглядел так же, как честно пустые подсказки.
+      let why = '';
       try {
         if (platform === 'youtube') {
           const r = await fetchYoutubeSuggestions(tikKey, seed, { region: input.region || 'US', language: ytLang });
-          if (r.ok) real = extractSuggestions(r.data, 12);
+          if (r.ok) real = extractSuggestions(r.data, 12); else why = r.error || `HTTP ${r.status}`;
         } else { // tiktok
           const r = await fetchTiktokQuerySuggestions(tikKey, seed, { countryCode: input.region || 'US' });
-          if (r.ok) real = extractSuggestions(r.data, 12);
+          if (r.ok) real = extractSuggestions(r.data, 12); else why = r.error || `HTTP ${r.status}`;
           // Пусто/упало → автокомплит поиска TikTok как фолбэк (без региона).
-          if (!real.length) { const r2 = await fetchTiktokKeywordSuggest(tikKey, seed); if (r2.ok) real = extractSuggestions(r2.data, 12); }
+          if (!real.length) {
+            const r2 = await fetchTiktokKeywordSuggest(tikKey, seed);
+            if (r2.ok) real = extractSuggestions(r2.data, 12); else why = r2.error || `HTTP ${r2.status}`;
+          }
         }
-      } catch { /* деградируем на ИИ-ключевики */ }
+      } catch (e: any) { why = e?.message || String(e); }
+      if (!real.length) console.warn(`[audience] заземление «${seed}» без подсказок${why ? `: ${why}` : ' (пустой ответ)'}`);
       if (real.length) {
         const low = new Set(real.map((x) => x.toLowerCase()));
         const merged = [...real];

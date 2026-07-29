@@ -3965,7 +3965,19 @@
  *          ЖИВЬЁМ из getManifest() (равна установленной всегда), детектор устаревшей вкладки
  *          сохранён: у отвязанного скрипта getManifest кидает → фолбэк-константа его сборки.
  *          Файлы: content-bridge.js, manifest 1.6.1, TT_EXT_VERSION, zip пересобран. */
-export const APP_VERSION = '2.6.40';
+/** 2.6.41 — «Таргет на ЦА»: скан ниши падал с загадочным «Trend вернул ошибку: terminated».
+ *          (1) tikhubGet терял err.cause — а undici кладёт настоящую причину обрыва только
+ *          туда («terminated» ← «SocketError: other side closed»); теперь цепочка причин
+ *          разворачивается в текст и в лог. (2) Свой таймаут опознавался по name==='AbortError',
+ *          но abort() на УЖЕ ИДУЩЕМ теле ответа undici бросает как TypeError: terminated —
+ *          таймаут уходил юзеру как «terminated»; теперь ловим своим флагом. (3) Код HTTP
+ *          больше не теряется, если апстрим прислал своё сообщение (сбой скрапера TikHub
+ *          и обрыв сети лечатся по-разному). (4) Ретраи TikHub пишутся в лог + «terminated»
+ *          и обрывы явно в списке транзиентных. (5) При sort_type=0 не тянем пул из 30 сырых
+ *          aweme (несколько МБ) ради 6 нужных — в «Таргете на ЦА» это шло по каждой нише.
+ *          (6) Провал заземления ключевиков логируется с причиной.
+ *          Файлы: tikhub_client.ts, trends/service.ts, trends/audience.ts. */
+export const APP_VERSION = '2.6.41';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
