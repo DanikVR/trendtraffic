@@ -21,11 +21,14 @@
   const OUT = 'tt-flow-ext';
   const IN = 'trendtraffic';
   const EXT_VERSION = (() => { try { return chrome.runtime.getManifest().version; } catch { return null; } })();
-  // ВЕРСИЯ САМОГО ЭТОГО СКРИПТА (зашита в код, НЕ из getManifest). Меняется вместе с
-  // релизом. Приложение сверяет её с версией манифеста (EXT_VERSION): если скрипт СТАРШЕ
-  // манифеста — значит после обновления расширения вкладку не перезагрузили и тут крутится
-  // УСТАРЕВШИЙ content-script (у него нет новых обработчиков, напр. reconnect) → просим F5.
-  const BRIDGE_VERSION = '1.4.0';
+  // ВЕРСИЯ САМОГО ЭТОГО СКРИПТА. Свежий скрипт берёт её ЖИВЬЁМ из манифеста — тогда она
+  // всегда равна установленной версии, и забытый бамп константы больше не даёт ложное
+  // «на вкладке старая версия» (случилось на 1.4.0→1.6.0). Детектор УСТАРЕВШЕГО скрипта
+  // (вкладку не перезагрузили после обновления расширения) при этом жив: у такого скрипта
+  // chrome.runtime уже отвязан, getManifest кидает → работает фолбэк-константа ЕГО сборки,
+  // приложение видит несовпадение и просит F5.
+  const BRIDGE_FALLBACK_VERSION = '1.6.1';
+  const BRIDGE_VERSION = (() => { try { return chrome.runtime.getManifest().version; } catch { return BRIDGE_FALLBACK_VERSION; } })();
   const TOKEN_KEY = 'vibevox_token'; // ключ JWT в localStorage SPA (см. store/useAppStore.ts)
   const toPage = (m) => window.postMessage({ source: OUT, bridgeVersion: BRIDGE_VERSION, ...m }, window.location.origin);
   const toBg = (m) => { try { return chrome.runtime.sendMessage(m); } catch { return Promise.resolve(null); } };

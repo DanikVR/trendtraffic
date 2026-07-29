@@ -3946,7 +3946,7 @@
  *          sidepanel.js добавлен в SRC_FILES харвестера — полный реген больше не теряет
  *          ключи панели. Файлы: trendtraffic-extension (sidepanel.{html,js}, content-flow.js,
  *          background.js, manifest, _locales ×52), translate-ext-runtime.mjs, zip пересобран. */
-/** 2.6.39 — «Сценарий → ролик» конвейер Flow Booster (ext v1.6.0). (1) Панель: секция
+/* 2.6.39 — «Сценарий → ролик» конвейер Flow Booster (ext v1.6.0). (1) Панель: секция
  *          «Сценарий → пакет» — сценарный план с таймкодами режется на промпты ≤8с (локальный
  *          парсер; при подключении — ИИ-нарезка Claude с EN-промптами и «no on-screen text»),
  *          сплит-сцены (Слева:/Справа:) → пара промптов, план хранится, клипы шлются в Галерею
@@ -3959,12 +3959,18 @@
  *          + поллинг сборки; локали sec.gallery.fb* ru+en, fb_scen* — 52 локали расширения.
  *          Файлы: ad_compose.ts, flow-ext/router.ts, podcast_compose.ts (экспорт хелперов),
  *          GalleryPage.tsx, sidepanel.{html,js,css}, background.js, manifest, package.json (qrcode). */
-export const APP_VERSION = '2.6.39';
+/** 2.6.40 — Фикс ложной плашки «на этой вкладке ещё работает старая версия (v1.4.0)» (ext
+ *          v1.6.1): BRIDGE_VERSION в content-bridge.js был зашит константой и не бампался с
+ *          1.4.0 — юзер обновил вкладку, а плашка осталась. Теперь свежий скрипт берёт версию
+ *          ЖИВЬЁМ из getManifest() (равна установленной всегда), детектор устаревшей вкладки
+ *          сохранён: у отвязанного скрипта getManifest кидает → фолбэк-константа его сборки.
+ *          Файлы: content-bridge.js, manifest 1.6.1, TT_EXT_VERSION, zip пересобран. */
+export const APP_VERSION = '2.6.40';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.6.0';
+export const TT_EXT_VERSION = '1.6.1';
 
 export function AppVersion() {
   return (
