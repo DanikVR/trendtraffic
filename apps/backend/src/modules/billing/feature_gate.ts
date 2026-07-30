@@ -14,6 +14,7 @@
  */
 
 import pool from '../../db/index.js';
+import { isUuid } from '../../utils/uuid.js';
 
 // ============================================================================
 // Типы
@@ -82,7 +83,10 @@ export async function getFeatureAccess(
 ): Promise<FeatureAccess> {
   const isSuper = userRole === 'superadmin';
 
-  if (!tenantId) {
+  // Нет tenant'а ИЛИ tenantId не UUID (суперадмин ходит с sentinel'ом 'global_admin'):
+  // подписки у такого «тенанта» быть не может, а subscriptions.tenant_id — UUID-колонка.
+  // Без проверки запрос падал сырым 22P02 и заваливал pm2-логи (см. utils/uuid.ts).
+  if (!isUuid(tenantId)) {
     // Не залогинен / нет tenant — никакого Enterprise-доступа (кроме суперадмина-исключения)
     return {
       tier: null,

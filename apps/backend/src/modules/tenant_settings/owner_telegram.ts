@@ -17,6 +17,7 @@
 
 import pool from '../../db/index.js';
 import { encryptSecret, decryptSecret } from './encryption.js';
+import { isUuid } from '../../utils/uuid.js';
 
 const TELEGRAM_API = 'https://api.telegram.org';
 
@@ -44,6 +45,7 @@ export interface BotInfo {
 // ============================================================================
 
 export async function getOwnerBotToken(tenantId: string): Promise<string | null> {
+  if (!isUuid(tenantId)) return null;   // суперадмин ('global_admin') — своего бота у него нет
   try {
     const res = await pool.query(
       'SELECT owner_telegram_bot_token_encrypted FROM tenants WHERE id = $1',

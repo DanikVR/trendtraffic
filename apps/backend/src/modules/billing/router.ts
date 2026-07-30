@@ -11,6 +11,7 @@ import { syncStripeProducts, listSyncedProducts, getStripe, ensurePriceCurrent }
 import pool from '../../db/index.js';
 import { TOPUP_PRICE_PER_MINUTE_EUR_CENTS, TOPUP_MIN_MINUTES, TOPUP_MAX_MINUTES, TIER_PRICES } from '@vibevox/shared';
 import { send500 } from '../../utils/http_error.js';
+import { isUuid } from '../../utils/uuid.js';
 
 /** Тарифы, которые считаются «активной подпиской» — не требуют автодобавления Plus. */
 const ACTIVE_PAID_TIERS = new Set(['premium', 'plus', 'standard', 'standard_yearly', 'enterprise']);
@@ -18,6 +19,7 @@ const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
 /** Получить запись текущей подписки tenant'а (или null). */
 async function getTenantSubscription(tenantId: string): Promise<any | null> {
+  if (!isUuid(tenantId)) return null;   // суперадмин ('global_admin') — подписки нет by design
   try {
     const r = await pool.query(
       `SELECT tier, status FROM subscriptions WHERE tenant_id = $1 LIMIT 1`,
@@ -593,6 +595,9 @@ billingAdminRouter.post('/topup', requireTenant, async (req: Request, res: Respo
  */
 billingAdminRouter.get('/me', requireTenant, async (req: Request, res: Response) => {
   const tenantId = (req as any).tenantId;
+  // Суперадмин ('global_admin') не тенант — подписки у него нет; отвечаем как при 0 строк,
+  // а не 500 сырой ошибкой uuid (это давало 73 стектрейса в pm2-логе).
+  if (!isUuid(tenantId)) return res.status(200).json({ subscription: null });
   try {
     const rows = await pool.query(
       `SELECT tier, status, billing_period, translation_minutes_balance, rollover_seconds,
@@ -638,6 +643,7 @@ billingAdminRouter.get('/me', requireTenant, async (req: Request, res: Response)
 billingAdminRouter.post('/cancel-subscription', requireTenant, async (req: Request, res: Response) => {
   const tenantId = (req as any).tenantId;
   const userEmail = (req as any).userEmail;
+  if (!isUuid(tenantId)) return res.status(400).json({ error: 'У вас нет активной Stripe-подписки' });
   try {
     const r = await pool.query(
       `SELECT stripe_subscription_id, cancel_at_period_end, current_period_end
@@ -697,6 +703,7 @@ billingAdminRouter.post('/cancel-subscription', requireTenant, async (req: Reque
  */
 billingAdminRouter.post('/resume-subscription', requireTenant, async (req: Request, res: Response) => {
   const tenantId = (req as any).tenantId;
+  if (!isUuid(tenantId)) return res.status(400).json({ error: 'У вас нет Stripe-подписки' });
   try {
     const r = await pool.query(
       `SELECT stripe_subscription_id, cancel_at_period_end

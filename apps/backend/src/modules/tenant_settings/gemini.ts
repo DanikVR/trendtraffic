@@ -20,6 +20,7 @@ import { getGeminiUseVertex, getVertexProject, getVertexLocation } from '../../c
 import { pickGeminiKey } from '../../config/gemini_key_pool.js';
 import { encryptSecret, decryptSecret } from './encryption.js';
 import { hasEnterpriseAccess } from '../billing/feature_gate.js';
+import { isUuid } from '../../utils/uuid.js';
 
 export type GeminiKeyStatus = 'active' | 'invalid' | 'quota_exceeded' | null;
 
@@ -44,6 +45,9 @@ export async function getTenantGeminiKey(tenantId: string): Promise<{
   status: GeminiKeyStatus;
   lastCheckAt: Date | null;
 }> {
+  // tenants.id — UUID; суперадмин ходит с sentinel'ом 'global_admin' и строки в tenants
+  // не имеет → per-tenant ключ к нему неприменим (как в tikhub.ts).
+  if (!isUuid(tenantId)) return { key: null, status: null, lastCheckAt: null };
   const res = await pool.query(
     `SELECT gemini_api_key_encrypted, gemini_api_key_status, gemini_api_key_last_check
      FROM tenants WHERE id = $1`,
