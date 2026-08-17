@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "__MSG_extDesc__",
   "default_locale": "en",
   "minimum_chrome_version": "116",
@@ -23,6 +23,7 @@
   "permissions": ["storage", "downloads", "scripting", "tabs", "alarms", "sidePanel"],
   "host_permissions": [
     "https://labs.google/*",
+    "https://notebook.google.com/*",
     "https://notebooklm.google.com/*",
     "https://*.googleapis.com/*",
     "https://*.googleusercontent.com/*",
@@ -48,7 +49,7 @@
       "all_frames": false
     },
     {
-      "matches": ["https://notebooklm.google.com/*"],
+      "matches": ["https://notebook.google.com/*", "https://notebooklm.google.com/*"],
       "js": ["src/content-notebook.js"],
       "run_at": "document_idle",
       "all_frames": false
@@ -78,7 +79,7 @@
     },
     {
       "resources": ["src/injected-nlm.js"],
-      "matches": ["https://notebooklm.google.com/*"]
+      "matches": ["https://notebook.google.com/*", "https://notebooklm.google.com/*"]
     },
     {
       "resources": ["src/injected-heygen.js"],

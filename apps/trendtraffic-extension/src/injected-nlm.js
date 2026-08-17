@@ -18,6 +18,7 @@
 
   // Хосты/пути, интересные для реверса эндпоинтов NotebookLM.
   const INTERESTING = [
+    'notebook.google.com/_/',
     'notebooklm.google.com/_/',
     'batchexecute',
     'LabsTailwind',

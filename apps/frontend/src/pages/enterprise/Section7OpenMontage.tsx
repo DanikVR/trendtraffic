@@ -196,7 +196,7 @@ function TtExtensionCard() {
             <li>{t('sec.ent.ext.step2a', 'Откройте')} <code>chrome://extensions</code> {t('sec.ent.ext.step2b', '→ включите «Режим разработчика» (справа сверху).')}</li>
             <li>{t('sec.ent.ext.step3a', 'Нажмите')} <b>{t('sec.ent.ext.step3b', '«Загрузить распакованное»')}</b> {t('sec.ent.ext.step3c', '→ выберите папку с расширением.')}</li>
             <li>{t('sec.ent.ext.step4', 'Если раньше стояло отдельное расширение «Google Flow» — удалите его (иначе задачи Flow задвоятся).')}</li>
-            <li>{t('sec.ent.ext.step5a', 'Откройте нужный сайт и войдите в свой Google:')} <b>labs.google/flow</b> {t('sec.ent.ext.step5b', '(для «Google Flow») или')} <b>notebooklm.google.com</b> {t('sec.ent.ext.step5c', '(для «Hotebook»). Справа снизу появится панель — когда «бежит лента», всё работает.')}</li>
+            <li>{t('sec.ent.ext.step5a', 'Откройте нужный сайт и войдите в свой Google:')} <b>labs.google/flow</b> {t('sec.ent.ext.step5b', '(для «Google Flow») или')} <b>notebook.google.com</b> {t('sec.ent.ext.step5c', '(для «Hotebook»). Справа снизу появится панель — когда «бежит лента», всё работает.')}</li>
             <li>{t('sec.ent.ext.step6a', 'Готово.')} <b>{t('sec.ent.ext.step6b', 'Подключение автоматическое')}</b>{t('sec.ent.ext.step6c', ', пока вы залогинены в TrendTraffic — кнопку «Подключить» жать не нужно.')}</li>
           </ol>
           <p className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border-medium)', color: 'var(--text-muted)' }}>

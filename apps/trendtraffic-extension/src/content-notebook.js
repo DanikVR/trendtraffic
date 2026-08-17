@@ -1,5 +1,6 @@
 /**
- * content-notebook.js — работает на https://notebooklm.google.com (изолированный
+ * content-notebook.js — работает на https://notebook.google.com (и на старом
+ * https://notebooklm.google.com, пока Google его редиректит) — изолированный
  * мир расширения). Зеркало content-flow.js, но NotebookLM — не one-shot генератор,
  * а stateful-CRUD, поэтому вместо одного `run-task` здесь КОМАНДНЫЙ РОУТ�ер `run-action`:
  *   create-notebook / add-source / list-sources / delete-source / chat / generate.
@@ -95,7 +96,8 @@
   }
 
   // ── статус входа в Google ─────────────────────────────────────────────────────
-  const onNotebookLM = () => location.host === 'notebooklm.google.com';
+  // Google переехал на notebook.google.com («Gemini Notebook»); старый хост пока редиректит.
+  const onNotebookLM = () => location.host === 'notebook.google.com' || location.host === 'notebooklm.google.com';
   function isLoggedIn() {
     if (!onNotebookLM()) return false;
     if (/accounts\.google\.com/.test(location.href)) return false; // редирект на вход = не залогинен

@@ -55,7 +55,7 @@ const ARTICLES: WikiArticleMeta[] = [
       { id: 'mcp', tab: 'MCP', image: '/wiki-shots/mcp.png', open: `${APP_URL}/settings` },
       { id: 'tikhub', tab: 'Tikhub', image: '/wiki-shots/tikhub.png', open: `${ES}?section=tikhub`, keyHref: 'https://tikhub.io' },
       { id: 'generation', tab: 'Generation', image: '/wiki-shots/generation.png', open: `${ES}?section=openmontage` },
-      { id: 'hotebook', tab: 'Hotebook', open: `${ES}?section=hotebook`, keyHref: 'https://notebooklm.google.com' },
+      { id: 'hotebook', tab: 'Hotebook', open: `${ES}?section=hotebook`, keyHref: 'https://notebook.google.com' },
     ],
   },
   {
@@ -102,7 +102,7 @@ const ARTICLES: WikiArticleMeta[] = [
     id: 'hotebook',
     category: 'app',
     sections: [
-      { id: 'use', tab: 'Hotebook', image: '/wiki-shots/hotebook.png', open: G('hotebook'), keyHref: 'https://notebooklm.google.com' },
+      { id: 'use', tab: 'Hotebook', image: '/wiki-shots/hotebook.png', open: G('hotebook'), keyHref: 'https://notebook.google.com' },
     ],
   },
   {

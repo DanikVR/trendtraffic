@@ -6,7 +6,7 @@
 | Сервис | Сайт | Блок в TrendFlow | Что делает |
 |--------|------|------------------|------------|
 | **Google Flow** (Veo) | `labs.google/fx/tools/flow` | «Google Flow» | очередь промптов → авто-генерация клипов → Галерея `folder='flow'`; обмен видео/картинками «⬆ В галерею»/«⬇ Из Галереи» |
-| **Google NotebookLM** | `notebooklm.google.com` | «Hotebook» | источники (URL/текст/файл из Галереи, в т.ч. видео+анализ), чат, генерация 9 артефактов → Галерея `folder='hotebook'` |
+| **Google NotebookLM** | `notebook.google.com` | «Hotebook» | источники (URL/текст/файл из Галереи, в т.ч. видео+анализ), чат, генерация 9 артефактов → Галерея `folder='hotebook'` |
 | **HeyGen** (Avatar IV/III) | `app.heygen.com` | «UGC / Аватары» | рендер говорящих голов по **вашей подписке** HeyGen (втрое дешевле API) → mp4 в пайплайн UGC |
 
 Панель поверх сайта включается **по хосту**: «TrendTraffic → Flow» на Flow,
@@ -24,7 +24,7 @@ content-script грузится только на своём домене. Од�
    (иначе два расширения будут дублировать задачи Flow).
 4. Откройте нужный сайт и войдите в свой Google:
    - `labs.google/flow` — для блока «Google Flow»;
-   - `notebooklm.google.com` — для блока «Hotebook».
+   - `notebook.google.com` — для блока «Hotebook».
    Справа снизу появится панель. «Бежит лента» = подключено и работает.
 5. Подключение **автоматическое**, пока вы залогинены в TrendTraffic.
 

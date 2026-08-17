@@ -6,7 +6,7 @@
  *     авто-генерация Veo, обмен видео/картинками с Галереей. Ветка ниже — БАЙТ-в-БАЙТ
  *     как в отдельном flow-extension (её трогать нельзя: работает в проде).
  *
- *   • Google NotebookLM (notebooklm.google.com, блок «Hotebook») — источники/чат/
+ *   • Google NotebookLM (notebook.google.com, ранее notebooklm.google.com; блок «Hotebook») — источники/чат/
  *     удаление (синхронные действия, юзер ждёт) + генерация артефактов (аудио/видео/
  *     отчёты/тесты…). Синхронные действия и генерации приходят одним long-poll
  *     `GET /api/notebooklm-ext/poll`, выполняются во вкладке NotebookLM, результат
@@ -462,12 +462,24 @@ async function enableSidePanelOnClick() {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  GOOGLE NOTEBOOKLM  (Hotebook)
 // ═══════════════════════════════════════════════════════════════════════════════
-// authuser вкладки НЕЛЬЗЯ терять при навигации: голый https://notebooklm.google.com/ уводит
+// В августе 2026 Google переехал: notebooklm.google.com → notebook.google.com («Gemini Notebook»),
+// старый хост отдаёт редирект. Держим ОБА: новый — основной (куда открываем сами), старый — чтобы
+// не потерять вкладку у тех, кому Google ещё отдаёт прежний домен.
+const NLM_ORIGIN = 'https://notebook.google.com';
+const NLM_MATCHES = ['https://notebook.google.com/*', 'https://notebooklm.google.com/*'];
+const NLM_URL_RE = /^https:\/\/notebook(lm)?\.google\.com\//;
+// authuser вкладки НЕЛЬЗЯ терять при навигации: голый https://notebook.google.com/ уводит
 // Chrome в аккаунт по умолчанию (authuser=0), а юзер может работать во втором Google (authuser=1).
 function nlmUrl(path, fromUrl) {
   let au = null;
-  try { au = new URL(fromUrl || '').searchParams.get('authuser'); } catch { /* */ }
-  return 'https://notebooklm.google.com' + path + (au ? (path.includes('?') ? '&' : '?') + 'authuser=' + encodeURIComponent(au) : '');
+  let origin = NLM_ORIGIN;
+  try {
+    const u = new URL(fromUrl || '');
+    au = u.searchParams.get('authuser');
+    // Остаёмся на том хосте, где вкладка уже живёт — иначе редирект сбросил бы SPA-состояние.
+    if (NLM_URL_RE.test(u.href)) origin = u.origin;
+  } catch { /* */ }
+  return origin + path + (au ? (path.includes('?') ? '&' : '?') + 'authuser=' + encodeURIComponent(au) : '');
 }
 async function findNotebookTab() {
   // 1) Закреплённая вкладка активного юзера (где он реально залогинен и работает) — приоритет,
@@ -475,10 +487,10 @@ async function findNotebookTab() {
   if (STATE.nlmTabId != null) {
     try {
       const t = await chrome.tabs.get(STATE.nlmTabId);
-      if (t && /^https:\/\/notebooklm\.google\.com\//.test(t.url || '')) return t;
+      if (t && NLM_URL_RE.test(t.url || '')) return t;
     } catch { STATE.nlmTabId = null; }
   }
-  const tabs = await chrome.tabs.query({ url: 'https://notebooklm.google.com/*' });
+  const tabs = await chrome.tabs.query({ url: NLM_MATCHES });
   if (!tabs.length) return null;
   // 2) Активная вкладка NotebookLM (перед глазами) > любая фоновая.
   return tabs.find((t) => t.active) || tabs[0];
@@ -488,7 +500,7 @@ async function ensureNotebookTab(notebookId, allowCreate = true) {
   let tab = await findNotebookTab();
   if (!tab) {
     if (!allowCreate) return null;
-    const url = notebookId ? `https://notebooklm.google.com/notebook/${notebookId}` : 'https://notebooklm.google.com/';
+    const url = notebookId ? `${NLM_ORIGIN}/notebook/${notebookId}` : `${NLM_ORIGIN}/`;
     tab = await chrome.tabs.create({ url, active: false });
     await waitForTabReady(tab.id);
     return tab.id;

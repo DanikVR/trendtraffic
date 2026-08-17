@@ -306,7 +306,7 @@ export async function setPresence(tenantId: string, loggedIn: boolean, notebookO
 /**
  * Статус подключения (для плашки). error_kind:
  *   'ext_offline' — расширение давно не выходило на связь (не установлено / браузер закрыт);
- *   'ext_login'   — расширение на связи, но не залогинено в notebooklm.google.com.
+ *   'ext_login'   — расширение на связи, но не залогинено в notebook.google.com.
  */
 export async function getConnectionStatus(tenantId: string): Promise<any> {
   try {

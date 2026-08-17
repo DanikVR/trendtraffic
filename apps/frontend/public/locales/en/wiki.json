@@ -99,7 +99,7 @@
           "body": "<p>The <b>Hotebook</b> tab connects the Hotebook block to your own <b>Google NotebookLM</b> through the same TrendTraffic extension, running in your browser under your Google login. Each account has its own connection and its own limits. The status shows one of: connected, extension offline, or sign-in needed.</p><p>Tip: use a <b>separate Google account</b> with a Google AI plan — the daily NotebookLM limits (audio / video / chat) are counted per account. The platform never stores your Google cookies; the login stays in your browser.</p>",
           "keyLabel": "Open NotebookLM",
           "examples": [
-            "Install the extension, open notebooklm.google.com and sign in — the “TrendTraffic → Hotebook” panel appears.",
+            "Install the extension, open notebook.google.com and sign in — the “TrendTraffic → Hotebook” panel appears.",
             "Generate audio or video overviews from your sources and pull the results into the Gallery.",
             "Keep the NotebookLM tab open while the block works — sources, chat and generation run inside it.",
             "Press “Check” on this tab if the status is stuck — it re-reads the live connection."
@@ -177,9 +177,9 @@
       "sections": {
         "use": {
           "title": "Working with notebooks",
-          "body": "<p>Install the extension and sign in at <b>notebooklm.google.com</b>. Your notebooks are listed here; <b>click a notebook</b> to open it in NotebookLM — that's where you work. While something is generating, a spinner turns on the card; finished audio and video overviews land in Media files by themselves. Generation runs under your own Google account and its limits (it can be separate from the app account).</p>",
+          "body": "<p>Install the extension and sign in at <b>notebook.google.com</b>. Your notebooks are listed here; <b>click a notebook</b> to open it in NotebookLM — that's where you work. While something is generating, a spinner turns on the card; finished audio and video overviews land in Media files by themselves. Generation runs under your own Google account and its limits (it can be separate from the app account).</p>",
           "examples": [
-            "Install the extension, sign in at notebooklm.google.com — your notebooks appear here.",
+            "Install the extension, sign in at notebook.google.com — your notebooks appear here.",
             "Click a notebook — it opens in NotebookLM, and you work right there.",
             "Generate an audio or video overview — it arrives in Media files by itself.",
             "“Refresh” updates the list; a spinner on a card means generation is running."

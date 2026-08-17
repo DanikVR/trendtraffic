@@ -4002,12 +4002,29 @@
  *          aweme (несколько МБ) ради 6 нужных — в «Таргете на ЦА» это шло по каждой нише.
  *          (6) Провал заземления ключевиков логируется с причиной.
  *          Файлы: tikhub_client.ts, trends/service.ts, trends/audience.ts. */
-export const APP_VERSION = '2.6.42';
+/** 2.6.43 — Hotebook ожил: Google переехал с notebooklm.google.com на notebook.google.com
+ *          («Gemini Notebook»), старый хост отдаёт редирект — а у расширения домен был зашит
+ *          в content_scripts.matches, поэтому на новом хосте content-notebook.js ВООБЩЕ не
+ *          инжектился: панели нет, в Галерее вечное «NotebookLM: не открыт». Flow не задело
+ *          (labs.google не переезжал). Фикс (ext v1.6.2) — оба хоста, новый основной:
+ *          (1) manifest — matches content_scripts + web_accessible_resources (host_permissions
+ *          новых прав НЕ требует: *.google.com уже покрывал, апдейт без перезапроса разрешений);
+ *          (2) background — NLM_ORIGIN/NLM_MATCHES/NLM_URL_RE вместо литералов, сами открываем
+ *          новый домен, но найденную вкладку НЕ перебрасываем с хоста на хост (редирект сбросил
+ *          бы SPA-состояние и authuser); (3) content-notebook — проверка host по обоим;
+ *          (4) injected-nlm — разведка путей /_/ на обоих. Фронт/бэк: ссылки «Открыть NotebookLM»
+ *          и подсказки → новый домен (108 локалей), referer при докачке артефактов.
+ *          ⚠️ UI студии Google перерисован (плитки Аудиопересказ/Презентация/Видеопересказ/…) —
+ *          селекторы генерации проверяются живьём, это следующий шаг.
+ *          Файлы: manifest, background.js, content-notebook.js, injected-nlm.js, GalleryPage,
+ *          HotebookStudio, Section7OpenMontage, Section8Hotebook, WikiPage, notebooklm/router.ts,
+ *          notebooklm-ext/router.ts, public/locales (110 файлов), zip пересобран. */
+export const APP_VERSION = '2.6.43';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.6.1';
+export const TT_EXT_VERSION = '1.6.2';
 
 export function AppVersion() {
   return (

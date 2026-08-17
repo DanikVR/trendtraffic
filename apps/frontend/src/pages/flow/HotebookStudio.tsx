@@ -1,7 +1,7 @@
 /**
  * HotebookStudio — ПОЛНОЭКРАННАЯ студия Hotebook (NotebookLM внутри TrendTraffic).
  *
- * Раскладка как у notebooklm.google.com: ИСТОЧНИКИ (слева) · ЧАТ (по центру) · СТУДИЯ (справа),
+ * Раскладка как у notebook.google.com: ИСТОЧНИКИ (слева) · ЧАТ (по центру) · СТУДИЯ (справа),
  * но в дизайне нашего сайта (токены var(--…), фирменный циан Hotebook #22d3ee).
  *
  * Представление: ВСЁ состояние и обработчики живут в MontageEditor и приходят пропсами
@@ -108,7 +108,7 @@ export function HotebookStudio(props: HotebookStudioProps) {
 
   const genToday = Object.values(hbCounters).reduce((s, n) => s + (n || 0), 0);
   const noSources = hbSources.length === 0;
-  const nbUrl = hbNotebookId ? `https://notebooklm.google.com/notebook/${hbNotebookId}` : 'https://notebooklm.google.com';
+  const nbUrl = hbNotebookId ? `https://notebook.google.com/notebook/${hbNotebookId}` : 'https://notebook.google.com';
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
@@ -150,9 +150,9 @@ export function HotebookStudio(props: HotebookStudioProps) {
               {hbStatus.errorKind === 'ext_offline' ? t('sec.hotebook.errExtOffline', 'Расширение Hotebook не на связи.') : hbStatus.errorKind === 'ext_login' ? t('sec.hotebook.errLogin', 'Нужен вход в Google (NotebookLM).') : t('sec.hotebook.errSync', 'Синхронизация не работает.')}
             </b>{' '}
             {hbStatus.errorKind === 'ext_offline'
-              ? t('sec.hotebook.hintExtOffline', 'Установите единое расширение TrendTraffic (Настройки → «Генерация») и откройте вкладку notebooklm.google.com в этом браузере, затем нажмите ↻ (Обновить) вверху.')
+              ? t('sec.hotebook.hintExtOffline', 'Установите единое расширение TrendTraffic (Настройки → «Генерация») и откройте вкладку notebook.google.com в этом браузере, затем нажмите ↻ (Обновить) вверху.')
               : hbStatus.errorKind === 'ext_login'
-                ? t('sec.hotebook.hintLogin', 'Откройте notebooklm.google.com и войдите в свой Google-аккаунт, затем нажмите ↻ (Обновить) вверху.')
+                ? t('sec.hotebook.hintLogin', 'Откройте notebook.google.com и войдите в свой Google-аккаунт, затем нажмите ↻ (Обновить) вверху.')
                 : t('sec.hotebook.hintSync', 'Проверьте расширение и открытую вкладку NotebookLM, затем нажмите ↻ (Обновить) вверху.')}
           </p>
         </div>

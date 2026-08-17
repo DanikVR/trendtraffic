@@ -7,7 +7,7 @@
  * Здесь:
  *  - статус синхронизации (тот же, что питает плашку в блоке): ok / ext_offline / ext_login;
  *  - как подключить: установить расширение (Настройки → «Генерация») + войти в
- *    notebooklm.google.com в том же браузере;
+ *    notebook.google.com в том же браузере;
  *  - счётчики генераций за сегодня.
  */
 
@@ -42,8 +42,8 @@ export function Section8Hotebook() {
     error: t('sec.ent.hotebook.kindErrorTitle', 'Синхронизация не работает'),
   };
   const KIND_BODY: Record<string, string> = {
-    ext_offline: t('sec.ent.hotebook.kindOfflineBody', 'Установите единое расширение TrendTraffic (Настройки → вкладка «Генерация») и держите открытой вкладку notebooklm.google.com в том же браузере, где вы залогинены в TrendTraffic. Расширение подключается автоматически.'),
-    ext_login: t('sec.ent.hotebook.kindLoginBody', 'Расширение на связи, но вход в notebooklm.google.com не выполнен. Откройте сайт и войдите в свой Google-аккаунт — статус обновится сам.'),
+    ext_offline: t('sec.ent.hotebook.kindOfflineBody', 'Установите единое расширение TrendTraffic (Настройки → вкладка «Генерация») и держите открытой вкладку notebook.google.com в том же браузере, где вы залогинены в TrendTraffic. Расширение подключается автоматически.'),
+    ext_login: t('sec.ent.hotebook.kindLoginBody', 'Расширение на связи, но вход в notebook.google.com не выполнен. Откройте сайт и войдите в свой Google-аккаунт — статус обновится сам.'),
     error: t('sec.ent.hotebook.kindErrorBody', 'Проверьте, что расширение установлено и вкладка NotebookLM открыта, затем нажмите «Проверить».'),
   };
   const headers = (): HeadersInit => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
@@ -139,7 +139,7 @@ export function Section8Hotebook() {
             {t('sec.ent.hotebook.step1a', 'Установите единое расширение TrendTraffic (v{{v}}) — оно на вкладке', { v: TT_EXT_VERSION })}
             <b> {t('sec.ent.hotebook.step1b', '«Генерация»')}</b> {t('sec.ent.hotebook.step1c', 'этих настроек, кнопка «Скачать расширение». Оно же обслуживает блок «Google Flow».')}
           </li>
-          <li>{t('sec.ent.hotebook.step2a', 'Откройте')} <b>notebooklm.google.com</b> {t('sec.ent.hotebook.step2b', 'и войдите в свой Google-аккаунт (как обычно в браузере).')}</li>
+          <li>{t('sec.ent.hotebook.step2a', 'Откройте')} <b>notebook.google.com</b> {t('sec.ent.hotebook.step2b', 'и войдите в свой Google-аккаунт (как обычно в браузере).')}</li>
           <li>{t('sec.ent.hotebook.step3a', 'Справа снизу появится панель')} <b>«TrendTraffic → Hotebook»</b>. {t('sec.ent.hotebook.step3b', 'Когда «бежит лента» — подключено и работает.')}</li>
           <li>{t('sec.ent.hotebook.step4', 'Держите эту вкладку NotebookLM открытой во время работы блока (источники/чат/генерации выполняются в ней).')}</li>
         </ol>
@@ -149,7 +149,7 @@ export function Section8Hotebook() {
             style={{ background: '#22d3ee', color: '#062730', textDecoration: 'none' }}>
             <Download size={15} /> {t('sec.ent.hotebook.downloadBtn', 'Скачать расширение')}
           </a>
-          <button onClick={() => window.open('https://notebooklm.google.com', '_blank', 'noopener')}
+          <button onClick={() => window.open('https://notebook.google.com', '_blank', 'noopener')}
             className="inline-flex items-center gap-1.5 text-[13px] font-600 px-3 py-2 rounded-xl"
             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)', cursor: 'pointer' }}>
             <ExternalLink size={15} /> {t('sec.ent.hotebook.openNotebookLm', 'Открыть NotebookLM')}

@@ -93,7 +93,7 @@ function saveDataUrl(dataUrl: string, jobId: string, extHint: string): { fileUrl
 async function saveSourceUrl(sourceUrl: string, jobId: string, extHint: string): Promise<{ fileUrl: string; filePath: string; size: number; mime: string; ext: string }> {
   // Прямая CDN-ссылка (fallback, когда расширение не смогло прочитать байты). Часто за
   // Google-авторизацией → может не скачаться на сервере; тогда честно падаем.
-  const s = await downloadVideoToDisk([sourceUrl], { referer: 'https://notebooklm.google.com/' });
+  const s = await downloadVideoToDisk([sourceUrl], { referer: 'https://notebook.google.com/' });
   const ext = extHint || path.extname(s.filePath).toLowerCase() || extOf(null, s.mime);
   return { fileUrl: s.mediaUrl, filePath: s.filePath, size: s.size, mime: s.mime, ext };
 }

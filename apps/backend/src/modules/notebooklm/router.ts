@@ -17,7 +17,7 @@
  * Подключение ПЕР-ТЕНАНТНОЕ: у каждого Enterprise-тенанта свой браузер с расширением
  * и свой вход в Google. Статус /status питается присутствием расширения:
  *   error_kind = 'ext_offline' — расширение не на связи (не установлено/браузер закрыт);
- *                'ext_login'   — расширение на связи, но не залогинено в notebooklm.google.com.
+ *                'ext_login'   — расширение на связи, но не залогинено в notebook.google.com.
  *
  * Доступ: JWT + Enterprise (как social-ext).
  */
@@ -133,7 +133,7 @@ async function ensureNotebook(tenantId: string, flowId: string, title?: string):
   if (!st.ok) {
     throw new ExtError(
       st.errorKind === 'ext_login'
-        ? 'Войдите в notebooklm.google.com в браузере с расширением'
+        ? 'Войдите в notebook.google.com в браузере с расширением'
         : 'Откройте NotebookLM в браузере с установленным расширением Hotebook',
       st.errorKind || 'ext_offline'
     );

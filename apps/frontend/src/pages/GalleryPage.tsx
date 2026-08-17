@@ -298,7 +298,7 @@ export default function GalleryPage() {
       }
       if (d.type === 'open-notebook-result') {
         if (openNbFallbackTimer.current) { clearTimeout(openNbFallbackTimer.current); openNbFallbackTimer.current = null; }
-        if (!d.ok) window.open(d.notebookId ? `https://notebooklm.google.com/notebook/${d.notebookId}` : 'https://notebooklm.google.com', '_blank', 'noopener');
+        if (!d.ok) window.open(d.notebookId ? `https://notebook.google.com/notebook/${d.notebookId}` : 'https://notebook.google.com', '_blank', 'noopener');
         setHbNbOpening(null);
       }
       if (d.type === 'push-to-flow-result') {
@@ -655,7 +655,7 @@ export default function GalleryPage() {
     window.postMessage({ source: 'trendtraffic', type: 'open-notebook', notebookId: nb.id }, window.location.origin);
     if (openNbFallbackTimer.current) clearTimeout(openNbFallbackTimer.current);
     openNbFallbackTimer.current = setTimeout(() => {
-      window.open(`https://notebooklm.google.com/notebook/${nb.id}`, '_blank', 'noopener');
+      window.open(`https://notebook.google.com/notebook/${nb.id}`, '_blank', 'noopener');
       setHbNbOpening(null);
     }, 1200);
     // Страховка: ack отменил фолбэк, а result потерялся (SW умер) → спиннер карточки не виснет.
@@ -664,7 +664,7 @@ export default function GalleryPage() {
   const openNotebookHome = () => {
     window.postMessage({ source: 'trendtraffic', type: 'open-notebook' }, window.location.origin);
     if (openNbFallbackTimer.current) clearTimeout(openNbFallbackTimer.current);
-    openNbFallbackTimer.current = setTimeout(() => window.open('https://notebooklm.google.com', '_blank', 'noopener'), 1200);
+    openNbFallbackTimer.current = setTimeout(() => window.open('https://notebook.google.com', '_blank', 'noopener'), 1200);
   };
 
   // Диплинк ?openNotebook=… (кнопка «Открыть TrendTraffic» из NotebookLM): раньше открывал
@@ -736,7 +736,7 @@ export default function GalleryPage() {
   // Плашка расширения TrendTraffic (Google Flow / Hotebook):
   //  • «Google Flow» и «NotebookLM» в тексте — кликабельны (первая страница сервиса);
   //  • кнопка «Скачать» прямо на плашке + иконка (i) «Как установить» → раскрывает инструкцию
-  //    с кликабельными chrome://extensions (копирование), labs.google/flow, notebooklm.google.com;
+  //    с кликабельными chrome://extensions (копирование), labs.google/flow, notebook.google.com;
   //  • если установлена старая версия расширения — бейдж «Обновите».
   // «Переподключить»: расширение сбрасывает привязку и заново берёт токен ТЕКУЩЕГО аккаунта
   // приложения (из localStorage) — так после смены учётки расширение перецепляется без переустановки.
@@ -780,7 +780,7 @@ export default function GalleryPage() {
       </button>
     );
     const flowA = <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>labs.google/flow</a>;
-    const nlmA = <a href="https://notebooklm.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>notebooklm.google.com</a>;
+    const nlmA = <a href="https://notebook.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>notebook.google.com</a>;
     return (
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: `1px solid ${outdated ? 'rgba(245,158,11,0.5)' : 'var(--border-medium)'}` }}>
         <div className="flex items-center gap-3 p-3">
@@ -807,7 +807,7 @@ export default function GalleryPage() {
               {t('sec.gallery.extLead', 'Единое расширение для')}{' '}
               <a href="https://labs.google/fx/tools/flow" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#6366f1' }}>Google Flow</a>
               {' '}(Veo) {t('sec.gallery.andWord', 'и')}{' '}
-              <a href="https://notebooklm.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>NotebookLM</a>
+              <a href="https://notebook.google.com" target="_blank" rel="noreferrer" className="font-700 underline" style={{ color: '#22d3ee' }}>NotebookLM</a>
               {' '}— {outdated ? t('sec.gallery.extTailOutdated', 'скачайте новую версию и обновите в chrome://extensions.') : t('sec.gallery.extTail', 'скачайте, установите и посмотрите, как это сделать.')}
             </div>
             {installed && (
@@ -819,7 +819,7 @@ export default function GalleryPage() {
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1 text-[11px] font-600 px-2 py-0.5 rounded-md"
-                  title={extAccount ? t('sec.gallery.nlmAccountTitle', 'Google-аккаунт, под которым у расширения открыт NotebookLM — под ним идёт генерация и тратятся его лимиты') : t('sec.gallery.nlmOpenHint', 'Откройте notebooklm.google.com в этом браузере и войдите в нужный Google')}
+                  title={extAccount ? t('sec.gallery.nlmAccountTitle', 'Google-аккаунт, под которым у расширения открыт NotebookLM — под ним идёт генерация и тратятся его лимиты') : t('sec.gallery.nlmOpenHint', 'Откройте notebook.google.com в этом браузере и войдите в нужный Google')}
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-medium)' }}>
                   <Clapperboard size={11} style={{ color: '#22d3ee' }} /> NotebookLM: {extAccount || t('sec.gallery.nlmNotOpen', 'не открыт')}
                 </span>
@@ -1598,8 +1598,8 @@ export default function GalleryPage() {
               {hbNbStatus && !hbNbStatus.ok ? (
                 <span style={{ color: '#f59e0b' }}>
                   {hbNbStatus.errorKind === 'ext_login'
-                    ? t('sec.gallery.nbLoginNeeded', 'Войдите в notebooklm.google.com в браузере с расширением — тогда покажутся все ваши блокноты.')
-                    : t('sec.gallery.nbOpenNeeded', 'Откройте notebooklm.google.com в браузере с расширением TrendTraffic — тогда покажутся все ваши блокноты.')}
+                    ? t('sec.gallery.nbLoginNeeded', 'Войдите в notebook.google.com в браузере с расширением — тогда покажутся все ваши блокноты.')
+                    : t('sec.gallery.nbOpenNeeded', 'Откройте notebook.google.com в браузере с расширением TrendTraffic — тогда покажутся все ваши блокноты.')}
                 </span>
               ) : (
                 <><span>{t('sec.gallery.nbCount', 'Блокнотов NotebookLM: {{n}}', { n: hbNotebooks.length })}</span>
