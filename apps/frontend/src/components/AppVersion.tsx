@@ -4019,12 +4019,34 @@
  *          Файлы: manifest, background.js, content-notebook.js, injected-nlm.js, GalleryPage,
  *          HotebookStudio, Section7OpenMontage, Section8Hotebook, WikiPage, notebooklm/router.ts,
  *          notebooklm-ext/router.ts, public/locales (110 файлов), zip пересобран. */
-export const APP_VERSION = '2.6.43';
+/** 2.6.44 — Hotebook держит удар редизайна (ext v1.6.3). После переезда на notebook.google.com
+ *          Google перерисовал студию, и подписи плиток стали ПРИХОДИТЬ ОБРЕЗАННЫМИ вёрсткой
+ *          («Аудиопе…», «Менталь…»), а часть названий сменилась на английские. Все семь хрупких
+ *          мест — это одно и то же «найти элемент по тексту», поэтому чинилось не семью
+ *          заплатками, а общим матчером. НОВЫЙ src/nlm-text.js (грузится ПЕРВЫМ в content_scripts,
+ *          кладёт себя в globalThis.TT_NLM_TEXT; у content-notebook есть фолбэк, если не подгрузился):
+ *          (1) looseIncludes — сравнение с поправкой на обрезку: берём последнее слово перед
+ *          многоточием и проверяем, СОДЕРЖИТ ли его искомое (именно «содержит», а не «начинается»:
+ *          у кнопки «Настроить аудиопе…» огрызок стоит в середине); порог 4 символа от ложных.
+ *          (2) findByText матчит ещё и по aria-label/title — там полный текст, даже когда CSS обрезал.
+ *          (3) ARTKIND_RE переписан ОСНОВАМИ (аудиопе/видеопе/инфогра/менталь/презент) + EN-названия.
+ *          (4) isGeneratingText знает новые плейсхолдеры (вернитесь позже, check back, this may take).
+ *          (5) Форма входа: «sign in to notebook» покрывает и старый бренд, и новый Gemini Notebook.
+ *          (6) Список блокнотов: если тег project-button переименуют — фолбэк на любую ссылку
+ *          вида /notebook/<id> (без неё плитка перестала бы открывать блокнот, значит она вечная).
+ *          (7) accountEmail читает ещё title и текстовые листья; studioPanelRoot терпит «Студи…».
+ *          ГЛАВНОЕ — тест: apps/trendtraffic-extension/test/nlm-text.test.mjs, 94 проверки на node
+ *          БЕЗ браузера, держит обе формулировки (до редизайна и после) и обе формы (полную и
+ *          обрезанную). Проверено, что он дискриминирует: старый код валится на 14 из 14 ключевых
+ *          случаев. Добавляешь синоним — добавляй случай в тест.
+ *          Файлы: nlm-text.js (новый), content-notebook.js, manifest 1.6.3, test/ (новый),
+ *          TT_EXT_VERSION, zip пересобран (70 файлов). */
+export const APP_VERSION = '2.6.44';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.6.2';
+export const TT_EXT_VERSION = '1.6.3';
 
 export function AppVersion() {
   return (

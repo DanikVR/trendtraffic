@@ -49,19 +49,36 @@
   const visible = (el) => { try { return !!(el && el.offsetParent !== null && el.getClientRects().length); } catch { return false; } };
   const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
   const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim(); // как norm, но БЕЗ lowercase (для названий)
-  const elText = (el) => norm((el && (el.getAttribute && el.getAttribute('aria-label'))) || '') + ' ' + norm((el && el.textContent) || '');
+  // Чистые текстовые матчеры вынесены в src/nlm-text.js (грузится ПЕРВЫМ, см. manifest) —
+  // так их можно прогнать в node без браузера: test/nlm-text.test.mjs.
+  const TXT = globalThis.TT_NLM_TEXT || null;
+  if (!TXT) console.warn('[tt-nlm] nlm-text.js не загрузился — матчеры работают в упрощённом режиме');
+  // Фолбэк на случай, если файл не подгрузился: обычное вхождение без учёта обрезки.
+  const looseIncludes = TXT ? TXT.looseIncludes : ((hay, needle) => norm(hay).includes(norm(needle)));
+  // Пункт ⋮ «Скачать» (но НЕ «Скачать блокнот»). Матчим по aria-label/title тоже — у иконочных
+  // пунктов меню видимый текст бывает одной лигатурой Material вроде «save_alt».
+  const isDownloadItem = TXT ? TXT.isDownloadItem
+    : ((t) => /скачать|save_alt|download/i.test(norm(t)) && !/блокнот|notebook/i.test(norm(t)));
+
+  // Текст элемента для матчинга. ВАЖНО: aria-label и title несут ПОЛНУЮ подпись даже тогда,
+  // когда CSS обрезал видимый текст многоточием, поэтому они идут в общий котёл к textContent.
+  const elText = (el) => {
+    const at = (n) => norm((el && el.getAttribute && el.getAttribute(n)) || '');
+    return [at('aria-label'), at('title'), at('data-title'), norm((el && el.textContent) || '')]
+      .filter(Boolean).join(' ');
+  };
 
   /** Найти видимый кликабельный элемент, чей текст/aria содержит одно из слов (первый — лучший). */
   function findByText(words, opts = {}) {
     const cands = (opts.roots || queryAllDeep(opts.sel || 'button,[role="button"],[role="menuitem"],[role="option"],[role="tab"],a,label,div[tabindex]'))
       .filter(visible);
     const ws = words.map(norm).filter(Boolean);
-    // Приоритет точному совпадению, затем вхождению.
+    // Приоритет точному совпадению, затем вхождению (вхождение — с поправкой на обрезку «…»).
     for (const exact of [true, false]) {
       for (const el of cands) {
         const t = elText(el);
         for (const w of ws) {
-          if (exact ? (t === w || norm(el.textContent) === w) : t.includes(w)) return el;
+          if (exact ? (t === w || norm(el.textContent) === w) : looseIncludes(t, w)) return el;
         }
       }
     }
@@ -104,8 +121,10 @@
     if (/\/notebook\//.test(location.href)) return true;
     if (queryAllDeep('a[href*="/notebook/"]').some(visible)) return true;
     if (queryAllDeep('[aria-label*="Account" i],[aria-label*="аккаунт" i],img[src*="googleusercontent"]').some(visible)) return true;
-    // Явная форма входа Google → НЕ залогинен.
-    if (findByText(['sign in with google', 'войдите в аккаунт', 'sign in to notebooklm', 'войти в google'])) return false;
+    // Явная форма входа Google → НЕ залогинен. Список слов — в nlm-text.js: под брендом
+    // «Gemini Notebook» подпись стала «Sign in to Notebook», старая «…to NotebookLM» покрывается
+    // тем же вхождением (сравнение по substring, не по равенству).
+    if (findByText(TXT ? TXT.SIGNIN_WORDS : ['sign in with google', 'войдите в аккаунт', 'sign in to notebook', 'войти в google'])) return false;
     // Иначе (загрузка, /accessrequest, промежуточные страницы notebooklm БЕЗ формы входа) — считаем
     // залогиненным. Иначе мигало «нужен вход» при навигации/загрузке во время генерации (баг «оборвалось»).
     return true;
@@ -123,9 +142,17 @@
         const m = EMAIL_RE.exec((n.getAttribute && n.getAttribute('aria-label')) || '');
         if (m) return m[1].toLowerCase();
       }
-      // Фолбэк: любой email в aria-label (аватар аккаунта Google почти всегда его несёт).
-      for (const n of queryAllDeep('[aria-label]')) {
-        const m = EMAIL_RE.exec(n.getAttribute('aria-label') || '');
+      // Фолбэк 1: любой email в aria-label или title (аватар аккаунта почти всегда его несёт).
+      for (const n of queryAllDeep('[aria-label],[title]')) {
+        const m = EMAIL_RE.exec((n.getAttribute('aria-label') || '') + ' ' + (n.getAttribute('title') || ''));
+        if (m) return m[1].toLowerCase();
+      }
+      // Фолбэк 2: у нового аккаунт-виджета почта бывает обычным текстом в листовом узле.
+      for (const n of queryAllDeep('a,button,div,span')) {
+        if (!visible(n) || (n.childElementCount || 0) > 0) continue;
+        const t = clean(n.textContent);
+        if (t.length > 80) continue;
+        const m = EMAIL_RE.exec(t);
         if (m) return m[1].toLowerCase();
       }
     } catch { /* */ }
@@ -407,16 +434,19 @@
 
   // Тип артефакта → плитки студии, ПАНЕЛЬ настройки («Настроить X» → там опции + «Сгенерировать»),
   // тип захвата, расширение, mime. Разведано вживую (RU NotebookLM).
+  // Подписи плиток вёрстка обрезает многоточием («Аудиопе…»), поэтому findByText сравнивает
+  // через looseIncludes (nlm-text.js), а здесь перечислены ПОЛНЫЕ варианты — RU и EN, включая
+  // старые названия. Добавлять новые синонимы сюда, а не чинить матчер.
   const GEN_UI = {
-    audio:       { tiles: ['аудиопересказ', 'audio overview', 'аудиообзор'], customize: ['настроить аудиопересказ', 'customize audio'], kind: 'media', ext: '.mp3', mime: 'audio/mpeg' },
-    video:       { tiles: ['видеопересказ', 'video overview', 'видеообзор'], customize: ['настроить видеопересказ', 'customize video'],   kind: 'media', ext: '.mp4', mime: 'video/mp4' },
-    report:      { tiles: ['отчеты', 'отчёты', 'reports', 'report'],         customize: ['настроить отчет', 'настроить отчёт'],            kind: 'doc',   ext: '.md',  mime: 'text/markdown' },
+    audio:       { tiles: ['аудиопересказ', 'audio overview', 'аудиообзор'], customize: ['настроить аудиопересказ', 'customize audio overview', 'customize audio'], kind: 'media', ext: '.mp3', mime: 'audio/mpeg' },
+    video:       { tiles: ['видеопересказ', 'video overview', 'видеообзор'], customize: ['настроить видеопересказ', 'customize video overview', 'customize video'],   kind: 'media', ext: '.mp4', mime: 'video/mp4' },
+    report:      { tiles: ['отчеты', 'отчёты', 'reports', 'report'],         customize: ['настроить отчет', 'настроить отчёт', 'customize report'],            kind: 'doc',   ext: '.md',  mime: 'text/markdown' },
     quiz:        { tiles: ['тест', 'quiz'],                                  customize: ['настроить тест', 'customize quiz'],              kind: 'json',  ext: '.json', mime: 'application/json' },
-    table:       { tiles: ['таблица данных', 'data table', 'таблица'],       customize: ['настроить таблицу данных', 'настроить таблицу'], kind: 'csv',   ext: '.csv', mime: 'text/csv' },
-    infographic: { tiles: ['инфографика', 'infographic'],                    customize: ['настроить инфографику'],                         kind: 'media', ext: '.png', mime: 'image/png' },
-    flashcards:  { tiles: ['карточки', 'flashcards'],                        customize: ['настроить карточки'],                            kind: 'json',  ext: '.json', mime: 'application/json' },
-    mindmap:     { tiles: ['ментальная карта', 'mind map', 'mindmap'],       customize: ['настроить ментальную карту'],                    kind: 'json',  ext: '.json', mime: 'application/json' },
-    slides:      { tiles: ['презентация', 'slides', 'slide deck'],           customize: ['настроить презентацию'],                         kind: 'doc',   ext: '.pdf', mime: 'application/pdf' },
+    table:       { tiles: ['таблица данных', 'data table', 'таблица'],       customize: ['настроить таблицу данных', 'настроить таблицу', 'customize data table'], kind: 'csv',   ext: '.csv', mime: 'text/csv' },
+    infographic: { tiles: ['инфографика', 'infographic'],                    customize: ['настроить инфографику', 'customize infographic'],                         kind: 'media', ext: '.png', mime: 'image/png' },
+    flashcards:  { tiles: ['карточки', 'flashcards', 'flash cards'],         customize: ['настроить карточки', 'customize flashcards'],                            kind: 'json',  ext: '.json', mime: 'application/json' },
+    mindmap:     { tiles: ['ментальная карта', 'mind map', 'mindmap'],       customize: ['настроить ментальную карту', 'customize mind map'],                    kind: 'json',  ext: '.json', mime: 'application/json' },
+    slides:      { tiles: ['презентация', 'slides', 'slide deck'],           customize: ['настроить презентацию', 'customize slide deck'],                         kind: 'doc',   ext: '.pdf', mime: 'application/pdf' },
   };
   // Значение опции UI → кандидаты текста в NotebookLM (EN + RU). Ненайденное сворачивается в инструкцию.
   const LABELS = {
@@ -577,18 +607,39 @@
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
     ui.task(T('nlm_readingNotebooks', 'Читаю список блокнотов…'));
     const collected = new Map();
+    // Плитки ищем по СОБСТВЕННОМУ тегу Google, а если он переименован при редизайне — по любой
+    // ссылке на /notebook/<id> (это единственный признак, который не может исчезнуть: без него
+    // плитка перестала бы открывать блокнот). Второй путь заодно ловит вёрстку без project-button.
+    const tileNodes = () => {
+      const own = queryAllDeep('project-button, .project-button').filter(visible);
+      if (own.length) return own;
+      const byLink = [];
+      const seenHost = new Set();
+      for (const a of queryAllDeep('a[href*="/notebook/"]').filter(visible)) {
+        // поднимаемся к контейнеру плитки: там, кроме ссылки, лежат название/подпись/эмодзи
+        let host = a;
+        for (let i = 0; i < 3 && host && host.parentElement; i++) {
+          if (clean(host.textContent).length > 8) break;
+          host = host.parentElement;
+        }
+        if (host && !seenHost.has(host)) { seenHost.add(host); byLink.push(host); }
+      }
+      return byLink;
+    };
     const scrapeVisible = () => {
-      for (const pb of queryAllDeep('project-button, .project-button').filter(visible)) {
-        const a = pb.querySelector('a[href*="/notebook/"]');
+      for (const pb of tileNodes()) {
+        const a = pb.querySelector ? (pb.querySelector('a[href*="/notebook/"]') || (pb.matches && pb.matches('a[href*="/notebook/"]') ? pb : null)) : null;
         const m = a ? /notebook\/([a-z0-9-]+)/i.exec(a.getAttribute('href') || '') : null;
         const id = m ? m[1] : null;
         if (!id || collected.has(id)) continue;
         const titleEl = pb.querySelector('.project-button-title') || pb.querySelector('[class*="title" i]');
-        const subEl = pb.querySelector('.project-button-subtitle');
-        const iconEl = pb.querySelector('.project-button-box-icon');
+        const subEl = pb.querySelector('.project-button-subtitle') || pb.querySelector('[class*="subtitle" i]');
+        const iconEl = pb.querySelector('.project-button-box-icon') || pb.querySelector('[class*="icon" i]');
+        // Без узла названия берём первую строку текста плитки — лучше, чем «Без названия».
+        const fallbackTitle = clean(pb.textContent).split(/·|\s{2,}/)[0];
         collected.set(id, {
           id,
-          title: (clean(titleEl && titleEl.textContent) || 'Без названия').slice(0, 120),
+          title: (clean(titleEl && titleEl.textContent) || fallbackTitle || 'Без названия').slice(0, 120),
           subtitle: clean(subEl && subEl.textContent).slice(0, 60),
           icon: clean(iconEl && iconEl.textContent).slice(0, 4),
         });
@@ -601,7 +652,7 @@
         .find((e) => norm(e.textContent) === label);
       if (!t) return false;
       clickEl(t);
-      await waitFor(() => (queryAllDeep('project-button, .project-button').filter(visible).length ? true : null), 6000, 400);
+      await waitFor(() => (tileNodes().length ? true : null), 6000, 400);
       await sleep(700);
       return true;
     };
@@ -612,15 +663,20 @@
     if (gotShared) scrapeVisible();
     // Фолбэк: вкладок нет / ничего не собрали → берём видимое, но выкидываем плитки из секции «Рекомендуемые».
     if (!gotMine && !gotShared && !collected.size) {
-      for (const pb of queryAllDeep('project-button, .project-button').filter(visible)) {
+      for (const pb of tileNodes()) {
         let sec = ''; let n = pb;
         for (let i = 0; i < 10 && n; i++) { if (/recommend|featured|рекоменд/i.test(String(n.className || ''))) { sec = 'rec'; break; } n = n.parentElement; }
         if (sec === 'rec') continue;
-        const a = pb.querySelector('a[href*="/notebook/"]');
+        const a = pb.querySelector ? (pb.querySelector('a[href*="/notebook/"]') || (pb.matches && pb.matches('a[href*="/notebook/"]') ? pb : null)) : null;
         const m = a ? /notebook\/([a-z0-9-]+)/i.exec(a.getAttribute('href') || '') : null;
         if (!m || collected.has(m[1])) continue;
-        const titleEl = pb.querySelector('.project-button-title');
-        collected.set(m[1], { id: m[1], title: (clean(titleEl && titleEl.textContent) || 'Без названия').slice(0, 120), subtitle: clean((pb.querySelector('.project-button-subtitle') || {}).textContent).slice(0, 60), icon: clean((pb.querySelector('.project-button-box-icon') || {}).textContent).slice(0, 4) });
+        const titleEl = pb.querySelector('.project-button-title') || pb.querySelector('[class*="title" i]');
+        collected.set(m[1], {
+          id: m[1],
+          title: (clean(titleEl && titleEl.textContent) || clean(pb.textContent).split(/·|\s{2,}/)[0] || 'Без названия').slice(0, 120),
+          subtitle: clean((pb.querySelector('.project-button-subtitle') || {}).textContent).slice(0, 60),
+          icon: clean((pb.querySelector('.project-button-box-icon') || {}).textContent).slice(0, 4),
+        });
       }
     }
     const out = [...collected.values()].slice(0, 200);
@@ -923,7 +979,7 @@
     await sleep(1000);
     // Пункт меню «Скачать» (save_alt) — НЕ «Скачать блокнот».
     const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
-      .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+      .find((e) => isDownloadItem(elText(e)));
     if (!item) { closeOpenMenu(); return false; }
     clickEl(item);
     await sleep(1500);
@@ -942,8 +998,10 @@
   // ── УЖЕ ГОТОВЫЕ работы студии в открытом блокноте (не наши джобы) ──
   // Разведано: карточка готовой работы = контейнер с длительностью m:ss / типом + кнопки
   // «Воспроизвести» (▶) и «Ещё» (⋮). Собираем их, чтобы показать в приложении с кнопкой «Загрузить».
-  const DUR_RE = /\b\d{1,2}:\d\d\b/;
-  const ARTKIND_RE = /подробный анализ|краткий обзор|дебаты|рецензи|пояснительн|поясня|обзор|аудиопересказ|видеопересказ|отч[её]т|тест|таблиц|инфографик|карточк|ментальн|презентаци|slide|report/i;
+  // Оба из nlm-text.js: ARTKIND_RE матчит ОСНОВАМИ («аудиопе», «инфогра»), чтобы переживать
+  // обрезку подписей многоточием, и знает EN-названия под брендом Gemini Notebook.
+  const DUR_RE = TXT ? TXT.DUR_RE : /\b\d{1,2}:\d\d\b/;
+  const ARTKIND_RE = TXT ? TXT.ARTKIND_RE : /аудиопе|видеопе|инфогра|менталь|презент|таблиц|карточк|отч[её]т|тест|обзор/i;
   // el внутри root с учётом shadow DOM (Node.contains не пересекает shadow-границы).
   function withinDeep(el, root) {
     let n = el;
@@ -989,15 +1047,10 @@
       // заголовок = текст ДО длительности/типа; чистим служебное (вкл. НАШУ инжект-кнопку «⬇TT» и её
       // состояния — иначе на следующем цикле заголовок «Название ⬇TT» не совпадёт с базлайном → дубликаты)
       // + ЛЮБЫЕ snake_case-лигатуры Material-иконок (cards_star, save_alt…) — они попадают в textContent.
-      let title = full.split(/·|\s{2,}/)[0].replace(DUR_RE, '')
-        .replace(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g, '')
-        // plain-лигатуры иконок Material (share/download склеиваются в «sharedownload») + чипы плеера
-        .replace(/sharedownload|share|download|subscriptions|fullscreen|pause|посмотреть запрос.*$/gi, '')
-        .replace(/more_vert|play_arrow|воспроизвести|ещё|⬇TT|…|✓|⚠/gi, '').trim();
-      if (!title || title.length < 2) title = 'Артефакт NotebookLM';
+      const title = TXT ? TXT.cardTitle(full) : (full.split(/·|\s{2,}/)[0].replace(DUR_RE, '').trim() || 'Артефакт NotebookLM');
       const hasPlay = [...(card.querySelectorAll ? card.querySelectorAll('button,[role="button"]') : [])]
         .some((b) => /play_arrow|воспроизвести/i.test(norm(b.getAttribute('aria-label') || b.textContent)));
-      cards.push({ el: card, more: mb, title: title.slice(0, 120), kind: hasPlay ? 'media' : 'doc' });
+      cards.push({ el: card, more: mb, title, kind: hasPlay ? 'media' : 'doc' });
     }
     return cards;
   }
@@ -1022,7 +1075,7 @@
     clickEl(card.more);
     await sleep(1000);
     const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
-      .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+      .find((e) => isDownloadItem(elText(e)));
     if (!item) { closeOpenMenu(); return { ok: false, reason: 'selector:download-item' }; }
     clickEl(item);
     await sleep(1500);
@@ -1060,13 +1113,17 @@
   // с глаголом в НАЗВАНИИ («Создаю бренд 6:46») не ловится ложно, а текст чата/источников — тоже нет.
   // «это может занять» — плейсхолдер ВИДЕОпересказа: «Генерация поясняющего видео. Это может занять
   // некоторое время.» (сущ. «Генерация», а не глагол — глагольная ветка его не ловила, живой баг 10.07).
-  const isGeneratingText = (t) => !DUR_RE.test(t) && (
+  // Реализация — в nlm-text.js (там же расширенный список плейсхолдеров: Google переписал их
+  // вместе с редизайном студии, добавлены «вернитесь позже», «check back», «this may take»).
+  const isGeneratingText = TXT ? TXT.isGeneratingText : ((t) => !DUR_RE.test(t) && (
     /вернитесь через|это может занять|\bgenerating\b|\bpreparing\b|генериру[ею]тся/i.test(t)
-    || (/(генераци|создаю|создаё?тся|создаё?м|создается|готовлю|обрабатыва|creating)/i.test(t) && ARTKIND_RE.test(t)));
+    || (/(генераци|создаю|создаё?тся|создаё?м|создается|готовлю|обрабатыва|creating)/i.test(t) && ARTKIND_RE.test(t))));
   // Панель «Студия» справа: сканим ТОЛЬКО её (по заголовку «Студия»/Studio) — не чат, не источники.
   function studioPanelRoot() {
-    const head = queryAllDeep('h1,h2,h3,[role="heading"],span,div').filter(visible)
-      .find((e) => /^(студия|studio)$/i.test(clean(e.textContent)));
+    // Заголовок панели тоже может приехать обрезанным («Студи…») — снимаем многоточие перед сверкой.
+    const isStudioHead = (e) => /^(студия|studio)$/i.test(TXT ? TXT.stripEllipsis(clean(e.textContent)) : clean(e.textContent));
+    const head = queryAllDeep('h1,h2,h3,[role="heading"],[aria-label],span,div').filter(visible)
+      .find((e) => isStudioHead(e) || /^(студия|studio)$/i.test(clean((e.getAttribute && e.getAttribute('aria-label')) || '')));
     if (!head) return null;
     let n = head; for (let i = 0; i < 6 && n; i++) { if (n.parentElement && n.parentElement.querySelectorAll && n.parentElement.querySelectorAll('button,[role="button"]').length > 3) return n.parentElement; n = n.parentElement; }
     return head.parentElement || null;
@@ -1155,7 +1212,7 @@
       clickEl(card.more);
       await sleep(1000);
       const item = queryAllDeep('[role="menuitem"],button,a').filter(visible)
-        .find((e) => /скачать|save_alt|download/i.test(norm(e.textContent)) && !/блокнот|notebook/i.test(norm(e.textContent)));
+        .find((e) => isDownloadItem(elText(e)));
       if (!item) {
         // У части типов (карточки/тест/ментальная карта…) в ⋮ НЕТ «Скачать» — файл не предусмотрен.
         // Фолбэк: открываем работу кликом по карточке, снимаем видимый текст и заливаем как .md.
@@ -1255,17 +1312,14 @@
   // Юзер открыл «Настройка видеообзора / инфографики / презентации / отчёта» → над полем
   // инструкций появляется чип «📱 9:16»: клик ДОПИСЫВАЕТ (не затирая введённое) английский
   // промпт вертикального формата — управляющие инструкции NotebookLM понимает лучше на англ.
-  const V916 = [
-    { re: /видеообзор|видеопересказ|video/i, prompt: 'Generate the video in a vertical 9:16 aspect ratio optimized for mobile screens and TikTok. Ensure clear text placement and dynamic visuals.' },
-    { re: /инфографик|infographic/i, prompt: 'Create a vertical infographic optimized for mobile view in 9:16 aspect ratio. Arrange the information architecture from top to bottom.' },
-    { re: /презентац|slide/i, prompt: 'Create a presentation tailored for mobile devices in 9:16 vertical format.' },
-    { re: /отч[её]т|report|брифинг/i, prompt: 'Format as a short briefing with vertical, mobile-friendly spacing and bullet points.' },
-  ];
+  // Правила — в nlm-text.js (основы вместо полных слов: заголовок диалога тоже обрезается).
+  const V916 = TXT ? TXT.V916 : [];
   // Диалог «Добавить источники» — НЕ наш: его заголовок-реклама «Создавайте аудиопересказы и
   // ВИДЕООБЗОРЫ…» матчился V916, textarea поиска источников сходила за поле инструкций → чип
   // «9:16» вставлялся в поле поиска и ломал его (баг 15.07, «не могу добавить источники»).
   // Узнаём его по УНИКАЛЬНЫМ контролам загрузки (в диалогах настройки студии их не бывает).
-  const SRC_DLG_RE = /перетащить файлы|загрузить файлы|скопированный текст|найдите новые источники|добавьте источник|drag (and|&) drop|upload (a )?file|copied text|discover sources/i;
+  const SRC_DLG_RE = TXT ? TXT.SRC_DLG_RE
+    : /перетащить файлы|загрузить файлы|скопированный текст|найдите новые источники|добавьте источник|drag (and|&) drop|upload (a )?file|copied text|discover sources/i;
   function inject916() {
     try {
       // Диалоги Angular CDK живут в overlay-контейнере В СВЕТЛОМ DOM → обычный querySelectorAll дешёв.
