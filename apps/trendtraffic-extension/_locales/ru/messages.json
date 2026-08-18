@@ -681,5 +681,13 @@
   "pop_bgListFail": { "message": "не удалось прочитать список" },
   "pop_bgNothing": { "message": "нечего добавлять" },
   "pop_booster": { "message": "⚡ Flow Booster" },
-  "pop_boosterFail": { "message": "Не удалось открыть пульт. Откройте его кнопкой на странице Google Flow." }
+  "pop_boosterFail": { "message": "Не удалось открыть пульт. Откройте его кнопкой на странице Google Flow." },
+  "pop_notImportableNlm": { "message": "Это страница NotebookLM. Откройте статью, которую хотите добавить, и нажмите иконку там." },
+  "pop_bgAdding": { "message": "идёт добавление источников — дождитесь конца" },
+  "pop_needLogin": { "message": "Войдите в NotebookLM — вкладка открыта" },
+  "pop_skippedBad": { "message": "пропущено строк: " },
+  "pop_skippedDup": { "message": "дублей: " },
+  "pop_abortedBusy": { "message": "остановлено: началась генерация" },
+  "pop_abortedFailing": { "message": "остановлено: три ошибки подряд" },
+  "bg_busyImport": { "message": "Идёт добавление источников — генерация выполнится следом" }
 }

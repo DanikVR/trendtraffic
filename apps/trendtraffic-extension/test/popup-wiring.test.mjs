@@ -76,6 +76,44 @@ for (const loc of readdirSync(join(ext, '_locales'))) {
   must(missing.length === 0, `в локали ${loc} нет ключей: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '…' : ''}`);
 }
 
+// ── 7. защита единственной вкладки NotebookLM ──────────────────────────────
+// Фон в node не исполнить (он весь на chrome.*), поэтому здесь СТРУКТУРНЫЕ проверки: они не
+// доказывают поведение, но не дают молча снести защиту. Сам сценарий разобран в ревью: два
+// импорта параллельно уводили вкладку, а источник кладётся в ТОТ блокнот, что открыт, — остаток
+// пакета уезжал в чужой блокнот. Это порча данных, поэтому три рубежа, и все три под охраной.
+{
+  const cn = read('src/content-notebook.js');
+
+  // рубеж 1: второй импорт отбивается ДО навигации вкладки
+  const addFn = bg.slice(bg.indexOf('async function popupAddSources'), bg.indexOf('async function popupBrowserTabs'));
+  must(addFn.includes('tabLockedNow()'), 'popupAddSources не проверяет замок вкладки');
+  // сверяем с местом ВЫЗОВА, а не с любым упоминанием: в комментарии рядом слово встречается выше
+  must(addFn.indexOf('tabLockedNow()') < addFn.indexOf('ensureNotebookTab('),
+    'проверка замка стоит ПОСЛЕ ensureNotebookTab() — вкладку уведёт раньше отказа');
+  must(addFn.includes('await lockTab()'), 'popupAddSources не берёт замок');
+  must(addFn.includes('unlockTab'), 'popupAddSources не снимает замок');
+  must(/finally\s*{[^}]*unlockTab/.test(addFn), 'замок снимается не в finally — исключение оставит вкладку запертой');
+
+  // рубеж 2: серверный цикл уважает замок
+  must(/async function runNlmAction[\s\S]{0,400}tabLockedNow\(\)/.test(bg), 'runNlmAction не проверяет замок');
+  must(/async function _runNlmTask[\s\S]{0,400}tabLockedNow\(\)/.test(bg), '_runNlmTask не проверяет замок');
+
+  // рубеж 3: сам add-source отказывается класть материал в чужой блокнот
+  const addSrc = cn.slice(cn.indexOf('async function addSource'), cn.indexOf('async function addSource') + 900);
+  must(addSrc.includes('wrong-notebook'), 'addSource не сверяет открытый блокнот с запрошенным');
+
+  // замок обязан протухать сам, иначе смерть service worker запрёт вкладку навсегда
+  must(bg.includes('TAB_LOCK_MS'), 'у замка нет дедлайна');
+  must(/tabBusyUntil:\s*STATE\.tabBusyUntil/.test(bg), 'tabBusyUntil не сохраняется в saveState');
+  must(bg.includes("'tabBusyUntil'"), 'tabBusyUntil не восстанавливается в loadState');
+  // а прогресс, наоборот, восстанавливать НЕЛЬЗЯ: цикл жил в памяти и умер вместе с воркером
+  must(!/STATE\.popupAdding\s*=\s*s\.popupAdding/.test(bg), 'popupAdding восстанавливается из storage — покажет пакет, которого нет');
+
+  // итог пакета уходит широковещательно: ответ адресован окну, которое могло закрыться
+  must(addFn.includes("'tt-popup-done'"), 'нет широковещательного итога — переоткрытый popup зависнет на N/N');
+  must(js.includes("msg.type === 'tt-popup-done'"), 'popup не слушает итог пакета');
+}
+
 console.log(`\npopup-wiring: пройдено ${pass}, провалено ${fails.length}`);
 if (fails.length) {
   console.error('\nПРОВАЛЫ:');

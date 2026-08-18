@@ -697,5 +697,13 @@
   "pop_bgListFail": { "message": "could not read the list" },
   "pop_bgNothing": { "message": "nothing to add" },
   "pop_booster": { "message": "⚡ Flow Booster" },
-  "pop_boosterFail": { "message": "Could not open the panel. Open it with the button on the Google Flow page." }
+  "pop_boosterFail": { "message": "Could not open the panel. Open it with the button on the Google Flow page." },
+  "pop_notImportableNlm": { "message": "This is a NotebookLM page. Open the article you want to add and click the icon there." },
+  "pop_bgAdding": { "message": "sources are being added — wait for it to finish" },
+  "pop_needLogin": { "message": "Sign in to NotebookLM — the tab is open" },
+  "pop_skippedBad": { "message": "skipped lines: " },
+  "pop_skippedDup": { "message": "duplicates: " },
+  "pop_abortedBusy": { "message": "stopped: a generation started" },
+  "pop_abortedFailing": { "message": "stopped: three errors in a row" },
+  "bg_busyImport": { "message": "Sources are being added — the generation will run next" }
 }

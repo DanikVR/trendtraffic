@@ -27,6 +27,11 @@
   // ── состояние ──────────────────────────────────────────────────────────────
   let current = null;   // вкладка, из которой открыли popup
   let notebooks = [];
+  // Стартуем с false намеренно: обработчики навешиваются синхронно, а init() асинхронна, и
+  // lock(false) мог сработать РАНЬШЕ проверки страницы — при дефолте true кнопка ожила бы
+  // на chrome:// или на самом NotebookLM.
+  let canAddCurrent = false;
+  let importRunning = false;   // идёт пакет (свой или чужой, начатый в прошлом окне)
 
   const setStatus = (text, cls) => {
     const s = $('status');
@@ -46,10 +51,19 @@
       const e = $(id);
       if (e) e.disabled = on;
     }
+    // «Добавить» отпускаем только если текущую страницу вообще можно добавить: раньше lock(false)
+    // после ⟳ безусловно оживлял кнопку на chrome:// и на странице самого NotebookLM.
+    const add = $('add');
+    if (add) add.disabled = on || !canAddCurrent;
   };
 
   const hostOf = (url) => { try { return new URL(url).host.replace(/^www\./, ''); } catch { return ''; } };
   const isImportable = (url) => typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+  // Сам NotebookLM источником не добавляем: положить страницу блокнота внутрь этого же блокнота —
+  // бессмыслица. В списке вкладок такие отфильтрованы фоном, здесь фильтруем одиночный импорт
+  // и вставленные руками ссылки, чтобы поведение было одинаковым везде.
+  const isNlmUrl = (url) => /^https:\/\/notebook(lm)?\.google\.com\//i.test(String(url || ''));
+  const canImport = (url) => isImportable(url) && !isNlmUrl(url);
 
   // ── наполнение селектов блокнотов ──────────────────────────────────────────
   function fillNotebooks() {
@@ -71,6 +85,10 @@
         sel.appendChild(o);
       }
       if (keep) sel.value = keep;
+      // Сохранённого блокнота может не быть в свежем списке (удалили в NotebookLM) — тогда
+      // select уходит в selectedIndex = -1 и показывает ПУСТОЕ поле, а «Добавить» ругается
+      // «выберите блокнот». Честно откатываемся на первый.
+      if (sel.selectedIndex < 0) sel.selectedIndex = 0;
     }
   }
 
@@ -84,10 +102,14 @@
       $('pageHost').textContent = hostOf(current.url || '');
       if (current.favIconUrl) $('fav').src = current.favIconUrl;
     }
-    if (!isImportable(current && current.url)) {
-      $('add').disabled = true;
-      setStatus(T('pop_notImportable', 'Эту страницу добавить нельзя — откройте обычный сайт (http/https).'), 'warn');
-    }
+    const url = current && current.url;
+    canAddCurrent = canImport(url);
+    // Причину блокировки запоминаем: она важнее подсказки про пустой список и не должна ею затираться.
+    let blockedReason = '';
+    if (isNlmUrl(url)) blockedReason = T('pop_notImportableNlm', 'Это страница NotebookLM. Откройте статью, которую хотите добавить, и нажмите иконку там.');
+    else if (!isImportable(url)) blockedReason = T('pop_notImportable', 'Эту страницу добавить нельзя — откройте обычный сайт (http/https).');
+    $('add').disabled = !canAddCurrent;
+    if (blockedReason) setStatus(blockedReason, 'warn');
 
     const st = await send({ type: 'tt-popup-state' });
     const dot = $('dot');
@@ -96,8 +118,17 @@
 
     notebooks = (st && st.notebooks) || [];
     fillNotebooks();
-    if (!notebooks.length) {
+    if (!notebooks.length && !blockedReason) {
       setStatus(T('pop_needRefresh', 'Список блокнотов пуст. Нажмите ⟳ — расширение прочитает его в NotebookLM.'), 'warn');
+    }
+
+    // Пакет мог быть запущен в прошлом окне popup и всё ещё идти в фоне: показываем прогресс и
+    // держим кнопки закрытыми, иначе окно выглядит чистым и человек запускает второй импорт.
+    if (st && st.adding) {
+      importRunning = true;
+      lock(true);
+      setProgress(st.adding.done, st.adding.total);
+      setStatus(T('pop_addingN', 'Добавляю: ') + st.adding.done + '/' + st.adding.total, '');
     }
   }
 
@@ -120,13 +151,17 @@
   });
 
   $('add').addEventListener('click', async () => {
+    if (!canAddCurrent) return;                    // покрывает и current === null
     const notebookId = $('nb').value;
     if (!notebookId) { setStatus(T('pop_pickNotebook', 'Сначала выберите блокнот.'), 'warn'); return; }
+    importRunning = true;
     lock(true);
     setStatus(T('pop_adding', 'Добавляю…'), '');
-    const r = await send({ type: 'tt-popup-add', notebookId, items: [{ url: current.url, title: current.title || '' }] });
-    lock(false);
-    finish(r, notebookId);
+    try {
+      const r = await send({ type: 'tt-popup-add', notebookId, items: [{ url: current.url, title: current.title || '' }] });
+      setProgress(0, 0);                           // фон шлёт прогресс и для одной ссылки — убираем полосу
+      finish(r, notebookId);
+    } finally { importRunning = false; lock(false); }
   });
 
   $('create').addEventListener('click', async () => {
@@ -162,8 +197,16 @@
   });
 
   // ── массовый импорт ────────────────────────────────────────────────────────
-  $('toBulk').addEventListener('click', () => { $('view-page').hidden = true; $('view-bulk').hidden = false; setStatus(''); });
-  $('back').addEventListener('click', () => { $('view-bulk').hidden = true; $('view-page').hidden = false; setStatus(''); });
+  // Селекты на двух экранах синхронизируем: выбрал «Ресёрч» на первом, ушёл в массовый импорт —
+  // и 20 источников уезжали в первый по списку блокнот, потому что nb2 остался на нём.
+  $('toBulk').addEventListener('click', () => {
+    if ($('nb').value) $('nb2').value = $('nb').value;
+    $('view-page').hidden = true; $('view-bulk').hidden = false; setStatus('');
+  });
+  $('back').addEventListener('click', () => {
+    if ($('nb2').value) $('nb').value = $('nb2').value;
+    $('view-bulk').hidden = true; $('view-page').hidden = false; setStatus('');
+  });
 
   for (const tab of document.querySelectorAll('.tab')) {
     tab.addEventListener('click', async () => {
@@ -210,47 +253,76 @@
 
     const onLinks = !$('pane-links').hidden;
     let items = [];
+    let badLines = 0;
     if (onLinks) {
-      items = $('links').value.split('\n').map((s) => s.trim()).filter(isImportable).map((url) => ({ url, title: '' }));
+      // Считаем именно НЕПУСТЫЕ строки: хвостовой перевод строки приезжает почти всегда при
+      // вставке из буфера и давал бы вечное «пропущено: 1». Дубли считаются отдельно, ниже.
+      const lines = $('links').value.split('\n').map((s) => s.trim()).filter(Boolean);
+      badLines = lines.filter((s) => !canImport(s)).length;
+      items = lines.filter(canImport).map((url) => ({ url, title: '' }));
     } else {
       items = [...$('tabList').querySelectorAll('input:checked')].map((b) => ({ url: b.value, title: b.dataset.title || '' }));
     }
     // дубли внутри одного пакета бессмысленны — NotebookLM положит две одинаковые ссылки
     const seen = new Set();
+    const beforeDedup = items.length;
     items = items.filter((i) => {
       if (seen.has(i.url)) return false;
       seen.add(i.url);
       return true;
     });
+    const dupes = beforeDedup - items.length;
 
     if (!items.length) { setStatus(T('pop_nothingToAdd', 'Нечего добавлять: нет корректных ссылок.'), 'warn'); return; }
 
+    importRunning = true;
     lock(true);
     setProgress(0, items.length);
     setStatus(T('pop_addingN', 'Добавляю: ') + '0/' + items.length, '');
-    const r = await send({ type: 'tt-popup-add', notebookId, items });
-    lock(false);
-    setProgress(0, 0);
-    finish(r, notebookId);
+    try {
+      const r = await send({ type: 'tt-popup-add', notebookId, items });
+      setProgress(0, 0);
+      finish(r, notebookId, { badLines, dropped: dupes });
+    } finally { importRunning = false; lock(false); }
   });
 
   // Фон шлёт прогресс по мере добавления — popup показывает его, пока открыт.
   // Закрыли popup — добавление всё равно доедет: цикл живёт в фоне.
   chrome.runtime.onMessage.addListener((msg) => {
-    if (!msg || msg.type !== 'tt-popup-progress') return;
-    setProgress(msg.done, msg.total);
-    setStatus(T('pop_addingN', 'Добавляю: ') + msg.done + '/' + msg.total, '');
+    if (!msg) return;
+    if (msg.type === 'tt-popup-progress') {
+      // Прогресс может прийти и от пакета, начатого в ПРОШЛОМ окне: тогда закрываем кнопки,
+      // иначе отсюда можно запустить второй импорт.
+      if (!importRunning) { importRunning = true; lock(true); }
+      setProgress(msg.done, msg.total);
+      setStatus(T('pop_addingN', 'Добавляю: ') + msg.done + '/' + msg.total, '');
+      return;
+    }
+    // Итог пакета приходит ещё и широковещательно: ответ на sendMessage адресован окну, которое
+    // операцию начало, а оно могло закрыться — без этого переоткрытый popup вис на «20/20».
+    if (msg.type === 'tt-popup-done') {
+      importRunning = false;
+      lock(false);
+      setProgress(0, 0);
+      finish({ ok: true, added: msg.added, failed: msg.failed, aborted: msg.aborted }, msg.notebookId);
+    }
   });
 
-  function finish(r, notebookId) {
+  function finish(r, notebookId, extra) {
     if (!r || !r.ok) { setStatus((r && r.error) || T('pop_addFail', 'Не получилось добавить.'), 'err'); return; }
     const okN = r.added || 0;
     const failN = r.failed || 0;
-    setStatus(failN
+    let text = failN
       ? T('pop_addedPartial', 'Добавлено: ') + okN + T('pop_addedFailSuf', ', не вышло: ') + failN
-      : T('pop_added', 'Добавлено в блокнот: ') + okN,
-    failN ? 'warn' : 'ok');
+      : T('pop_added', 'Добавлено в блокнот: ') + okN;
+    // Молча выброшенные строки — потерянный материал: человек уверен, что добавились все.
+    if (extra && extra.badLines) text += ' · ' + T('pop_skippedBad', 'пропущено строк: ') + extra.badLines;
+    if (extra && extra.dropped) text += ' · ' + T('pop_skippedDup', 'дублей: ') + extra.dropped;
+    if (r.aborted === 'busy') text += ' · ' + T('pop_abortedBusy', 'остановлено: началась генерация');
+    if (r.aborted === 'failing') text += ' · ' + T('pop_abortedFailing', 'остановлено: три ошибки подряд');
+    setStatus(text, (failN || (extra && extra.badLines) || r.aborted) ? 'warn' : 'ok');
 
+    if (!notebookId) return;
     const open = document.createElement('button');
     open.className = 'link';
     open.textContent = ' ' + T('pop_openNotebook', 'Открыть блокнот');

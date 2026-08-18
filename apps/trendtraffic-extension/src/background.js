@@ -43,6 +43,11 @@ const STATE = {
   activeTaskId: null, // id текущей джобы генерации (для резервного wake-ингеста, если SW умрёт)
   nlmAccount: null, // email аккаунта Google, под которым сейчас открыт NotebookLM (для плашки «переподключить»)
   nlmTabId: null,   // id вкладки NotebookLM, где юзер РЕАЛЬНО работает (активная+залогинена) — все операции туда, чтобы не уехать в другой Google-аккаунт при мультиаккаунте
+  // Вкладка NotebookLM ОДНА, а претендентов на неё трое: серверный цикл, генерация и импорт из
+  // popup. Без общего замка второй импорт уводил вкладку на свой блокнот, а добавление источника
+  // кладёт материал в ТОТ блокнот, что сейчас открыт, — остаток пакета молча уезжал не туда.
+  tabBusyUntil: 0,   // дедлайн замка вкладки; переживает рестарт SW и сам протухает, чтобы не залипнуть
+  popupAdding: null, // {notebookId, done, total} — прогресс импорта, ТОЛЬКО в памяти (цикл живёт в памяти SW)
   hgBusy: false,
 };
 
@@ -54,7 +59,11 @@ const log = (...a) => console.log('[tt-ext bg]', ...a);
 const T = (key, fallback) => { try { const m = chrome.i18n.getMessage(key); return m || fallback; } catch (e) { return fallback; } };
 
 async function loadState() {
-  const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil', 'nlmAccount', 'nlmBusy', 'busyUntil', 'activeTaskId', 'nlmTabId']);
+  const s = await chrome.storage.local.get(['token', 'apiBase', 'pausedUntil', 'nlmAccount', 'nlmBusy', 'busyUntil', 'activeTaskId', 'nlmTabId', 'tabBusyUntil']);
+  // Замок вкладки переживает рестарт SW, но НЕ прогресс импорта: сам цикл жил в памяти и умер
+  // вместе с воркером. Поэтому popupAdding не восстанавливаем — иначе показывали бы вечное
+  // «идёт добавление» для пакета, которого уже нет. Замок протухнет сам по дедлайну.
+  STATE.tabBusyUntil = s.tabBusyUntil || 0;
   STATE.token = s.token || null;
   STATE.apiBase = s.apiBase || null;
   STATE.pausedUntil = s.pausedUntil || 0;
@@ -70,6 +79,7 @@ async function saveState() {
   await chrome.storage.local.set({
     token: STATE.token, apiBase: STATE.apiBase, pausedUntil: STATE.pausedUntil, nlmAccount: STATE.nlmAccount,
     nlmBusy: STATE.nlmBusy, busyUntil: STATE.busyUntil, activeTaskId: STATE.activeTaskId, nlmTabId: STATE.nlmTabId,
+    tabBusyUntil: STATE.tabBusyUntil,
   });
 }
 
@@ -573,6 +583,10 @@ async function nlmActionResult(actionId, ok, result, error) {
 
 /** Выполнить синхронное действие (create/open/add-source/list/delete/chat). */
 async function runNlmAction(action) {
+  // Идёт импорт из popup — вкладка занята. Уводить её сейчас нельзя: остаток пакета уедет в
+  // чужой блокнот (источник кладётся в ТОТ блокнот, что открыт). Действие вернётся в очередь,
+  // ровно как это уже сделано для 'busy-generating' ниже.
+  if (tabLockedNow()) { await nlmActionResult(action.id, false, null, 'busy-import'); return; }
   // «Создать блокнот» — особый случай: клик «создать» уводит на /notebook/<uuid> (SPA или полный
   // reload), поэтому результат ждём отдельным событием от content (переживает перезагрузку).
   if (action.kind === 'create-notebook') {
@@ -706,6 +720,9 @@ async function runNlmTask(task) {
   }
 }
 async function _runNlmTask(task) {
+  // См. runNlmAction: пока идёт импорт из popup, вкладку трогать нельзя — генерация увела бы её
+  // на свой блокнот и порвала бы пакет. Возвращаем задачу в очередь, она выполнится следом.
+  if (tabLockedNow()) { await nlmTaskStatus(task.id, 'retry', T('bg_busyImport', 'Идёт добавление источников — генерация выполнится следом')); return; }
   const tabId = await ensureNotebookTab(task.notebookId || null, true);
   if (!tabId) { await nlmTaskStatus(task.id, 'retry', T('bg_openNlmGen', 'Откройте NotebookLM — генерация выполнится сама')); return; }
   await nlmTaskStatus(task.id, 'running');
@@ -908,16 +925,26 @@ async function nbCacheSet(notebooks) {
 }
 /** Генерация занимает вкладку: навигация её прервёт (живой баг 2.2.x). Пускаем только в простой. */
 function nlmBusyNow() { return STATE.nlmBusy && Date.now() < STATE.busyUntil; }
+/** Замок вкладки на время импорта из popup. Дедлайн обязателен: без него смерть SW посреди
+ *  пакета залипла бы вкладку навсегда. Продлевается на каждой итерации, а не берётся на весь пакет. */
+function tabLockedNow() { return Date.now() < (STATE.tabBusyUntil || 0); }
+const TAB_LOCK_MS = 120_000;
+async function lockTab() { STATE.tabBusyUntil = Date.now() + TAB_LOCK_MS; await saveState(); }
+async function unlockTab() { STATE.tabBusyUntil = 0; STATE.popupAdding = null; await saveState(); }
 
 async function popupState() {
   const tab = await findNotebookTab();
   const c = await nbCacheGet();
-  return { ok: true, nlmReady: !!tab, account: STATE.nlmAccount || null, notebooks: c.notebooks || [], at: c.at || 0 };
+  // adding отдаём, чтобы ПЕРЕОТКРЫТЫЙ popup сразу показал идущий импорт и заблокировал кнопки:
+  // иначе он выглядит как чистый и пускает второй пакет (замок его отобьёт, но человек не поймёт).
+  const adding = (STATE.popupAdding && tabLockedNow()) ? STATE.popupAdding : null;
+  return { ok: true, nlmReady: !!tab, account: STATE.nlmAccount || null, notebooks: c.notebooks || [], at: c.at || 0, adding };
 }
 
 /** Живой скрейп списка (мимо кэша). Плитки есть ТОЛЬКО на главной — наводим вкладку туда. */
 async function popupRefreshNotebooks() {
-  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — список можно обновить после неё') };
+  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — попробуйте после неё') };
+  if (tabLockedNow()) return { ok: false, error: T('pop_bgAdding', 'идёт добавление источников — дождитесь конца') };
   const tabId = await ensureNotebookTab(null, true);
   if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
   try {
@@ -934,19 +961,38 @@ async function popupRefreshNotebooks() {
 }
 
 async function popupCreateNotebook(title) {
-  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — список можно обновить после неё') };
+  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — попробуйте после неё') };
+  if (tabLockedNow()) return { ok: false, error: T('pop_bgAdding', 'идёт добавление источников — дождитесь конца') };
   const tabId = await ensureNotebookTab(null, true);
   if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
-  // Клик «создать» уводит на /notebook/<uuid> и может перезагрузить страницу, поэтому результат
-  // приходит отдельным сообщением nlm-create-done — как в серверном пути.
+
+  // Клик «создать» уводит на /notebook/<uuid> и часто ПЕРЕЗАГРУЖАЕТ страницу — вместе с ней
+  // умирает контекст, из которого пришёл бы ответ. Серверный путь давно кладёт якорь в storage,
+  // и content-notebook после перезагрузки дорапортовывает по нему (resumePendingCreate).
+  // Без якоря popup ждал 45 секунд и врал «не создался», хотя блокнот уже был создан.
   const actionId = 'popup-create-' + Date.now();
-  try { await chrome.tabs.sendMessage(tabId, { type: 'run-action', action: { kind: 'create-notebook', id: actionId, payload: { title: (title || '').slice(0, 80) } } }); }
-  catch { /* страница могла перезагрузиться — ждём событие */ }
+  const clean = (title || '').slice(0, 80);
+  try { await chrome.storage.local.set({ ttNlmPendingCreate: { actionId, title: clean, at: Date.now() } }); } catch { /* */ }
+
+  let direct = null;
+  try { direct = await chrome.tabs.sendMessage(tabId, { type: 'run-action', action: { kind: 'create-notebook', id: actionId, payload: { title: clean } } }); }
+  catch { /* страница перезагрузилась — ждём событие по якорю */ }
+
   const ev = await waitForNlmEvent('create-done', actionId, NLM_CREATE_WAIT_MS);
-  if (ev && ev.notebookId) {
+  // Якорь снимаем ИЗБИРАТЕЛЬНО: серверный create мог идти параллельно, глухой remove затёр бы чужой.
+  try {
+    const st = await chrome.storage.local.get(['ttNlmPendingCreate']);
+    if (st.ttNlmPendingCreate && st.ttNlmPendingCreate.actionId === actionId) await chrome.storage.local.remove('ttNlmPendingCreate');
+  } catch { /* */ }
+
+  // Фолбэк на прямой ответ: SPA-случай без перезагрузки, а также смерть SW (тогда nlmWaiters
+  // теряется вместе с памятью, но ответ content-скрипта мог уже дойти).
+  const nbId = (ev && ev.notebookId) || (direct && direct.ok && direct.notebookId) || null;
+  const nbTitle = (ev && ev.title) || (direct && direct.title) || clean || '';
+  if (nbId) {
     const c = await nbCacheGet();
-    await nbCacheSet([{ id: ev.notebookId, title: ev.title || (title || ''), icon: '' }].concat(c.notebooks || []));
-    return { ok: true, notebookId: ev.notebookId, title: ev.title || title || '' };
+    await nbCacheSet([{ id: nbId, title: nbTitle, icon: '' }].concat(c.notebooks || []));
+    return { ok: true, notebookId: nbId, title: nbTitle };
   }
   return { ok: false, error: T('bg_notebookNotCreated', 'блокнот не создался') };
 }
@@ -955,25 +1001,66 @@ async function popupCreateNotebook(title) {
 async function popupAddSources(notebookId, items) {
   const list = (items || []).filter((i) => i && typeof i.url === 'string');
   if (!notebookId || !list.length) return { ok: false, error: T('pop_bgNothing', 'нечего добавлять') };
-  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — список можно обновить после неё') };
-  const tabId = await ensureNotebookTab(notebookId, true);
-  if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
+  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — попробуйте после неё') };
+  // Второй импорт запрещаем ДО ensureNotebookTab: иначе вкладку уведёт на чужой блокнот
+  // ещё до того, как мы вернём отказ, и остаток первого пакета уедет туда же.
+  if (tabLockedNow()) return { ok: false, error: T('pop_bgAdding', 'идёт добавление источников — дождитесь конца') };
 
-  let added = 0; let failed = 0; const errors = [];
-  for (let i = 0; i < list.length; i++) {
-    let r = null;
-    try {
-      r = await withTimeout(chrome.tabs.sendMessage(tabId, {
-        type: 'run-action',
-        action: { kind: 'add-source', notebookId, payload: { srcKind: 'url', url: list[i].url, title: list[i].title || '' } },
-      }), 90_000);
-    } catch (e) { r = { ok: false, reason: String(e && e.message || e) }; }
-    if (r && r.ok) added++;
-    else { failed++; if (errors.length < 3) errors.push((r && r.reason) || 'fail'); }
-    // popup мог закрыться — тогда некому слушать, и это нормально: цикл доедет в фоне
-    try { chrome.runtime.sendMessage({ type: 'tt-popup-progress', done: i + 1, total: list.length }); void chrome.runtime.lastError; } catch { /* */ }
+  await lockTab();
+  STATE.popupAdding = { notebookId, done: 0, total: list.length };
+  let added = 0; let failed = 0; let aborted = null; const errors = [];
+  try {
+    const tabId = await ensureNotebookTab(notebookId, true);
+    if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
+
+    let streak = 0; // подряд неудачных — чтобы не молотить 20 ссылок по 90 с в пустоту
+    for (let i = 0; i < list.length; i++) {
+      // Генерация могла стартовать уже ПОСЛЕ входа в цикл — проверяем на каждом шаге.
+      if (nlmBusyNow()) { aborted = 'busy'; break; }
+      await lockTab(); // продлеваем замок: пакет длиннее одного дедлайна
+
+      let r = null;
+      try {
+        r = await withTimeout(chrome.tabs.sendMessage(tabId, {
+          type: 'run-action',
+          action: { kind: 'add-source', notebookId, payload: { srcKind: 'url', url: list[i].url, title: list[i].title || '' } },
+        }), 90_000);
+      } catch (e) { r = { ok: false, reason: String(e && e.message || e) }; }
+
+      if (r && r.ok) { added++; streak = 0; } else {
+        failed++; streak++;
+        if (errors.length < 3) errors.push((r && r.reason) || 'fail');
+        // Разлогин: content-скрипт скажет not-logged-in, НО чаще Google просто уводит вкладку
+        // на accounts.google.com, где скрипта нет и sendMessage падает связью. Ловим оба случая.
+        let offDomain = false;
+        try { const t = await chrome.tabs.get(tabId); offDomain = !NLM_URL_RE.test(t.url || ''); } catch { /* */ }
+        if ((r && r.reason === 'not-logged-in') || offDomain) {
+          try { await chrome.tabs.update(tabId, { active: true }); } catch { /* */ }
+          aborted = 'login';
+          break;
+        }
+        if (streak >= 3) { aborted = 'failing'; break; }
+      }
+
+      STATE.popupAdding = { notebookId, done: i + 1, total: list.length };
+      // popup мог закрыться — тогда некому слушать, и это нормально: цикл доедет в фоне
+      try { chrome.runtime.sendMessage({ type: 'tt-popup-progress', done: i + 1, total: list.length }); void chrome.runtime.lastError; } catch { /* */ }
+    }
+  } finally {
+    await unlockTab();
   }
-  return { ok: true, added, failed, errors };
+
+  if (aborted === 'login') {
+    return { ok: false, added, failed, errors, error: T('pop_needLogin', 'Войдите в NotebookLM — вкладка открыта') };
+  }
+  const res = { ok: true, added, failed, errors, aborted };
+  // Ответ уходит ТОМУ popup, который начал операцию, а он мог закрыться. Дублируем итог
+  // широковещательно, иначе переоткрытый popup навсегда застрянет на «Добавляю: 20/20».
+  try {
+    chrome.runtime.sendMessage({ type: 'tt-popup-done', notebookId, added, failed, aborted });
+    void chrome.runtime.lastError;
+  } catch { /* слушателя нет — нормально */ }
+  return res;
 }
 
 /** Вкладки браузера для массового импорта. Свои же (NotebookLM) не предлагаем. */

@@ -516,6 +516,13 @@
   }
   async function addSource(a) {
     if (!isLoggedIn()) return { ok: false, reason: 'not-logged-in' };
+    // Источник кладётся в ТОТ блокнот, что открыт во вкладке, а вкладка одна на всё расширение.
+    // Если её успели увести (второй импорт, генерация, серверная задача), молча положить материал
+    // в чужой блокнот — худший исход: пользователь этого не заметит. Лучше честно отказаться.
+    if (a.notebookId) {
+      const open = notebookIdFromUrl();
+      if (open && open !== a.notebookId) return { ok: false, reason: 'wrong-notebook' };
+    }
     const kind = a.srcKind;
     ui.task(T('nlm_addingSource', 'Добавляю источник (') + kind + ')');
     await openAddSource();
