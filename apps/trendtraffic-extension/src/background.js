@@ -464,9 +464,15 @@ function disarmRename() {
   try { if (chrome.downloads.onDeterminingFilename.hasListener(onDetermineFilename)) chrome.downloads.onDeterminingFilename.removeListener(onDetermineFilename); } catch { /* */ }
 }
 
-// Включить открытие side-panel по клику на иконку расширения (панель = пульт пакета).
+// С версии 1.6.4 клик по иконке открывает POPUP (action.default_popup), а пульт пакета —
+// кнопкой «⚡ Flow Booster» внутри него и кнопкой на странице Google Flow.
+//
+// ВАЖНО: setPanelBehavior запоминается В ПРОФИЛЕ БРАУЗЕРА и переживает обновление расширения.
+// У всех, кто ставил версии до 1.6.4, там осталось включённое «открывать панель по клику» —
+// из-за него клик по иконке уводил в боковую панель, и popup человек просто не мог найти.
+// Поэтому флаг не удалён из кода, а явно ВЫКЛЮЧАЕТСЯ: только так старое значение вычищается.
 async function enableSidePanelOnClick() {
-  try { if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }); } catch { /* старый Chrome */ }
+  try { if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }); } catch { /* старый Chrome */ }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

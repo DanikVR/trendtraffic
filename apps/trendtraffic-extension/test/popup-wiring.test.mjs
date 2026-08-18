@@ -114,6 +114,16 @@ for (const loc of readdirSync(join(ext, '_locales'))) {
   must(js.includes("msg.type === 'tt-popup-done'"), 'popup не слушает итог пакета');
 }
 
+// ── 8. клик по иконке обязан открывать popup, а не боковую панель ──────────
+// setPanelBehavior запоминается в ПРОФИЛЕ и переживает обновление расширения: у всех,
+// кто ставил версии до 1.6.4, там лежало openPanelOnActionClick:true, и popup был недостижим.
+// Флаг обязан явно выключаться, иначе старое значение так и останется у людей.
+{
+  must(/openPanelOnActionClick:\s*false/.test(bg), 'openPanelOnActionClick не выключается — клик по иконке уйдёт в боковую панель');
+  must(!/openPanelOnActionClick:\s*true/.test(bg), 'где-то остался openPanelOnActionClick: true — он перебьёт popup');
+  must(bg.includes('enableSidePanelOnClick()'), 'сброс поведения иконки не вызывается на старте');
+}
+
 console.log(`\npopup-wiring: пройдено ${pass}, провалено ${fails.length}`);
 if (fails.length) {
   console.error('\nПРОВАЛЫ:');

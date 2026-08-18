@@ -4096,12 +4096,25 @@
  *          через createRequire. Два других теста (nlm-text 94, popup-wiring 157) по-прежнему
  *          гоняются без единого пакета.
  *          Файлы: popup.js, scripts/add-popup-locales.py, локали (+1 ключ), test/ (новый файл). */
-export const APP_VERSION = '2.6.46';
+/** 2.6.47 — Popup наконец открывается по клику на иконку (ext v1.6.6). Юзер дважды не смог его
+ *          найти, и виноват был не он: `setPanelBehavior({openPanelOnActionClick})` запоминается
+ *          В ПРОФИЛЕ БРАУЗЕРА и переживает обновление расширения. У всех, кто ставил версии до
+ *          1.6.4, там лежало включённое «открывать боковую панель по клику» — добавив
+ *          action.default_popup, я старую настройку не снял, и клик по иконке по-прежнему уводил
+ *          в панель Flow Booster. Popup был технически на месте и при этом недостижим.
+ *          Фикс: enableSidePanelOnClick теперь явно ВЫКЛЮЧАЕТ флаг (а не удалён из кода —
+ *          удаление ничего бы не вычистило, значение осталось бы в профиле). Зовётся на старте,
+ *          onInstalled и onStartup, поэтому чинится само при первом запуске 1.6.6.
+ *          Тест: popup-wiring +3 проверки — флаг обязан выключаться, значения true в коде быть
+ *          не должно. Мутация «вернуть true» даёт 2 провала. Этот же тест поймал реальную поломку
+ *          в процессе: скриптовая замена по первому вхождению попала в комментарий, а не в вызов.
+ *          Файлы: background.js, manifest 1.6.6, test/popup-wiring.test.mjs. */
+export const APP_VERSION = '2.6.47';
 
 /** Версия ЕДИНОГО Chrome-расширения TrendTraffic (apps/trendtraffic-extension/manifest.json) —
  *  работает на Google Flow, NotebookLM (Hotebook) и HeyGen. БАМПАТЬ вместе с manifest при каждом
  *  релизе расширения — показывается на карточке «Скачать» в Настройках → «Генерация». */
-export const TT_EXT_VERSION = '1.6.5';
+export const TT_EXT_VERSION = '1.6.6';
 
 export function AppVersion() {
   return (
