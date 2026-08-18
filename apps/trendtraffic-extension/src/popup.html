@@ -32,7 +32,13 @@
     <button id="create" class="btn ghost" data-i18n="pop_create">Создать блокнот</button>
 
     <div class="sep"></div>
-    <button id="toBulk" class="link" data-i18n="pop_toBulk">Массовый импорт →</button>
+    <div class="row between">
+      <button id="toBulk" class="link" data-i18n="pop_toBulk">Массовый импорт →</button>
+      <!-- default_popup перехватывает клик по иконке, которым раньше открывался пульт Flow
+           Booster (openPanelOnActionClick). Возвращаем ему вход отсюда, иначе вне страниц
+           Flow пульт стал бы недостижим. -->
+      <button id="booster" class="link" data-i18n="pop_booster">⚡ Flow Booster</button>
+    </div>
   </section>
 
   <!-- Экран 2: массовый импорт -->

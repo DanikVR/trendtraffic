@@ -679,5 +679,7 @@
   "pop_openNotebook": { "message": "Open notebook" },
   "pop_bgBusy": { "message": "a generation is running — try again once it finishes" },
   "pop_bgListFail": { "message": "could not read the list" },
-  "pop_bgNothing": { "message": "nothing to add" }
+  "pop_bgNothing": { "message": "nothing to add" },
+  "pop_booster": { "message": "⚡ Flow Booster" },
+  "pop_boosterFail": { "message": "Could not open the panel. Open it with the button on the Google Flow page." }
 }

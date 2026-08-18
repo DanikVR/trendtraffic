@@ -679,5 +679,7 @@
   "pop_openNotebook": { "message": "Открыть блокнот" },
   "pop_bgBusy": { "message": "идёт генерация — попробуйте после неё" },
   "pop_bgListFail": { "message": "не удалось прочитать список" },
-  "pop_bgNothing": { "message": "нечего добавлять" }
+  "pop_bgNothing": { "message": "нечего добавлять" },
+  "pop_booster": { "message": "⚡ Flow Booster" },
+  "pop_boosterFail": { "message": "Не удалось открыть пульт. Откройте его кнопкой на странице Google Flow." }
 }

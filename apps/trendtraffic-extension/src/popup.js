@@ -145,6 +145,22 @@
     }
   });
 
+  // Пульт Flow Booster. Раньше открывался кликом по иконке расширения
+  // (setPanelBehavior openPanelOnActionClick), но default_popup этот клик перехватил —
+  // вне страниц Flow пульт стал бы недостижим, поэтому вход возвращён сюда.
+  // ВАЖНО: sidePanel.open требует живой пользовательский жест, поэтому windowId берётся
+  // заранее (в init) и вызов идёт ПЕРВЫМ, без единого await перед ним.
+  $('booster').addEventListener('click', () => {
+    const wid = current && current.windowId;
+    try {
+      if (wid == null || !chrome.sidePanel || !chrome.sidePanel.open) throw new Error('no sidePanel');
+      chrome.sidePanel.open({ windowId: wid });
+      window.close();
+    } catch {
+      setStatus(T('pop_boosterFail', 'Не удалось открыть пульт. Откройте его кнопкой на странице Google Flow.'), 'err');
+    }
+  });
+
   // ── массовый импорт ────────────────────────────────────────────────────────
   $('toBulk').addEventListener('click', () => { $('view-page').hidden = true; $('view-bulk').hidden = false; setStatus(''); });
   $('back').addEventListener('click', () => { $('view-bulk').hidden = true; $('view-page').hidden = false; setStatus(''); });

@@ -55,6 +55,8 @@ RU = {
     'pop_bgBusy': 'идёт генерация — попробуйте после неё',
     'pop_bgListFail': 'не удалось прочитать список',
     'pop_bgNothing': 'нечего добавлять',
+    'pop_booster': '⚡ Flow Booster',
+    'pop_boosterFail': 'Не удалось открыть пульт. Откройте его кнопкой на странице Google Flow.',
 }
 
 EN = {
@@ -94,6 +96,8 @@ EN = {
     'pop_bgBusy': 'a generation is running — try again once it finishes',
     'pop_bgListFail': 'could not read the list',
     'pop_bgNothing': 'nothing to add',
+    'pop_booster': '⚡ Flow Booster',
+    'pop_boosterFail': 'Could not open the panel. Open it with the button on the Google Flow page.',
 }
 
 
