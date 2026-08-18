@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>TrendTraffic</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="hd">
+    <span class="mark"></span>
+    <span class="brand" data-i18n="pop_brand">Отправить в блокнот</span>
+    <span class="dot" id="dot" title=""></span>
+  </header>
+
+  <!-- Экран 1: обычный импорт текущей страницы -->
+  <section id="view-page">
+    <div class="page-card" id="pageCard">
+      <img class="fav" id="fav" alt="">
+      <div class="page-meta">
+        <div class="page-title" id="pageTitle">—</div>
+        <div class="page-host" id="pageHost"></div>
+      </div>
+    </div>
+
+    <label class="lbl" for="nb" data-i18n="pop_notebook">Блокнот</label>
+    <div class="row">
+      <select id="nb" class="sel"></select>
+      <button id="refresh" class="icon" data-i18n-title="pop_refreshTitle" title="Обновить список блокнотов (переведёт вкладку NotebookLM на главную)">⟳</button>
+    </div>
+
+    <button id="add" class="btn primary" data-i18n="pop_add">Добавить в блокнот</button>
+    <button id="create" class="btn ghost" data-i18n="pop_create">Создать блокнот</button>
+
+    <div class="sep"></div>
+    <button id="toBulk" class="link" data-i18n="pop_toBulk">Массовый импорт →</button>
+  </section>
+
+  <!-- Экран 2: массовый импорт -->
+  <section id="view-bulk" hidden>
+    <button id="back" class="link" data-i18n="pop_back">← Назад</button>
+
+    <div class="tabs">
+      <button class="tab on" data-tab="links" data-i18n="pop_tabLinks">Ссылки</button>
+      <button class="tab" data-tab="tabs" data-i18n="pop_tabTabs">Вкладки браузера</button>
+    </div>
+
+    <div id="pane-links">
+      <textarea id="links" class="ta" data-i18n-ph="pop_linksPh"
+                placeholder="По одной ссылке в строке&#10;https://example.com/a&#10;https://example.com/b"></textarea>
+    </div>
+
+    <div id="pane-tabs" hidden>
+      <div class="row between">
+        <button id="selAll" class="link" data-i18n="pop_selectAll">Выбрать все</button>
+        <span class="muted" id="tabsCount"></span>
+      </div>
+      <div class="list" id="tabList"></div>
+    </div>
+
+    <label class="lbl" for="nb2" data-i18n="pop_notebook">Блокнот</label>
+    <select id="nb2" class="sel"></select>
+
+    <button id="addBulk" class="btn primary" data-i18n="pop_addBulk">Добавить</button>
+  </section>
+
+  <div class="status" id="status" hidden></div>
+  <div class="bar" id="bar" hidden><i id="barFill"></i></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

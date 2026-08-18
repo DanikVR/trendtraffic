@@ -892,6 +892,105 @@ function tick() {
 }
 
 // ---------- сообщения ----------
+// ═══════════════════════════════════════════════════════════════════════════════
+//  POPUP: «страница, которую я читаю → в блокнот» (+ массовый импорт)
+// ═══════════════════════════════════════════════════════════════════════════════
+// Popup — только интерфейс; вкладкой NotebookLM владеет фон (он же знает про authuser
+// и мультиаккаунт). Наш бэкенд здесь не участвует вовсе: импорт работает, даже если
+// app.trendtraffic.pro не открыт и расширение к приложению не привязано.
+const NB_CACHE_KEY = 'nlmNotebooksCache';
+
+async function nbCacheGet() {
+  try { const s = await chrome.storage.local.get([NB_CACHE_KEY]); return s[NB_CACHE_KEY] || {}; } catch { return {}; }
+}
+async function nbCacheSet(notebooks) {
+  try { await chrome.storage.local.set({ [NB_CACHE_KEY]: { notebooks, at: Date.now() } }); } catch { /* */ }
+}
+/** Генерация занимает вкладку: навигация её прервёт (живой баг 2.2.x). Пускаем только в простой. */
+function nlmBusyNow() { return STATE.nlmBusy && Date.now() < STATE.busyUntil; }
+
+async function popupState() {
+  const tab = await findNotebookTab();
+  const c = await nbCacheGet();
+  return { ok: true, nlmReady: !!tab, account: STATE.nlmAccount || null, notebooks: c.notebooks || [], at: c.at || 0 };
+}
+
+/** Живой скрейп списка (мимо кэша). Плитки есть ТОЛЬКО на главной — наводим вкладку туда. */
+async function popupRefreshNotebooks() {
+  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — список можно обновить после неё') };
+  const tabId = await ensureNotebookTab(null, true);
+  if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
+  try {
+    const t = await chrome.tabs.get(tabId);
+    if (/\/notebook\//.test(t.url || '')) { await chrome.tabs.update(tabId, { url: nlmUrl('/', t.url) }); await waitForTabReady(tabId); }
+  } catch { /* навигация best-effort */ }
+  let res;
+  try { res = await withTimeout(chrome.tabs.sendMessage(tabId, { type: 'run-action', action: { kind: 'list-notebooks' } }), 60_000); }
+  catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+  if (res && res.ok) { await nbCacheSet(res.notebooks || []); return { ok: true, notebooks: res.notebooks || [] }; }
+  // не залогинен → показать вкладку, чтобы юзер вошёл (тот же приём, что в серверном пути)
+  if (res && res.reason === 'not-logged-in') { try { await chrome.tabs.update(tabId, { active: true }); } catch { /* */ } }
+  return { ok: false, error: (res && res.reason) || T('pop_bgListFail', 'не удалось прочитать список') };
+}
+
+async function popupCreateNotebook(title) {
+  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — список можно обновить после неё') };
+  const tabId = await ensureNotebookTab(null, true);
+  if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
+  // Клик «создать» уводит на /notebook/<uuid> и может перезагрузить страницу, поэтому результат
+  // приходит отдельным сообщением nlm-create-done — как в серверном пути.
+  const actionId = 'popup-create-' + Date.now();
+  try { await chrome.tabs.sendMessage(tabId, { type: 'run-action', action: { kind: 'create-notebook', id: actionId, payload: { title: (title || '').slice(0, 80) } } }); }
+  catch { /* страница могла перезагрузиться — ждём событие */ }
+  const ev = await waitForNlmEvent('create-done', actionId, NLM_CREATE_WAIT_MS);
+  if (ev && ev.notebookId) {
+    const c = await nbCacheGet();
+    await nbCacheSet([{ id: ev.notebookId, title: ev.title || (title || ''), icon: '' }].concat(c.notebooks || []));
+    return { ok: true, notebookId: ev.notebookId, title: ev.title || title || '' };
+  }
+  return { ok: false, error: T('bg_notebookNotCreated', 'блокнот не создался') };
+}
+
+/** Добавить пачку ссылок источниками. Строго последовательно: вкладка одна. */
+async function popupAddSources(notebookId, items) {
+  const list = (items || []).filter((i) => i && typeof i.url === 'string');
+  if (!notebookId || !list.length) return { ok: false, error: T('pop_bgNothing', 'нечего добавлять') };
+  if (nlmBusyNow()) return { ok: false, error: T('pop_bgBusy', 'идёт генерация — список можно обновить после неё') };
+  const tabId = await ensureNotebookTab(notebookId, true);
+  if (!tabId) return { ok: false, error: T('bg_openNlmFailed', 'не удалось открыть NotebookLM') };
+
+  let added = 0; let failed = 0; const errors = [];
+  for (let i = 0; i < list.length; i++) {
+    let r = null;
+    try {
+      r = await withTimeout(chrome.tabs.sendMessage(tabId, {
+        type: 'run-action',
+        action: { kind: 'add-source', notebookId, payload: { srcKind: 'url', url: list[i].url, title: list[i].title || '' } },
+      }), 90_000);
+    } catch (e) { r = { ok: false, reason: String(e && e.message || e) }; }
+    if (r && r.ok) added++;
+    else { failed++; if (errors.length < 3) errors.push((r && r.reason) || 'fail'); }
+    // popup мог закрыться — тогда некому слушать, и это нормально: цикл доедет в фоне
+    try { chrome.runtime.sendMessage({ type: 'tt-popup-progress', done: i + 1, total: list.length }); void chrome.runtime.lastError; } catch { /* */ }
+  }
+  return { ok: true, added, failed, errors };
+}
+
+/** Вкладки браузера для массового импорта. Свои же (NotebookLM) не предлагаем. */
+async function popupBrowserTabs() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    const out = [];
+    for (const t of tabs) {
+      const u = t.url || '';
+      if (!/^https?:\/\//i.test(u)) continue;
+      if (NLM_URL_RE.test(u)) continue;
+      out.push({ id: t.id, url: u, title: t.title || '' });
+    }
+    return { ok: true, tabs: out };
+  } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     switch (msg && msg.type) {
@@ -941,6 +1040,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case 'batch-spec': sendResponse(await sendBatchSpec(msg.batchId, msg.spec)); break;
 
       // — NotebookLM —
+      // ── popup: импорт страницы / пачки ссылок ──
+      case 'tt-popup-state': sendResponse(await popupState()); break;
+      case 'tt-popup-refresh-notebooks': sendResponse(await popupRefreshNotebooks()); break;
+      case 'tt-popup-create': sendResponse(await popupCreateNotebook(msg.title)); break;
+      case 'tt-popup-add': sendResponse(await popupAddSources(msg.notebookId, msg.items)); break;
+      case 'tt-popup-tabs': sendResponse(await popupBrowserTabs()); break;
+      case 'tt-popup-progress': sendResponse({ ok: true }); break; // прогресс слушает popup; фон ack'ает
+
       case 'nlm-status':
         sendResponse({ connected: !!(STATE.token && STATE.apiBase), loggedIn: STATE.nlmLoggedIn, apiBase: STATE.apiBase });
         break;
