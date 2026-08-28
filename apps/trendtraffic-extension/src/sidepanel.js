@@ -29,7 +29,9 @@
    'resolution', 'length', 'refBox', 'refInput', 'refs', 'charMode', 'useMention', 'chain', 'prompts',
    'promptCount', 'folder', 'prefix', 'autoDl', 'hiRes', 'ttSend', 'ttSendWrap', 'ttSignin', 'pace',
    'concurrency', 'start', 'pause', 'stop', 'clear', 'queue', 'log', 'clearLog',
-   'scenario', 'scenPlan', 'scenToggle', 'scenBody', 'scenInfo'].forEach((id) => (els[id] = $(id)));
+   'scenario', 'scenPlan', 'scenToggle', 'scenBody', 'scenInfo',
+   'omniToggle', 'omniBody', 'omniMode', 'omniChips', 'omniHint',
+   'kfBox', 'kfInput', 'kfPairs', 'kfHint'].forEach((id) => (els[id] = $(id)));
 
   // Часто используемые подписи (кнопка «Пауза» переключается в 5 местах).
   const LBL_PAUSE = T('fb_pause', '⏸ Пауза');
@@ -43,15 +45,57 @@
   };
 
   let characters = [];       // [{id, name, dataUrl}] — референс-персонажи (в памяти)
-  let queue = [];            // [{id, prompt, status, note, pct}]
+  let kfPairs = [];          // [{id, a:{name,dataUrl}|null, b:{…}|null}] — пары кадров переходов (в памяти)
+  let kfTarget = null;       // {pairId, slot:'a'|'b'} — какой слот заполнит следующий выбранный файл
+  let kfCharsWarned = false; // «персонажи пропущены» — предупреждаем один раз на пакет
+  let queue = [];            // [{id, prompt, status, note, pct, frames?}]
   let running = false, paused = false, stopFlag = false;
   let ttConnected = false;
   let lastChainImage = null; // dataURL последнего img-результата (для «Chain»)
   let throttleTimer = null;  // один таймер паузы по троттлингу (не плодим)
   let renameArmed = false;   // взведено ли переименование родных hi-res загрузок на весь пакет
 
-  const SETTINGS_KEYS = ['mode', 'model', 'aspect', 'count', 'resolution', 'length', 'folder', 'prefix', 'pace', 'concurrency', 'charMode'];
+  const SETTINGS_KEYS = ['mode', 'model', 'aspect', 'count', 'resolution', 'length', 'folder', 'prefix', 'pace', 'concurrency', 'charMode', 'omniMode'];
   const FLAG_KEYS = ['autoDl', 'hiRes', 'ttSend', 'chain', 'useMention'];
+
+  // ── Эффекты Omni 1.1 (анонс Google, 08.2026): готовые киношные приёмы камеры. Тексты промптов —
+  //    АНГЛИЙСКИЕ и НЕ локализуются (видеомодели понимают EN лучше); локализуются только подписи
+  //    чипов (label — литеральный T(), его харвестит translate-ext-runtime.mjs). frames:true —
+  //    эффект раскрывается парой кадров «первый → последний» (режим «Кадры → Видео», кейфреймы). ──
+  const OMNI_PRESETS = [
+    { label: () => T('fb_prDollyZoom', 'Долли-зум (вертиго)'), frames: false,
+      line: "Camera dollies forward while simultaneously zooming out, keeping the subject locked at the exact same size while the background stretches away with a vertigo warp - classic dolly-zoom, cinematic.",
+      suffix: "dolly-zoom vertigo: subject locked at the same size, background warps away" },
+    { label: () => T('fb_prSnapZoom', 'Снэп-зум в глаза'), frames: false,
+      line: "Fast mechanical snap-zoom straight into the character's eyes with a hard stop, stylized cinematic tension.",
+      suffix: "fast snap-zoom into the eyes with a hard stop" },
+    { label: () => T('fb_prOrbit', 'Орбита 360°'), frames: false,
+      line: "High-speed 360-degree orbital rotation around the frozen subject, strong depth and parallax, time standing still, cinematic lighting.",
+      suffix: "high-speed 360-degree orbit around the frozen subject, strong parallax" },
+    { label: () => T('fb_prFrozen', 'Стоп-время'), frames: false,
+      line: "Time freezes mid-action: droplets and debris hang motionless in the air while the camera glides slowly through the frozen scene.",
+      suffix: "frozen-time moment, camera glides through the motionless scene" },
+    { label: () => T('fb_prWhipPan', 'Whip-pan переход'), frames: true,
+      line: "Ultra-fast whip-pan transition: the camera whips away from the first scene and lands on the next one, motion blur smearing the frames together.",
+      suffix: "ultra-fast whip-pan transition with heavy motion blur" },
+    { label: () => T('fb_prScreenZoom', 'Камера в экран'), frames: true,
+      line: "The camera pushes forward and zooms seamlessly into a screen inside the scene, the picture on that screen becoming the next full-frame scene without a cut.",
+      suffix: "camera zooms seamlessly into an on-screen picture, no cut" },
+    { label: () => T('fb_prMacro', 'Макро-боке'), frames: false,
+      line: "Extreme macro close-up with shallow depth of field, the subject swaying gently, golden sunlight filtering through with soft bokeh circles in the background.",
+      suffix: "extreme macro close-up, shallow depth of field, golden bokeh" },
+    { label: () => T('fb_prLoop', 'Бесшовный луп'), frames: true,
+      line: "Seamless loop: the motion ends exactly where it began so the clip repeats endlessly without a visible cut, smooth continuous movement.",
+      suffix: "seamless loop, motion ends exactly where it began" },
+    { label: () => T('fb_prFpv', 'FPV-пролёт'), frames: false,
+      line: "High-speed FPV drone fly-through, weaving between obstacles with smooth banking turns, wide-angle lens, one continuous take.",
+      suffix: "high-speed FPV drone fly-through, wide-angle, one continuous take" },
+    { label: () => T('fb_prReveal', 'Отъезд-раскрытие'), frames: false,
+      line: "Slow pull-back reveal: the camera glides backwards to uncover the full unexpected scale of the scene around the subject, one continuous shot.",
+      suffix: "slow pull-back reveal of the full scene, one continuous shot" },
+  ];
+  // Промпт-заглушка для пары кадров без текста (EN — как все промпты пакета).
+  const KF_DEFAULT_PROMPT = 'Smooth seamless cinematic transition from the first frame to the last frame, continuous camera motion, natural morphing, no cuts.';
 
   // ---------- локализация статичной вёрстки ----------
   function applyI18n() {
@@ -99,6 +143,16 @@
     setTxt('lLog', T('fb_log', 'Лог'));
     setTxt('clearLog', T('fb_clearLog', 'очистить'));
     setTxt('fbFoot', T('fb_footer', 'Бесплатно · вход не нужен. Результаты скачиваются на ваш компьютер. TrendFlow — опционально.'));
+    setTxt('lOmni', T('fb_omniTitle', 'Эффекты Omni 1.1'));
+    setTxt('omniToggle', els.omniBody && !els.omniBody.hidden ? T('fb_collapse', 'свернуть') : T('fb_expand', 'развернуть'));
+    setTxt('lOmniMode', T('fb_omniModeLbl', 'Как вставлять'));
+    setOpt('#omniMode option[value="line"]', T('fb_omniModeLine', 'Новой строкой-промптом'));
+    setOpt('#omniMode option[value="style"]', T('fb_omniModeStyle', 'Стилем ко всем строкам'));
+    setTxt('omniHint', T('fb_omniHint', 'Готовые киношные приёмы Gemini Omni 1.1: клик вставляет EN-промпт. «Стилем» — дописать хвост эффекта к каждой строке. Чипы с ⇄ лучше всего работают парой кадров (режим «Кадры → Видео» → «Переходы»).'));
+    setTxt('lKf', T('fb_kfTitle', 'Переходы: первый → последний кадр'));
+    setTxt('lKfEm', T('fb_kfEm', '(кейфреймы Omni 1.1)'));
+    setTxt('lKfAdd', T('fb_kfAddPair', '+ пара'));
+    setTxt('kfHint', T('fb_kfHint', 'Пара = один клип «кадр А → кадр Б». Промптов — столько же, сколько пар, или один на все; пусто — вставится плавный переход. Файлы добавляются по два: 1-й → А, 2-й → Б. Клик по слоту — заменить кадр.'));
     setTxt('lScen', T('fb_scenTitle', 'Сценарий → пакет'));
     setTxt('scenPlan', T('fb_scenBtn', 'Разбить на промпты'));
     setTxt('scenToggle', els.scenBody && !els.scenBody.hidden ? T('fb_collapse', 'свернуть') : T('fb_expand', 'развернуть'));
@@ -137,7 +191,84 @@
   const parsePrompts = () => els.prompts.value.split('\n').map((s) => s.trim()).filter(Boolean);
   const updatePromptCount = () => { els.promptCount.textContent = String(parsePrompts().length); };
   const isImageMode = () => ['imageToVideo', 'components', 'imageToImage'].includes(els.mode.value);
-  const syncModeUI = () => { els.refBox.hidden = !isImageMode(); };
+  // Пары кадров имеют смысл только в «Кадры → Видео» (там у Flow слоты первого/последнего кадра).
+  const syncModeUI = () => { els.refBox.hidden = !isImageMode(); if (els.kfBox) els.kfBox.hidden = els.mode.value !== 'imageToVideo'; };
+
+  // ---------- Эффекты Omni 1.1 (чипы-пресеты) ----------
+  function insertPreset(p) {
+    const name = p.label();
+    if (els.omniMode && els.omniMode.value === 'style') {
+      // «Стилем»: дописать хвост эффекта к каждой непустой строке (повторно — не дублируем).
+      let n = 0;
+      const out = els.prompts.value.split('\n').map((ln) => {
+        if (!ln.trim() || ln.toLowerCase().includes(p.suffix.toLowerCase())) return ln;
+        n++; return ln.replace(/\s+$/, '') + ', ' + p.suffix;
+      });
+      if (!n) { log(T('fb_omniNoLines', 'нет строк — сначала добавь промпты')); return; }
+      els.prompts.value = out.join('\n');
+      log(fmt(T('fb_omniStyled', '🎨 «{name}» дописан к {n} строкам'), { name, n }));
+    } else {
+      els.prompts.value = (els.prompts.value.replace(/\s+$/, '') + '\n' + p.line).replace(/^\n/, '');
+      log(fmt(T('fb_omniInserted', '✚ «{name}» добавлен строкой'), { name }));
+    }
+    if (p.frames && els.mode.value !== 'imageToVideo') log(fmt(T('fb_omniFramesTip', '💡 «{name}» раскрывается парой кадров: режим «Кадры → Видео» → «Переходы»'), { name }));
+    updatePromptCount(); saveSettings();
+  }
+  function renderOmniChips() {
+    if (!els.omniChips) return;
+    els.omniChips.innerHTML = '';
+    for (const p of OMNI_PRESETS) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip-btn'; b.title = p.line;
+      b.textContent = p.label();
+      if (p.frames) { const fx = document.createElement('span'); fx.className = 'fx'; fx.textContent = '⇄'; b.appendChild(fx); }
+      b.addEventListener('click', () => insertPreset(p));
+      els.omniChips.appendChild(b);
+    }
+  }
+
+  // ---------- Переходы: пары кадров «первый → последний» ----------
+  function renderKfPairs() {
+    if (!els.kfPairs) return;
+    els.kfPairs.innerHTML = '';
+    kfPairs.forEach((p, idx) => {
+      const row = document.createElement('div'); row.className = 'kfrow';
+      const num = document.createElement('span'); num.className = 'kfn'; num.textContent = String(idx + 1);
+      row.appendChild(num);
+      for (const slot of ['a', 'b']) {
+        const cell = document.createElement('div'); cell.className = 'kfslot' + (p[slot] ? ' full' : '');
+        if (p[slot]) { const img = document.createElement('img'); img.src = p[slot].dataUrl; cell.appendChild(img); }
+        else cell.textContent = '+';
+        cell.title = slot === 'a' ? T('fb_kfFirstTitle', 'первый кадр — клик, чтобы выбрать файл') : T('fb_kfLastTitle', 'последний кадр — клик, чтобы выбрать файл');
+        cell.addEventListener('click', () => { kfTarget = { pairId: p.id, slot }; els.kfInput.click(); });
+        row.appendChild(cell);
+        if (slot === 'a') { const ar = document.createElement('span'); ar.className = 'kfarrow'; ar.textContent = '→'; row.appendChild(ar); }
+      }
+      const x = document.createElement('span'); x.className = 'x'; x.textContent = '×';
+      x.onclick = () => { kfPairs = kfPairs.filter((k) => k.id !== p.id); renderKfPairs(); };
+      row.appendChild(x);
+      els.kfPairs.appendChild(row);
+    });
+  }
+  // Файлы → пары: целевой слот (клик по слоту) заполняется первым файлом, остальные — по два
+  // на пару (незакрытая пара добирается, потом создаются новые). До 12 пар.
+  async function addKfFiles(files) {
+    for (const f of files) {
+      if (!/^image\//.test(f.type)) continue;
+      let dataUrl; try { dataUrl = await fileToDataUrl(f); } catch { continue; }
+      const frame = { name: baseName(f.name), dataUrl };
+      if (kfTarget) {
+        const p = kfPairs.find((k) => k.id === kfTarget.pairId);
+        const slot = kfTarget.slot;
+        kfTarget = null;
+        if (p) { p[slot] = frame; continue; }
+      }
+      const open = kfPairs.find((k) => !k.a || !k.b);
+      if (open) { if (!open.a) open.a = frame; else open.b = frame; }
+      else if (kfPairs.length < 12) kfPairs.push({ id: 'kf' + Date.now() + Math.random().toString(36).slice(2, 6), a: frame, b: null });
+    }
+    renderKfPairs();
+  }
 
   // ---------- «Сценарий → пакет»: нарезка сценарного плана ----------
   let plan = null; // { batchId, spec, items } — активный пакет (переживает переоткрытие панели)
@@ -413,9 +544,13 @@
         if (!item) break;
         item.status = 'running'; item.note = T('fb_submitting', 'запуск…'); item.pct = 0; renderQueue();
         const refs = [];
-        if (isImageMode()) {
+        if (isImageMode() && !item.frames) {
           if (els.chain.checked && lastChainImage) refs.push({ name: 'previous', dataUrl: lastChainImage });
           refs.push(...resolveCharacters(item.prompt));
+        } else if (item.frames && (characters.length || (els.chain.checked && lastChainImage)) && !kfCharsWarned) {
+          // Пара кадров занимает слоты Flow — персонажи/цепочка к таким промптам не прикрепляются.
+          log(T('fb_kfCharsSkipped', 'персонажи пропущены — у промптов есть пары кадров'));
+          kfCharsWarned = true;
         }
         const payload = {
           id: item.id, prompt: item.prompt, title: item.prompt.slice(0, 60),
@@ -423,6 +558,7 @@
           outputCount: Number(els.count.value) || 1, resolution: els.resolution.value,
           videoLength: els.length.value ? Number(els.length.value) : null,
           characters: refs.map((c) => ({ name: c.name, dataUrl: c.dataUrl })), useMention: els.useMention.checked,
+          frames: item.frames || null,
         };
         qi++;
         let sub;
@@ -471,9 +607,33 @@
   }
 
   function startRun() {
-    const prompts = parsePrompts();
+    let prompts = parsePrompts();
+    // Переходы (пары кадров): активны только в «Кадры → Видео». Строка i → пара i;
+    // один промпт — на все пары; пусто — вставляем плавный переход; иначе — просим выровнять.
+    let pairs = [];
+    if (els.mode.value === 'imageToVideo' && kfPairs.length) {
+      pairs = kfPairs.filter((p) => p.a && p.b);
+      kfPairs.forEach((p, i) => { if (!p.a || !p.b) log(fmt(T('fb_kfIncompleteSkip', '⚠ пара {i} без второго кадра — пропущена'), { i: i + 1 })); });
+    }
+    if (pairs.length) {
+      if (!prompts.length) {
+        prompts = pairs.map(() => KF_DEFAULT_PROMPT);
+        els.prompts.value = prompts.join('\n'); updatePromptCount(); saveSettings();
+        log(T('fb_kfAutoPrompt', 'промптов не было — вставлен плавный переход (EN)'));
+      } else if (prompts.length === 1 && pairs.length > 1) {
+        prompts = pairs.map(() => prompts[0]);
+      } else if (prompts.length !== pairs.length) {
+        log(fmt(T('fb_kfMismatch', '⚠ промптов {p}, пар {k} — сделай поровну или оставь один промпт'), { p: prompts.length, k: pairs.length }));
+        return;
+      }
+    }
     if (!prompts.length) { log(T('fb_addPrompts', 'добавь хотя бы один промпт')); return; }
-    queue = prompts.map((p, i) => ({ id: 'q' + Date.now() + '_' + i, prompt: p, status: 'queued', note: '', pct: 0 }));
+    kfCharsWarned = false;
+    queue = prompts.map((p, i) => ({
+      id: 'q' + Date.now() + '_' + i, prompt: p, status: 'queued', note: '', pct: 0,
+      frames: pairs.length ? { first: pairs[i].a.dataUrl, last: pairs[i].b.dataUrl } : null,
+    }));
+    if (pairs.length) log(fmt(T('fb_kfActive', '🎞 переходы: {n} пар кадров прикреплены'), { n: pairs.length }));
     // Пакет сценария: мета клипов по ПОЗИЦИИ строки (строка i = items[i]); строки менялись — без меты.
     if (plan && plan.items && plan.items.length === queue.length) {
       queue.forEach((q, i) => { q.batchIndex = plan.items[i].index; });
@@ -505,6 +665,7 @@
   function clearAll() {
     if (running) return;
     queue = []; renderQueue(); els.prompts.value = ''; updatePromptCount();
+    kfPairs = []; kfTarget = null; renderKfPairs();
     plan = null; savePlan();
     if (els.scenInfo) els.scenInfo.textContent = '';
     saveSettings();
@@ -544,6 +705,15 @@
     }
     if (els.scenPlan) els.scenPlan.onclick = runScenarioPlan;
     if (els.scenario) els.scenario.addEventListener('input', saveSettings);
+    if (els.omniToggle) {
+      els.omniToggle.onclick = () => {
+        const wasHidden = els.omniBody.hidden;
+        els.omniBody.hidden = !wasHidden;
+        els.omniToggle.textContent = wasHidden ? T('fb_collapse', 'свернуть') : T('fb_expand', 'развернуть');
+      };
+    }
+    renderOmniChips();
+    if (els.kfInput) els.kfInput.addEventListener('change', (e) => { addKfFiles([...e.target.files]); e.target.value = ''; });
   }
 
   // ---------- старт ----------

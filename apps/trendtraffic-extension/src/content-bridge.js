@@ -27,7 +27,7 @@
   // (вкладку не перезагрузили после обновления расширения) при этом жив: у такого скрипта
   // chrome.runtime уже отвязан, getManifest кидает → работает фолбэк-константа ЕГО сборки,
   // приложение видит несовпадение и просит F5.
-  const BRIDGE_FALLBACK_VERSION = '1.6.1';
+  const BRIDGE_FALLBACK_VERSION = '1.7.0';
   const BRIDGE_VERSION = (() => { try { return chrome.runtime.getManifest().version; } catch { return BRIDGE_FALLBACK_VERSION; } })();
   const TOKEN_KEY = 'vibevox_token'; // ключ JWT в localStorage SPA (см. store/useAppStore.ts)
   const toPage = (m) => window.postMessage({ source: OUT, bridgeVersion: BRIDGE_VERSION, ...m }, window.location.origin);

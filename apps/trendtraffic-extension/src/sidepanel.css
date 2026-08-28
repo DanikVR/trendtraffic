@@ -82,6 +82,29 @@ textarea { resize: vertical; line-height: 1.5; min-height: 84px; }
 .mini-btn { font-size: 11px; color: var(--indigo); cursor: pointer; padding: 3px 8px; border: 1px solid var(--line); border-radius: 6px; }
 .mini-btn:hover { border-color: var(--indigo); }
 
+/* Эффекты Omni 1.1 — чипы-пресеты */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn { font-size: 11px; color: var(--fg); background: var(--card2); border: 1px solid var(--line);
+  border-radius: 20px; padding: 5px 10px; cursor: pointer; font-family: inherit; }
+.chip-btn:hover { border-color: var(--indigo); background: #222836; }
+.chip-btn .fx { color: var(--indigo); font-size: 10px; margin-left: 2px; }
+
+/* Переходы: пары кадров «первый → последний» */
+.kfpairs { display: flex; flex-direction: column; gap: 6px; }
+.kfpairs:empty { display: none; }
+.kfrow { display: flex; align-items: center; gap: 7px; background: var(--card2);
+  border: 1px solid var(--line); border-radius: 8px; padding: 5px 7px; }
+.kfn { font-size: 10px; color: var(--dim); font-family: ui-monospace, Consolas, monospace; width: 12px; text-align: center; flex: 0 0 auto; }
+.kfslot { width: 44px; height: 44px; border-radius: 6px; overflow: hidden; background: var(--card);
+  border: 1px dashed var(--line); cursor: pointer; flex: 0 0 auto; display: flex; align-items: center;
+  justify-content: center; color: var(--muted); font-size: 16px; }
+.kfslot.full { border-style: solid; background: #000; }
+.kfslot img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.kfslot:hover { border-color: var(--indigo); }
+.kfarrow { color: var(--muted); font-size: 13px; flex: 0 0 auto; }
+.kfrow .x { flex: 1; text-align: right; cursor: pointer; color: var(--muted); font-size: 15px; }
+.kfrow .x:hover { color: var(--err); }
+
 /* buttons */
 .btn { flex: 1; font-size: 12px; font-weight: 600; padding: 9px 10px; border-radius: 8px;
   border: 1px solid var(--line); background: #222836; color: var(--fg); cursor: pointer; }

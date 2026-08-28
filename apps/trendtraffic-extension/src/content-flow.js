@@ -57,7 +57,13 @@
     // текущее значение группы = и есть её кнопка). target добавляем к группе при матче.
     aspectValues: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
     aspectAlias: { '16:9': ['landscape', 'горизонт', '横', '16:9'], '9:16': ['portrait', 'вертикал', '縦', '9:16'], '1:1': ['square', 'квадрат', '正方', '1:1'] },
-    modelHint: ['veo', 'model', 'модель', 'モデル', '模型', 'modelo', 'banana', 'imagen'],
+    modelHint: ['veo', 'omni', 'model', 'модель', 'モデル', '模型', 'modelo', 'banana', 'imagen'],
+    // Слоты кадров режима «Кадры → Видео» (первый/последний кадр — кейфреймы Omni 1.1). Точный CSS
+    // можно задать без релиза: chrome.storage.local['flowSelectors'] = {batchCss:{frameFirst,frameLast}}.
+    frameSlotTokens: {
+      first: ['first frame', 'start frame', 'starting frame', 'первый кадр', 'начальный кадр', 'primer fotograma', 'première image', '最初のフレーム', '首帧'],
+      last: ['last frame', 'final frame', 'end frame', 'последний кадр', 'конечный кадр', 'último fotograma', 'dernière image', '最後のフレーム', '尾帧'],
+    },
     countHint: ['output', 'count', 'quantity', 'videos', 'images', 'кол-во', 'количество', 'выход', '数量', '出力', 'cantidad', 'sorties'],
     lengthHint: ['length', 'duration', 'длит', 'секунд', 'sec', '秒', 'durée', 'duración'],
     // Скачивание готового тайла в нужном разрешении.
@@ -613,6 +619,55 @@
       } catch { ui.line(`⚠ персонаж «${name}» не залился`); }
     }
   }
+  // ── КАДРЫ ПЕРЕХОДА (кейфреймы Omni 1.1): первый/последний кадр режима «Кадры → Видео» ──
+  const frameFile = (slot, frame) => dataUrlToFile(frame.dataUrl || '', 'flow-' + slot + '-frame' + guessExt((/^data:([^;]+)/.exec(frame.dataUrl || '') || [])[1] || 'image/jpeg'));
+  // Пул поиска слотов шире interactives(): плитки слотов у Flow бывают div с aria-label/title.
+  const framePool = () => [...interactives(), ...queryAllDeep('[aria-label],[title]').filter(visible)];
+  // Прикрепить кадр в слот: точный CSS-оверрайд → токены текста/aria → {ok:false, reason:'no-slot'}.
+  async function attachFrame(slot, frame) {
+    let opener = null;
+    const cssSel = BATCH.css && BATCH.css[slot === 'first' ? 'frameFirst' : 'frameLast'];
+    if (cssSel) { try { opener = [...document.querySelectorAll(cssSel)].filter(visible)[0] || null; } catch { /* кривой оверрайд — токены ниже */ } }
+    if (!opener) opener = findByTokens(BATCH.frameSlotTokens[slot] || [], framePool());
+    if (!opener) return { ok: false, reason: 'no-slot' };
+    const before = new Set(document.querySelectorAll('input[type="file"]'));
+    realClick(opener);
+    await sleep(700);
+    // Клик по слоту мог раскрыть попап с «upload» — дожимаем, потом ищем СВЕЖИЙ image-input.
+    const freshInput = () => [...document.querySelectorAll('input[type="file"]')].find((i) => !before.has(i) && acceptsKind(i, 'image'));
+    let inp = freshInput();
+    if (!inp) {
+      const up = findByTokens(SELECTORS.addMediaText);
+      if (up) { realClick(up); await sleep(600); }
+      inp = freshInput() || findFileInput('image');
+    }
+    if (!inp) return { ok: false, reason: 'no-file-input' };
+    return setInputFiles(inp, frameFile(slot, frame));
+  }
+  // Оба кадра по очереди. Слоты не нашлись токенами → фолбэк: общее поле загрузки по порядку
+  // (Flow кладёт файлы в следующий пустой слот). Провал любого кадра = провал item (честный reason).
+  async function attachFrames(frames) {
+    ui.line(T('flow_kfAttaching', 'прикрепляю кадры перехода…'));
+    // Панель шлёт кадры строками dataURL; принимаем и {dataUrl} на вырост.
+    const asFrame = (f) => (typeof f === 'string' ? { dataUrl: f } : (f && f.dataUrl ? f : null));
+    const seq = [];
+    const first = asFrame(frames.first), last = asFrame(frames.last);
+    if (first) seq.push(['first', first]);
+    if (last) seq.push(['last', last]);
+    if (!seq.length) return { ok: true };
+    let fellBack = false;
+    for (const [slot, frame] of seq) {
+      let r = await attachFrame(slot, frame);
+      if (!r.ok && r.reason === 'no-slot') {
+        if (!fellBack) { ui.line(T('flow_kfFallback', 'слоты кадров не найдены — заливаю по порядку')); fellBack = true; }
+        r = await injectFileIntoFlow(frameFile(slot, frame), 'image');
+      }
+      if (!r.ok) return { ok: false, reason: slot + ':' + (r.reason || 'fail') };
+      await sleep(1300); // Flow дорисовывает превью слота перед следующей заливкой
+    }
+    ui.line(T('flow_kfDone', '✓ кадры перехода на месте'));
+    return { ok: true };
+  }
   // Применить параметры генерации (идемпотентно — no-op, если уже стоит нужное).
   async function applyParams(it) {
     if (it.mode) await selectMode(it.mode);
@@ -647,7 +702,15 @@
     if (!/\/project\//.test(location.href)) { try { await openProject(); } catch { /* best-effort */ } }
     await applyParams(it);
     const imageDriven = it.mode === 'imageToVideo' || it.mode === 'components' || it.mode === 'imageToImage';
-    if (imageDriven && it.characters && it.characters.length) { emitProgress(it.id, 'refs', 0, 0, ''); await attachCharacters(it.characters, it.useMention); }
+    // Переход по кадрам (первый → последний): кадры занимают слоты Flow — персонажи для таких
+    // item не прикрепляются (панель их и не шлёт). Провал прикрепления = провал item, не генерим текстом.
+    const hasFrames = !!(it.mode === 'imageToVideo' && it.frames && (it.frames.first || it.frames.last));
+    if (hasFrames) {
+      emitProgress(it.id, 'frames', 0, 0, '');
+      const fr = await attachFrames(it.frames);
+      if (!fr.ok) { ui.line(T('flow_kfFail', '⚠ кадры перехода: ') + fr.reason); return { ok: false, reason: 'frames:' + fr.reason }; }
+    }
+    if (imageDriven && !hasFrames && it.characters && it.characters.length) { emitProgress(it.id, 'refs', 0, 0, ''); await attachCharacters(it.characters, it.useMention); }
     const okPrompt = await setPrompt(it.prompt || '');
     if (!okPrompt) { ui.line('⚠ поле промпта не найдено'); return { ok: false, reason: 'selector:promptInput' }; }
     await sleep(400);
@@ -850,6 +913,10 @@
       if (kind === 'video' && imageOnly) return { ok: false, reason: T('flow_onlyImagesHere', 'Flow здесь принимает только картинки — видео залей через раздел «Загрузки» Flow') };
       return { ok: false, reason: T('flow_uploadFieldNotFound', 'поле загрузки не найдено — открой ПРОЕКТ в Flow (не главную): внутри проекта есть загрузка (+/«Загрузки»)') };
     }
+    return setInputFiles(inp, file);
+  }
+  // Подложить файл в конкретный input[type=file] (реактовский change — как при ручном выборе).
+  function setInputFiles(inp, file) {
     try {
       const dt = new DataTransfer(); dt.items.add(file);
       inp.files = dt.files;

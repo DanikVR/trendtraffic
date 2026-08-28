@@ -54,6 +54,7 @@
           <span id="lModel">Model</span>
           <select id="model">
             <option value="">Auto (current)</option>
+            <option value="Omni 1.1 Flash">Omni 1.1 — Flash</option>
             <option value="Veo 3.1 Fast">Veo 3.1 — Fast</option>
             <option value="Veo 3.1 Quality">Veo 3.1 — Quality</option>
             <option value="Veo 2 Fast">Veo 2 — Fast</option>
@@ -116,6 +117,35 @@
       </label>
       <label class="chk"><input type="checkbox" id="useMention" /> <span id="lUseMention">Use Flow @mention (else upload as reference)</span></label>
       <label class="chk"><input type="checkbox" id="chain" /> <span id="lChain">Chain last result as reference (forces sequential)</span></label>
+    </section>
+
+    <!-- Переходы: первый → последний кадр (кейфреймы Omni 1.1, режим «Кадры → Видео») -->
+    <section class="card refbox" id="kfBox" hidden>
+      <div class="row between">
+        <span class="lbl"><span id="lKf">Transitions: first → last frame</span> <em id="lKfEm">(Omni 1.1 keyframes)</em></span>
+        <label class="mini-btn"><input type="file" id="kfInput" accept="image/*" multiple hidden /><span id="lKfAdd">+ pair</span></label>
+      </div>
+      <div class="kfpairs" id="kfPairs"></div>
+      <div class="hint" id="kfHint"></div>
+    </section>
+
+    <!-- Эффекты Omni 1.1: чипы-пресеты киношных приёмов (клик — вставить EN-промпт) -->
+    <section class="card">
+      <div class="row between">
+        <span class="lbl" id="lOmni">Omni 1.1 effects</span>
+        <button class="link" id="omniToggle">expand</button>
+      </div>
+      <div id="omniBody" hidden>
+        <label class="fld">
+          <span id="lOmniMode">Insert mode</span>
+          <select id="omniMode">
+            <option value="line">New prompt line</option>
+            <option value="style">Style suffix on every line</option>
+          </select>
+        </label>
+        <div class="chips" id="omniChips"></div>
+        <div class="hint" id="omniHint"></div>
+      </div>
     </section>
 
     <!-- Prompts -->
